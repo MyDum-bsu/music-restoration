@@ -4,8 +4,7 @@
 #   ./install.sh                    # all four skills -> ~/.agents/skills
 #   ./install.sh restore-dr         # any subset: name skills as arguments
 #   ./install.sh restore-dr add-lyrics phone-music
-#   ./install.sh --claude           # symlink into ~/.claude/skills instead
-#   ./install.sh --skills-dir D     # symlink into a custom dir
+#   ./install.sh --skills-dir D     # symlink into a custom dir (any agent)
 #   ./install.sh --copy             # copy instead of symlink (updates need re-run)
 #   ./install.sh --venv             # also create .venv and pip-install requirements
 #
@@ -23,7 +22,6 @@ VENV=0
 SKILLS=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --claude) SKILLS_DIR="${HOME}/.claude/skills"; shift ;;
     --skills-dir) SKILLS_DIR="$2"; shift 2 ;;
     --copy) MODE=copy; shift ;;
     --venv) VENV=1; shift ;;
