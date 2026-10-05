@@ -1,0 +1,18 @@
+# Stereo Tool CLI is freeware but NOT redistributable — download it yourself,
+# see docs/stereo-tool.md
+restore-dr/bin/*
+!restore-dr/bin/README.md
+
+# local environments / caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# working directories created by the pipeline
+work/
+*.restore-work/
+
+# personal config (device paths etc.)
+config.env
