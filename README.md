@@ -55,8 +55,14 @@ or through your agent (each SKILL.md lists its requirements explicitly).
 
 ```bash
 git clone <this repo> && cd music-restoration
-./install.sh
+./install.sh                                  # all four skills
+./install.sh restore-dr add-lyrics            # or any subset, by name
 ```
+
+Skills are independent: `restore-dr` (restoration) and `add-lyrics` (lyrics)
+stand alone. Two small links: `phone-music` borrows helper code from
+`restore-dr` (taken from the same clone automatically), and lyrics embedding
+uses `add-lyrics` when it is installed.
 
 Optional: the [Stereo Tool CLI](docs/stereo-tool.md). It is free for
 non-commercial use and cannot be redistributed, so it is not bundled; it
