@@ -23,6 +23,10 @@ MUSIC_DIR_NAMES = {"music", "музыка"}
 
 
 def gvfs_mtp_mounts() -> list[Path]:
+    """gvfs MTP mounts (Linux desktops). Empty elsewhere — phone features
+    degrade to a clear 'no phone found' error, never a crash."""
+    if not hasattr(os, "getuid"):
+        return []
     base = Path("/run/user") / str(os.getuid()) / "gvfs"
     return sorted(p for p in base.glob("mtp:host=*") if p.exists())
 

@@ -6,10 +6,12 @@ redistributable**, so it is not bundled.
 
 ## Install
 
-1. Download the Linux **command line version** from <https://www.stereo-tool.com>.
-2. Put the binary in `restore-dr/bin/stereo_tool_cmd_64` (or anywhere) and
-   point `MR_STEREO_TOOL_BIN` at it in `~/.config/music-restoration/config.env`.
-3. `chmod +x` it.
+1. Download the **command line version** for your OS from
+   <https://www.stereo-tool.com> (Linux binary, Windows `.exe`, or macOS).
+2. Put the binary in `restore-dr/bin/stereo_tool_cmd_64` (on Windows:
+   `stereo_tool_cmd_64.exe` — either works) or anywhere else, and point
+   `MR_STEREO_TOOL_BIN` at it in `~/.config/music-restoration/config.env`.
+3. On Linux/macOS: `chmod +x` it.
 
 Without the binary everything else still works: diagnose, measure, scan_dr,
 and the contour/EQ/HPF pipeline (run with `--nd2 0`).

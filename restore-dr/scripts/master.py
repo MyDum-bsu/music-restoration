@@ -18,6 +18,7 @@ Usage:
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -247,7 +248,7 @@ def master_track(src, dst, slope=1.08, offset=-4.6, side_db=-3.0, tp_target=-0.5
         return steps, prof
     finally:
         if not keep_tmp:
-            subprocess.run(["rm", "-rf", str(tmp)])
+            shutil.rmtree(tmp, ignore_errors=True)
 
 
 def contour_fit(before_file, after_file, fs=None):

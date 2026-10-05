@@ -45,10 +45,18 @@ def mb_trackmap(artist: str, album: str, n_files: int):
 
 def caa_cover(mbid: str, dest: Path) -> bool:
     run(["curl", "-sL", "-A", UA, "-o", str(dest), f"https://coverartarchive.org/release/{mbid}/front-500"])
-    ok = dest.exists() and dest.stat().st_size > 5000 and "html" not in run(["file", str(dest)]).stdout.lower()
+    ok = dest.exists() and dest.stat().st_size > 5000 and _looks_like_image(dest)
     if not ok and dest.exists():
         dest.unlink()
     return ok
+
+
+def _looks_like_image(path: Path) -> bool:
+    """Content sniff — no external `file` utility (absent on Windows)."""
+    head = path.open("rb").read(512).lstrip()
+    if head.startswith((b"\xff\xd8", b"\x89PNG", b"GIF8", b"BM")):  # jpeg/png/gif/bmp
+        return True
+    return not head[:64].lower().lstrip(b"\xef\xbb\xbf").startswith((b"<", b"<!doctype"))
 
 
 def parse_trackno(name: str) -> int:

@@ -9,7 +9,10 @@ Split a single-FLAC-per-album into individual tagged tracks with cover art.
 
 ## Requirements
 
-- `shntool`, `cuetag`, `flac`, `metaflac`, `ffmpeg` — all must be installed
+- `shntool`, `cuetag`, `flac`, `metaflac`, `ffmpeg` — all must be installed.
+  shntool/cuetag are Unix tools: easy on Linux, finicky on Windows/macOS —
+  there an agent can substitute `ffmpeg -ss/-to` per CUE index for splitting
+  and write tags with mutagen; the steps below assume the standard tools.
 - Album directory must contain:
   - One `.flac` file (whole album)
   - One `.cue` file (track listing)
