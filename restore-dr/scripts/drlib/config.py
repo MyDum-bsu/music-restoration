@@ -81,6 +81,10 @@ def stereo_tool_bin() -> Path:
     v = get_path("STEREO_TOOL_BIN")
     if v:
         return v
+    for name in ("stereo_tool_cmd_64.exe", "stereo_tool_cmd_64"):  # Windows build first if present
+        p = _SKILL_ROOT / "bin" / name
+        if p.exists():
+            return p
     return _SKILL_ROOT / "bin" / "stereo_tool_cmd_64"
 
 
