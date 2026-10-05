@@ -22,7 +22,7 @@ python3 restore-dr/scripts/measure.py compare in.flac out.flac --outdir report
 python3 restore-dr/scripts/scan_dr.py            # DR-скан всей библиотеки
 ```
 
-Ни одного захардкоженного пути. Папку музыки на телефоне скрипты находят сами (gvfs MTP), локальная библиотека по умолчанию `~/Music`, рабочие файлы складываются в `~/.local/state/music-restoration/`. Всё переопределяется через `~/.config/music-restoration/config.env` или переменные окружения.
+Папку музыки на телефоне скрипты находят сами (gvfs MTP), локальная библиотека по умолчанию `~/Music`, рабочие файлы складываются в `~/.local/state/music-restoration/`. Всё переопределяется через `~/.config/music-restoration/config.env` или переменные окружения.
 
 ## Платформы
 

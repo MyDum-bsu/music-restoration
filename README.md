@@ -32,8 +32,8 @@ python3 restore-dr/scripts/measure.py compare in.flac out.flac --outdir report
 python3 restore-dr/scripts/scan_dr.py            # whole-library DR scan
 ```
 
-No hardcoded paths anywhere. The phone music dir is found automatically
-(gvfs MTP), the local library defaults to `~/Music`, working files go to
+The phone music dir is found automatically (gvfs MTP), the local library
+defaults to `~/Music`, working files go to
 `~/.local/state/music-restoration/` — all of it overridable in
 `~/.config/music-restoration/config.env` or via environment variables.
 
