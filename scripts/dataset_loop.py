@@ -136,6 +136,8 @@ def main() -> int:
     ap.add_argument("--keep-window", type=int, default=12)
     ap.add_argument("--min-master-seeders", type=int, default=2)
     ap.add_argument("--min-free-gb", type=float, default=10.0)
+    ap.add_argument("--stall-passes", type=int, default=2,
+                    help="сколько проходов ждать, если качается, но скорость 0")
     ap.add_argument("--once", action="store_true")
     args = ap.parse_args()
     log(f"цикл обогащения: интервал {args.interval}s, партия {args.batch_pairs} пар "
