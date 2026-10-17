@@ -163,11 +163,10 @@ def band_rms_db(x: np.ndarray, fs: int, frame: int = 16384, hop: int | None = No
     import hashlib
     hop = hop or frame // 2
     win = np.hanning(frame)
-    seg = x[..., None] if x.ndim == 2 else x
+    seg = x if x.ndim == 2 else x[:, None]
     n = seg.shape[0]
     acc = np.zeros(len(_BANDS_HZ) - 1)
     cnt = 0
-    idx = np.arange(frame)
     for st in range(0, max(n - frame, 1), hop):
         chunk = seg[st:st + frame]
         if chunk.shape[0] < frame:

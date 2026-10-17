@@ -1,0 +1,95 @@
+{
+ "version": "ds-7dd93580",
+ "pairs": 13,
+ "tracks": 118,
+ "trusted_tracks": 118,
+ "by_author": {
+  "5618698": 110,
+  "3048819": 8
+ },
+ "labels": {
+  "weak_base": 1,
+  "trusted": 12
+ },
+ "items": [
+  {
+   "key": "4932354/rel6",
+   "label": "trusted",
+   "n": 12,
+   "sha1": "e5e84bd9a70e"
+  },
+  {
+   "key": "5007070/rel2",
+   "label": "trusted",
+   "n": 3,
+   "sha1": "b43ca38d867d"
+  },
+  {
+   "key": "5011944/rel6",
+   "label": "trusted",
+   "n": 10,
+   "sha1": "f05eaa44d3c2"
+  },
+  {
+   "key": "5115336/rel5",
+   "label": "trusted",
+   "n": 11,
+   "sha1": "7ca1a2ade6d3"
+  },
+  {
+   "key": "5151107/rel1",
+   "label": "trusted",
+   "n": 10,
+   "sha1": "f6d02852d843"
+  },
+  {
+   "key": "5220623/rel2",
+   "label": "trusted",
+   "n": 10,
+   "sha1": "c98835fc5ea7"
+  },
+  {
+   "key": "5228297/rel12",
+   "label": "trusted",
+   "n": 6,
+   "sha1": "a0a7ea3aac70"
+  },
+  {
+   "key": "5228297/rel13",
+   "label": "trusted",
+   "n": 10,
+   "sha1": "bbe95457cee4"
+  },
+  {
+   "key": "5537929/rel2",
+   "label": "trusted",
+   "n": 9,
+   "sha1": "6ab14f4f5c06"
+  },
+  {
+   "key": "6001991/rel7",
+   "label": "trusted",
+   "n": 9,
+   "sha1": "9a459fc7041d"
+  },
+  {
+   "key": "6099529/rel4",
+   "label": "trusted",
+   "n": 11,
+   "sha1": "e5fba63d83f9"
+  },
+  {
+   "key": "6363233/rel0",
+   "label": "weak_base",
+   "n": 8,
+   "sha1": "c9a509e41a6d"
+  },
+  {
+   "key": "6772802/rel0",
+   "label": "trusted",
+   "n": 9,
+   "sha1": "76655dc938ad"
+  }
+ ],
+ "created": 1792278949
+}

@@ -62,10 +62,74 @@ def dir_audio(root: Path) -> tuple[int, float]:
     return n, b
 
 
+def integrity() -> int:
+    """Целостность датасета: парсинг фич, наличие meta, читаемость вырезок.
+
+    Нужно после аварийного завершения: проверяем, что файлы не обрезаны и
+    структура строк не поехала.
+    """
+    import subprocess
+    import numpy as np
+    pairs = dataset_dir() / "pairs"
+    bad: list[str] = []
+    n_pairs = n_tracks = n_ex = 0
+    for d in sorted(pairs.glob("*/")):
+        fp, mp = d / "features.json", d / "meta.json"
+        if not fp.is_file():
+            bad.append(f"{d.name}: нет features.json")
+            continue
+        try:
+            rows = json.loads(fp.read_text(encoding="utf-8"))
+        except Exception as e:                             # noqa: BLE001
+            bad.append(f"{d.name}: features.json не парсится ({e})")
+            continue
+        if not mp.is_file():
+            bad.append(f"{d.name}: нет meta.json")
+        n_pairs += 1
+        n_tracks += len(rows)
+        for r in rows:
+            for side in ("original", "restored"):
+                if side not in r:
+                    bad.append(f"{d.name} t{r.get('track')}: нет блока {side}")
+                    break
+            else:
+                for side in ("original", "restored"):
+                    b = r[side].get("bands_db") or []
+                    if len(b) != 30:
+                        bad.append(f"{d.name} t{r.get('track')}: bands {len(b)} (ждём 30)")
+                        break
+                if r.get("delta") is None or "crest" not in r["delta"]:
+                    bad.append(f"{d.name} t{r.get('track')}: нет delta.crest")
+        ex = sorted((d / "excerpts").glob("*.flac")) if (d / "excerpts").is_dir() else []
+        for f in ex:
+            n_ex += 1
+            try:
+                out = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
+                                      "format=duration", "-of", "csv=p=0", str(f)],
+                                     capture_output=True, text=True, timeout=30)
+                if out.returncode != 0 or not out.stdout.strip():
+                    bad.append(f"{d.name}: битая вырезка {f.name}")
+            except Exception as e:                          # noqa: BLE001
+                bad.append(f"{d.name}: вырезка {f.name} — {type(e).__name__}")
+    print(f"целостность: пар {n_pairs}, треков {n_tracks}, вырезок {n_ex}")
+    if bad:
+        print(f"ПРОБЛЕМЫ ({len(bad)}):")
+        for b in bad[:20]:
+            print("  ", b)
+    else:
+        print("проблем нет")
+    return 0 if not bad else 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", default=None)
+    ap.add_argument("--integrity", action="store_true",
+                    help="проверить целостность данных после сбоя (файлы/поля/вырезки)")
     args = ap.parse_args()
+
+    if args.integrity:
+        return integrity()
 
     uniq = S.merged_state(dataset_dir() / "state.jsonl")
 
