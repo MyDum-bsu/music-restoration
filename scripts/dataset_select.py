@@ -18,6 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from rnext import planner  # noqa: E402
 from rnext import workspace  # noqa: E402
 
 
@@ -49,10 +50,14 @@ def main() -> int:
     ap.add_argument("--balance-authors", action="store_true", default=True,
                     help="добирать партии у отстающего автора (нужно для кросс-авторной проверки)")
     ap.add_argument("--no-balance-authors", dest="balance_authors", action="store_false")
+    ap.add_argument("--min-per-stratum", type=int, default=200,
+                    help="цель по трекам в страте (автор × декада): пустые ячейки добираем первыми")
+    ap.add_argument("--only-author", default=None, help="качать только этого автора (pid)")
     args = ap.parse_args()
 
     rows = [r for r in read_jsonl(corpus() / "dataset_plan.jsonl")
             if r["status"].startswith("matched")]
+    plan_index = {r["key"]: r for r in rows}
     print(f"matched в плане: {len(rows)}")
 
     # сиды темы мастера — из разбора темы (крупные дискографии часто без сидов)
@@ -80,17 +85,58 @@ def main() -> int:
     print(f"уже в датасете по авторам: {done_by_author or '—'}"
           + (f" → добираем {author_order[0]}" if args.balance_authors and author_order else ""))
 
+    # ── что уже есть в датасете по стратам (автор × декада) ────────────────
+    have: dict[tuple, int] = defaultdict(int)
+    pairs_root = workspace.data_root() / "dataset" / "pairs"
+    for d in sorted(pairs_root.glob("*/features.json")):
+        try:
+            feat_rows = json.loads(d.read_text(encoding="utf-8"))
+        except Exception:                                  # noqa: BLE001
+            continue
+        mp = d.parent / "meta.json"
+        meta = json.loads(mp.read_text(encoding="utf-8")) if mp.is_file() else {}
+        key = d.parent.name.replace("__", "/")
+        plan_rec = plan_index.get(key) or {}
+        au = str(meta.get("author_pid") or plan_rec.get("author_pid"))
+        yr = meta.get("year") or (plan_rec.get("release") or {}).get("year")
+        have[(au, decade(yr))] += len(feat_rows)
+    if have:
+        print("в датасете по стратам (автор, декада) → треков:")
+        for (a, dec), n in sorted(have.items()):
+            print(f"   {a} {dec}-е: {n}")
+
+    # что уже заведено (журнал загрузок) — чтобы не тратить слоты партии
+    done_keys: set[str] = set()
+    st_file = workspace.data_root() / "dataset" / "state.jsonl"
+    if st_file.is_file():
+        for line in st_file.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                try:
+                    done_keys.add(json.loads(line)["key"])
+                except Exception:                          # noqa: BLE001
+                    pass
     seen: set[tuple] = set()
     cand: list[dict] = []
-    skipped_seed = 0
+    skipped_seed = skipped_alt = 0
     for r in rows:
-        ch = r["chosen"] or {}
+        ch = r.get("chosen") or {}
         size = ch.get("size_bytes") or 0
         if (ch.get("seeders") or 0) < args.min_seeders or size > args.max_gb * 1e9:
             continue
         if (r["release"].get("n_tracks") or 0) < args.min_tracks:
             continue                    # синглы/EP — мало материала для пары
         if size < args.min_mb * 1e6:
+            continue
+        if args.only_author and str(r["author_pid"]) != str(args.only_author):
+            continue
+        # уже заведённые пары (включая отбракованные) не берём повторно
+        if r["key"] in done_keys:
+            continue
+        # издания с другим содержимым (акапеллы/инструменталы) — не пары
+        title = ch.get("title") or ""
+        alt = planner.CONTENT_ALT.search(title)
+        if alt and not planner.CONTENT_ALT.search(r["release"]["album"] or ""):
+            skipped_alt += 1
             continue
         ms = mseed.get(r["restored_topic_id"], 0)
         if ms < args.min_master_seeders:
@@ -106,6 +152,8 @@ def main() -> int:
                      "_dec": decade(r["release"].get("year"))})
     if skipped_seed:
         print(f"отброшено из-за слабых сидов темы мастера: {skipped_seed}")
+    if skipped_alt:
+        print(f"отброшено как другое издание (акапеллы/инструменталы): {skipped_alt}")
 
     # страта: автор × декада × класс раздавленности мастера
     def cls(md):
@@ -115,9 +163,15 @@ def main() -> int:
     for r in cand:
         strata[(r["author_pid"], r["_dec"], cls(r["_md"]))].append(r)
 
+    def deficit(r) -> int:
+        """Насколько страте не хватает треков (0 — уже набрано)."""
+        return max(0, args.min_per_stratum - have.get((str(r["author_pid"]), r["_dec"]), 0))
+
     def rank(r):
-        # альбомные темы с известной целью → низкий master DR → больше сидов → меньше размер
-        return (r["_graphy"], r["_md"] == 99, r["_md"], -r["_mse"], r["_size"])
+        # 1) сначала закрываем пустые страты (автор × декада),
+        # 2) альбомные темы с известной целью, 3) низкий master DR (сильнее раздавлен),
+        # 4) больше сидов, 5) меньше размер
+        return (-deficit(r), r["_graphy"], r["_md"] == 99, r["_md"], -r["_mse"], r["_size"])
 
     picked = []
     # круговой обход страт: по одному из каждой, пока не наберём лимит
