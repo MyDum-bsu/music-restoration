@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+"""Разбор темы реставрации на per-release JSON."""
+import json
+import sys
+
+sys.path.insert(0, "/home/mydum/Desktop/projects/restore-next")
+
+from rnext.rtclient import RTClient  # noqa: E402
+from rnext.rttopic import fetch_topic  # noqa: E402
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print("usage: mine_topic.py <topic_id>", file=sys.stderr)
+        return 1
+    d = fetch_topic(RTClient(), sys.argv[1])
+    print(json.dumps(d, ensure_ascii=False, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <title>restore-listen</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">restore<span>·</span>listen</div>
+    <div class="pack-info" id="packInfo">пак не выбран</div>
+    <button id="btnPick" class="ghost">Открыть пак…</button>
+    <button id="btnCsv" class="ghost">Экспорт CSV</button>
+  </header>
+
+  <main>
+    <section class="item">
+      <div class="item-head">
+        <div class="item-title" id="itemTitle">—</div>
+        <div class="item-note" id="itemNote"></div>
+      </div>
+
+      <div class="variants" id="variants"></div>
+
+      <div class="transport">
+        <button id="btnPlay" class="primary">▶ Играть</button>
+        <button id="btnLoop" class="ghost toggled">⟲ Цикл</button>
+        <span class="time" id="time">0:00 / 0:12</span>
+        <input type="range" id="seek" min="0" max="1000" value="0" />
+      </div>
+
+      <div class="level-note" id="levelNote"></div>
+
+      <div class="rating">
+        <div class="rating-prompt">Что лучше по звуку? (уровни выровнены по LUFS)</div>
+        <div class="rating-buttons" id="ratingButtons"></div>
+        <button id="btnReveal" class="ghost">Показать ответ</button>
+        <div class="reveal" id="reveal"></div>
+      </div>
+
+      <div class="hint">
+        Пробел — играть/стоп · 1/2/3 — вариант · ←/→ — ±2 с · L — цикл · R — показать ответ
+      </div>
+    </section>
+
+    <aside class="list">
+      <div class="list-head">
+        <span>Элементы</span>
+        <span id="progress">0 / 0</span>
+      </div>
+      <ol id="items"></ol>
+    </aside>
+  </main>
+
+  <script src="player.js"></script>
+</body>
+</html>

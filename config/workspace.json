@@ -1,0 +1,12 @@
+{
+  "data_root": "/media/mydum/Data/Music/restore",
+  "budget_bytes": 42949672960,
+  "budget_note": "40 GiB strict; rotator must keep data_root usage below this",
+  "filesystem_note": "NTFS (ntfs3). JSONL/FLAC/WAV only; no SQLite here.",
+  "dirs": {
+    "torrents": "torrents",
+    "corpus": "corpus",
+    "abx": "abx",
+    "cache": "cache"
+  }
+}
