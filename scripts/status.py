@@ -30,15 +30,19 @@ def main() -> int:
     print(f"флешка {workspace.data_root()}")
     print(f"  [{('#' * bar).ljust(20)}] {human(used)} / {human(budget)}  (свободно {human(budget - used)})")
 
-    cookie = secrets.rutracker_bb_data()
-    print(f"cookie bb_data: {'ок' if cookie else 'НЕТО'}")
+    cookies = secrets.rutracker_cookies()
+    if cookies:
+        print(f"cookie: ок ({len(cookies)} шт: {', '.join(list(cookies)[:6])})")
+    else:
+        print("cookie: НЕТО")
 
-    try:
-        rpc = secrets.transmission_rpc()
-        r = requests.post(rpc["url"], json={"method": "session-get"}, auth=(rpc["username"], rpc["password"]), timeout=4)
-        print(f"transmission rpc: {r.status_code}")
-    except Exception as e:
-        print(f"transmission rpc: оффа ({e.__class__.__name__})")
+    # RPC требует рукопожатие X-Transmission-Session-Id — используем клиент
+    from rnext import transm as transm_mod
+    rpc = transm_mod.check()
+    if rpc.get("ok"):
+        print(f"transmission rpc: ok {rpc['version']}")
+    else:
+        print(f"transmission rpc: оффа ({rpc.get('err')})")
     return 0
 
 

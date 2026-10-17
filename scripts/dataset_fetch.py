@@ -464,8 +464,6 @@ def main() -> int:
                     help="записать в журнал фактические каталоги сторон")
     ap.add_argument("--refetch", action="store_true",
                     help="докачать стороны, чьё сырьё удалено после извлечения")
-    ap.add_argument("--masters-only", action="store_true",
-                    help="докачать мастер-стороны для уже начатых пар")
     args = ap.parse_args()
 
     if args.status:

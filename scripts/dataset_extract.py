@@ -506,7 +506,8 @@ def prune_raw_window(window: int) -> None:
     """
     metas = sorted((dataset_dir() / "pairs").glob("*/meta.json"),
                    key=lambda p: p.stat().st_mtime, reverse=True)
-    state = state_map()
+    from rnext import sides as _S
+    state = _S.merged_state(dataset_dir() / "state.jsonl")
     refs = dir_refcounts()
     dropped = 0
     for m in metas[window:]:

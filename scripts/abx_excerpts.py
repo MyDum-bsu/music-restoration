@@ -21,7 +21,7 @@ import numpy as np
 sys.path.insert(0, "/home/mydum/Desktop/projects/restore-next")
 
 from rnext import features as F  # noqa: E402
-from rnext.dsp.restore import encode_flac  # noqa: E402
+from restore_one import encode_flac  # noqa: E402  (реиспользуем из scripts/)
 
 
 def main() -> int:
