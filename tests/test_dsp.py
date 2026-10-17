@@ -51,7 +51,8 @@ def test_declip_sine_reconstruction():
     assert clip_positions(clipd) > 500
     y, nfill = declip_track(clipd)
     assert nfill > 0
-    err = np.abs(y[:, 0][3000:].astype(np.float64) / 32768 - np.abs(sig)[3000:])
+    # сравниваем МОДУЛИ: восстановление идёт по знаку сигнала, а эталон — |sig|
+    err = np.abs(np.abs(y[:, 0][3000:].astype(np.float64) / 32768) - np.abs(sig)[3000:])
     assert err.max() < 0.45, err.max()
 
 
@@ -67,9 +68,12 @@ def test_pipeline_transparent_when_contour_off_and_k1():
     x = (rng.standard_normal((100000, 2)) * 0.2).astype(np.float32)
     pol = Policy(mode="expand", r_expand=1.0, contour_enabled=False, declip=True)
     y = restore_track(x, 44100, pol)
-    # HPF меняет только самые низкие частоты: сигнал почти равен
+    # HPF меняет только самые низкие частоты. Для БЕЛОГО шума ниже 25 Гц лежит
+    # sqrt(25/22050) ≈ 3.4 % RMS — ровно это фильтр и убирает (проверено:
+    # разница совпадает с низкочастотной частью, корреляция 0.9999), поэтому
+    # порог 2 % физически недостижим; держим 5 % и следим, чтобы не рос.
     rel = np.sqrt(np.mean((y - x) ** 2)) / np.sqrt(np.mean(x ** 2))
-    assert rel < 0.02, rel
+    assert rel < 0.05, rel
 
 
 if __name__ == "__main__":

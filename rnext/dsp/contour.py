@@ -127,7 +127,13 @@ def contour_expand(x: np.ndarray, sr: int, pol: ContourPolicy | None = None) -> 
     pol = pol or ContourPolicy()
     hop = pol.hop or pol.frame // 4
     w = _window(pol.frame)
-    n, ch = x.shape
+    n0, ch = x.shape
+    # Паддинг краёв: без него WOLA-нормировка у границ близка к нулю и края
+    # «взрываются». Дополняем нулями на кадр слева и справа, считаем всё на
+    # дополненном сигнале, в конце отрезаем паддинг (идентичность r=1 точна).
+    pad = pol.frame
+    x = np.pad(x, ((pad, pad + pol.frame), (0, 0)))
+    n = x.shape[0]
     starts = _frame_starts(n, pol.frame, hop)
     nf = starts.size
     freqs = np.fft.rfftfreq(pol.frame, 1.0 / sr)
@@ -176,7 +182,8 @@ def contour_expand(x: np.ndarray, sr: int, pol: ContourPolicy | None = None) -> 
         Zb = _stft_batch(x, starts[b0:b1], w)  # [batch, ch, freq]
         Gb = np.ones((b1 - b0, ch, nbins), dtype=np.float64)
         for bi, idx in enumerate(band_bins):
-            Gb[:, :, idx] = gains_lin[bi, :, b0:b1].T  # [batch, ch, 1]
+            # одна и та же полосовая кривая на все бины полосы: [batch, ch] → [batch, ch, 1]
+            Gb[:, :, idx] = gains_lin[bi, :, b0:b1].T[:, :, None]
         Yb = np.fft.irfft(Zb * Gb, n=pol.frame, axis=-1)
         Yb *= w[None, None, :]
         for j, s in enumerate(starts[b0:b1]):
@@ -187,7 +194,8 @@ def contour_expand(x: np.ndarray, sr: int, pol: ContourPolicy | None = None) -> 
         gc.collect()
 
     norm = np.maximum(norm, 1e-8)
-    return (out / norm[:, None]).astype(x.dtype)
+    y = out / norm[:, None]
+    return y[pad:pad + n0].astype(x.dtype)
 
 
 def true_peak_dbfs(x: np.ndarray, sr: int, factor: int = 4) -> float:

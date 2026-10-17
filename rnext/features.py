@@ -84,8 +84,12 @@ def tt_dr(x: np.ndarray, fs: int):
     ch_dr = -20.0 * np.log10(rms_energy_mean / peaks[seg_cnt - 2, :])
     ch_dr[np.logical_or(np.sum(top ** 2, 0) < AUDIO_MIN, np.abs(ch_dr) > MAX_DYNAMIC)] = 0.0
     dr = int(round(float(np.mean(ch_dr))))
-    db_peak = 20.0 * math.log10(max(float(np.max(peaks)), 1e-10) / 32768.0)
-    db_rms = 20.0 * math.log10(max(float(np.mean(dr_rms(x.astype(np.float64)))), 1e-10) / 32768.0)
+    # full_scale: для int16 — 32768, для float (наш DSP) — 1.0. Без этой ветки
+    # все уровни читались как −90 дБFS и diagnose() ломался (всё → sparse).
+    full_scale = 32768.0 if np.issubdtype(x.dtype, np.integer) else 1.0
+    db_peak = 20.0 * math.log10(max(float(np.max(peaks)), 1e-10) / full_scale)
+    db_rms = 20.0 * math.log10(
+        max(float(np.mean(dr_rms(x.astype(np.float64)))), 1e-10) / full_scale)
     return dr, float(np.mean(ch_dr)), (round(float(ch_dr[0]), 1), round(float(ch_dr[1]), 1)), db_peak, db_rms
 
 

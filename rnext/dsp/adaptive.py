@@ -4,9 +4,11 @@
 (микроструктура плотности/транзиентов). Мастер на наших корпусных парах
 стабильно добавляет Δcrest ≈ +4.4..+4.7 дБ.
 
-Метод (2-точечная калибровка на коротком куске средней части):
-    измеряем crest(r1), crest(r2) → линейно инвертируем к target.
-Кост: два лёгких прогонa на куске (не на полном треке).
+Метод: два пробных прохода ПОЛНОГО трека (r1, r2), оба через тот же
+пост-обработчик, что и финал (TP-лимитер), затем квадратичная инверсия
+    d(u) = A·u² + B·u,  u = r − 1,  d(0) = 0
+к целевой Δcrest. Δ считается от СЫРОГО исходника (crest_ref): HPF сам даёт
++0.3…0.5 дБ к кресту, иначе систематический перелёт.
 """
 import math
 
@@ -18,30 +20,47 @@ from rnext.dsp.contour import ContourPolicy, contour_expand
 DEFAULT_TARGET_DCREST = 4.5
 
 
-def _mid_slice(x: np.ndarray, sec: float) -> np.ndarray:
-    n0 = (x.shape[0] - sec) // 2
-    return x[n0:n0 + sec]
-
-
 def _crest(x: np.ndarray, sr: int) -> float:
     st = F.tt_dr(x, sr)
     return st[3] - st[4]
 
 
 def fit_r(x: np.ndarray, sr: int, target_dcrest: float = DEFAULT_TARGET_DCREST,
-          sec: float = 90.0, lo: float = 1.2, hi: float = 2.4,
-          base: ContourPolicy | None = None) -> tuple[float, float]:
-    """→ (r, predicted dcrest). Оффцеливание по вечернему треку."""
+          base: ContourPolicy | None = None,
+          post=None, r1: float = 1.5, r2: float = 2.1,
+          crest_ref: float | None = None) -> tuple[float, float]:
+    """→ (r, predicted dcrest). Две пробы полного трека + нулевая точка.
+
+    crest(r) суперлинейна (транзиенты насыщают гейны): d(u) = A·u² + B·u.
+    """
     base = base or ContourPolicy()
-    sl = x if sec * sr >= x.shape[0] else _mid_slice(x, int(sec * sr))
-    c0 = _crest(sl, sr)
-    def run(r):
-        p = ContourPolicy(**{**base.__dict__, "r_expand": r})
-        return _crest(contour_expand(sl, sr, p), sr)
-    r1, r2 = lo, max(hi, lo + 0.4)
-    c1, c2 = run(r1), run(r2)
-    slope = (c2 - c1) / (r2 - r1)          # crest(r) ≈ линейно в r
-    if abs(slope) < 1e-3:
-        return lo, c1 - c0
-    r = lo + (c0 + target_dcrest - c1) / slope
-    return float(min(hi, max(lo, r))), float(min(c2, max(c1, c0 + target_dcrest)) - c0)
+    c_raw = _crest(x, sr)
+    ref = c_raw if crest_ref is None else float(crest_ref)
+
+    def run(r: float) -> float:
+        cp = ContourPolicy(**{**base.__dict__, "r_expand": float(r)})
+        y = contour_expand(x, sr, cp)
+        if post is not None:
+            y = post(y, sr)
+        return _crest(y, sr) - ref
+
+    d1 = run(r1)
+    d2 = run(r2)
+    u1, u2 = r1 - 1.0, r2 - 1.0
+    # решаем A,B из двух точек (d(0)=0 уже учтено)
+    det = (u1 * u1 * u2 - u2 * u2 * u1)
+    if abs(det) < 1e-12:
+        return float(min(r2, max(1.1, r2 if d2 > 1.0 else 1.1))), max(d2, d1)
+    A = (d1 * u2 - d2 * u1) / det
+    B = (d2 * u1 * u1 - d1 * u2 * u2) / det
+    if abs(A) < 1e-9:
+        r = 1.0 + (target_dcrest - 0.0) / B if abs(B) > 1e-9 else r2
+    else:
+        disc = B * B + 4 * A * target_dcrest
+        if disc < 0:
+            r = r2
+        else:
+            r = 1.0 + (-B + math.sqrt(disc)) / (2 * A)
+    r = float(min(max(r, 1.05), 3.0))
+    pred = A * (r - 1.0) ** 2 + B * (r - 1.0)
+    return r, float(pred)

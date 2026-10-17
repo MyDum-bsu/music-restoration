@@ -33,7 +33,7 @@ def _ar_extrapolate(context: np.ndarray, a: np.ndarray, n_pred: int, backward: b
         val = 0.0
         for k in range(1, a.size + 1):
             if m - k >= 0:
-                val -= a[k - 1] * y[m - k]
+                val += a[k - 1] * y[m - k]
         out.append(val)
         y.append(val)
     arr = np.array(out)
