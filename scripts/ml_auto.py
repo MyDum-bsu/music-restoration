@@ -31,8 +31,13 @@ from rnext.ml import metrics as M  # noqa: E402
 from rnext.ml import models as Z  # noqa: E402
 from rnext.ml import registry as reg  # noqa: E402
 
-LEVELS = [(1, 600, "M1: регрессия цели"), (2, 1500, "M2: полосы/тилт/гейт"),
-          (3, 3000, "M3: универсальность")]
+# Уровни привязаны к порогам моделей (rnext/ml/models.MIN_N), а не «на глаз»:
+#   ridge/knn/conformal — с 150 в fit ≈ 300 треков всего
+#   hgb/hgbq           — с 400 в fit ≈ 760 треков всего
+#   кросс-авторная проверка осмысленна с ~300 треков НА КАЖДОГО автора
+LEVELS = [(1, 300, "M1: регрессия цели (ridge/knn)"),
+          (2, 760, "M2: бустинг (hgb)"),
+          (3, 1500, "M3: кросс-авторская проверка")]
 ROOT_M = Path(__file__).resolve().parents[1] / "models"
 LEADERBOARD = ROOT_M / "leaderboard.jsonl"
 
