@@ -227,12 +227,12 @@ def sec_deep() -> None:
         x = base.copy()
         for i in range(0, sr * 20 - 500, sr // 2):
             x[i:i + 400] += hit
-        x = (np.clip(x * 2.2, -1, 1) * 0.98)
+        x = (np.clip(x * 1.0, -1, 1) * 0.98)    # раздавленный, как в корпусе (DR ~5)
         w = wave.open(str(tmp / "tmp.wav"), "wb")
         w.setnchannels(2)
         w.setsampwidth(2)
         w.setframerate(sr)
-        w.writeframes(np.stack([x, x], 1).astype("<i2").tobytes())
+        w.writeframes((np.stack([x, x], 1) * 32767).astype("<i2").tobytes())
         w.close()
         subprocess.run(["flac", "-s", "-f", "-o", str(tmp / "01. smoke.flac"),
                         str(tmp / "tmp.wav")], check=True)
@@ -243,10 +243,14 @@ def sec_deep() -> None:
         rep = out / "restore_report.jsonl"
         if rep.is_file():
             rec = json.loads(rep.read_text(encoding="utf-8").splitlines()[0])
-            ok(f"сквозной прогон: класс {rec['class']}, цель {rec['target_dcrest']:.2f}, "
-               f"ml_target {rec.get('ml_target') and round(rec['ml_target'], 2)}, "
-               f"r_fit {rec.get('r_fit') and round(rec['r_fit'], 2)}, TP {rec['tp_actual']}, "
-               f"DR {rec['orig']['dr']}→{rec['rest']['dr']}")
+            tp_ok = rec["tp_actual"] <= -0.45
+            dr_ok = rec["rest"]["dr"] - rec["orig"]["dr"] >= 2
+            ml = rec.get("ml_target")
+            line = (f"сквозной прогон: класс {rec['class']}, цель {rec['target_dcrest']:.2f}"
+                    + (f" (из модели {ml:.2f})" if ml else "")
+                    + f", r_fit {round(rec.get('r_fit') or 0, 2)}, TP {rec['tp_actual']}, "
+                      f"DR {rec['orig']['dr']}→{rec['rest']['dr']}")
+            (ok if (tp_ok and dr_ok) else bad)(line + ("" if tp_ok and dr_ok else "  ← ПРОВЕРИТЬ"))
         else:
             warn("сквозной прогон не дал отчёта")
     except Exception as e:                                # noqa: BLE001

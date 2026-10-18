@@ -76,7 +76,9 @@ def integrity() -> int:
     for d in sorted(pairs.glob("*/")):
         fp, mp = d / "features.json", d / "meta.json"
         if not fp.is_file():
-            bad.append(f"{d.name}: нет features.json")
+            if not mp.is_file():
+                continue          # извлечение в процессе — не проблема
+            bad.append(f"{d.name}: есть meta, но нет features.json")
             continue
         try:
             rows = json.loads(fp.read_text(encoding="utf-8"))

@@ -1,0 +1,171 @@
+{
+ "model": "knn",
+ "target": "dcrest",
+ "dataset_version": "ds-d77cdab1",
+ "dataset": {
+  "pairs": 59,
+  "tracks": 643,
+  "trusted_tracks": 616,
+  "by_author": {
+   "5618698": 385,
+   "3048819": 231
+  },
+  "labels": {
+   "unlabeled": 1,
+   "suspect": 3,
+   "trusted": 55
+  }
+ },
+ "level": 1,
+ "seed": 17,
+ "frac": 0.3,
+ "features": [
+  "dr",
+  "dr_exact",
+  "crest_db",
+  "rms_db",
+  "peak_db",
+  "dur_s",
+  "clip_samples",
+  "clip_events",
+  "longest_run",
+  "rms_p05",
+  "rms_p50",
+  "rms_p95",
+  "rms_spread",
+  "attacks_per_s",
+  "flux_per_s",
+  "rms_range_db",
+  "side_mid_db",
+  "side_mid_hf_db",
+  "tp_overshoot_db",
+  "tilt_low_high",
+  "tilt_slope",
+  "n_tracks"
+ ],
+ "n_train": 174,
+ "n_cal": 57,
+ "n_hold": 385,
+ "holdout_mode": "by-author",
+ "caps": {
+  "dcrest_max": 8.0
+ },
+ "promote": false,
+ "gate_gain_db": 0.011,
+ "gate_ci_low": -0.116,
+ "metrics": {
+  "all": {
+   "n": 385,
+   "median_abs": 0.92,
+   "mean_abs": 1.112,
+   "p90_abs": 2.268,
+   "share_le_0.5": 0.278,
+   "share_le_1.0": 0.54,
+   "bias": -0.5
+  },
+  "by_class": {
+   "crushed": {
+    "n": 302,
+    "median_abs": 1.011,
+    "mean_abs": 1.165,
+    "p90_abs": 2.318,
+    "share_le_0.5": 0.255,
+    "share_le_1.0": 0.5,
+    "bias": -0.84
+   },
+   "healthy": {
+    "n": 34,
+    "median_abs": 0.553,
+    "mean_abs": 0.794,
+    "p90_abs": 1.788,
+    "share_le_0.5": 0.471,
+    "share_le_1.0": 0.735,
+    "bias": 0.437
+   },
+   "mid": {
+    "n": 49,
+    "median_abs": 0.769,
+    "mean_abs": 1.008,
+    "p90_abs": 2.207,
+    "share_le_0.5": 0.286,
+    "share_le_1.0": 0.653,
+    "bias": 0.623
+   }
+  },
+  "baseline_noop": {
+   "n": 385,
+   "median_abs": 4.756,
+   "mean_abs": 4.308,
+   "p90_abs": 6.434,
+   "share_le_0.5": 0.049,
+   "share_le_1.0": 0.104,
+   "bias": -4.756
+  },
+  "baseline_const46": {
+   "n": 385,
+   "median_abs": 1.371,
+   "mean_abs": 1.765,
+   "p90_abs": 4.585,
+   "share_le_0.5": 0.145,
+   "share_le_1.0": 0.327,
+   "bias": -0.156
+  },
+  "baseline_v0table": {
+   "n": 385,
+   "median_abs": 0.931,
+   "mean_abs": 1.068,
+   "p90_abs": 2.065,
+   "share_le_0.5": 0.265,
+   "share_le_1.0": 0.53,
+   "bias": 0.168
+  },
+  "vs_noop": 0.193,
+  "vs_v0table": 0.988,
+  "gate": {
+   "min_gain_db": 0.1,
+   "by_baseline": {
+    "noop": {
+     "improvement_dB": 3.836,
+     "ci_low": 3.503,
+     "ci_high": 4.103,
+     "p_win": 1.0,
+     "n": 385,
+     "median_abs": 4.756,
+     "pass": true
+    },
+    "const46": {
+     "improvement_dB": 0.451,
+     "ci_low": 0.311,
+     "ci_high": 0.583,
+     "p_win": 1.0,
+     "n": 385,
+     "median_abs": 1.371,
+     "pass": true
+    },
+    "v0table": {
+     "improvement_dB": 0.011,
+     "ci_low": -0.116,
+     "ci_high": 0.167,
+     "p_win": 0.632,
+     "n": 385,
+     "median_abs": 0.931,
+     "pass": false
+    }
+   },
+   "best_baseline": "v0table",
+   "vs_best": {
+    "improvement_dB": 0.011,
+    "ci_low": -0.116,
+    "ci_high": 0.167,
+    "p_win": 0.632,
+    "n": 385,
+    "median_abs": 0.931,
+    "pass": false
+   },
+   "promote": false
+  }
+ },
+ "model_id": "knn-dcrest-ds-d77cdab1-20261018-221548",
+ "git": "8b93c25",
+ "saved": 1792350948
+}
