@@ -3,8 +3,8 @@
 # Transmission, цикл обогащения, обучение и плеер. Идемпотентно — можно
 # запускать сколько угодно раз.
 #
-#   scripts/resume.sh            # поднять всё, что можно
-#   scripts/resume.sh --no-app   # без плеера
+#   scripts/resume.sh             # поднять всё, что можно (БЕЗ плеера)
+#   scripts/resume.sh --with-app  # плюс плеер для прослушивания
 set -u
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
@@ -59,7 +59,9 @@ fi
 say "5/5 обучение"
 python3 scripts/ml_auto.py --force --with-audio 2>&1 | tail -20
 
-if [ "${1:-}" != "--no-app" ] && [ -d app/node_modules ]; then
+# Плеер запускается только по явному запросу: он нужен на последней стадии,
+# при обычном возобновлении работы мешает.
+if [ "${1:-}" = "--with-app" ] && [ -d app/node_modules ]; then
   pgrep -f "restore-next/app/node_modules/[e]lectron/dist" >/dev/null || {
     echo "запускаю плеер"
     (cd app && setsid nohup ./node_modules/.bin/electron --no-sandbox --disable-gpu . \

@@ -155,6 +155,9 @@ def run_once(args) -> None:
                 "features": table.feature_names, "n_train": res["n_train"],
                 "n_cal": res["n_cal"], "n_hold": res["n_hold"],
                 "holdout_mode": mode, "caps": {"dcrest_max": 8.0},
+                "promote": res["metrics"]["gate"]["promote"],
+                "gate_gain_db": res["metrics"]["gate"]["vs_best"]["improvement_dB"],
+                "gate_ci_low": res["metrics"]["gate"]["vs_best"]["ci_low"],
                 "metrics": res["metrics"],
             }
             reg.save_snapshot(res["model"], meta, mid)

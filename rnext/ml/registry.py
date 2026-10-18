@@ -166,13 +166,34 @@ def list_snapshots() -> list[dict]:
     return [json.loads(l) for l in REGISTRY.read_text(encoding="utf-8").splitlines() if l.strip()]
 
 
-def latest_snapshot(model: str | None = None, target: str = "dcrest") -> str | None:
+# Порядок предпочтения для рантайма: сначала устойчивые модели, knn — последним
+# (он лучше всех на by-album, но это запоминание: train-ошибка 0, и на кросс-
+# авторном сплите он теряет больше всех).
+MODEL_PREFERENCE = ("ridge", "hgb", "hgbq", "conformal", "table", "knn")
+
+
+def latest_snapshot(model: str | None = None, target: str = "dcrest",
+                    promoted_only: bool = True) -> str | None:
+    """Свежий снапшот. По умолчанию — только ПРОШЕДШИЙ ГЕЙТ.
+
+    Иначе рантайм брал бы последнюю записанную модель, а ею может оказаться
+    кросс-авторный сплит, который гейт не пропустил (и который хуже базы).
+    """
     rows = [r for r in list_snapshots() if r["target"] == target
             and (model is None or r["model"] == model)]
+    if promoted_only:
+        ok = [r for r in rows if r.get("promote")]
+        if not ok:
+            return None
+        rows = ok
     if not rows:
         return None
-    rows.sort(key=lambda r: r.get("saved") or 0)
-    return rows[-1]["model_id"]
+    def rank(r):
+        m = r.get("model") or ""
+        pref = MODEL_PREFERENCE.index(m) if m in MODEL_PREFERENCE else len(MODEL_PREFERENCE)
+        return (pref, -(r.get("saved") or 0))
+    rows.sort(key=rank)
+    return rows[0]["model_id"]
 
 
 def already_trained(ds_version: str, model: str, target: str = "dcrest") -> bool:

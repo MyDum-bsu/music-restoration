@@ -77,6 +77,12 @@ def main() -> int:
                     help="класс материала → политика (по умолчанию включено)")
     ap.add_argument("--no-auto", dest="auto_policy", action="store_false",
                     help="выключить авто-политику, работать по ручным --mode/--target/--adaptive")
+    ap.add_argument("--eq-curve", default="", help="JSON с кривой тилта (scripts/fit_tilt.py)")
+    ap.add_argument("--eq-scale", type=float, default=1.0, help="масштаб кривой тилта")
+    ap.add_argument("--eq-match", action="store_true",
+                    help="замкнутый EQ: измеряем дельту полос и добираем разницу с кривой")
+    ap.add_argument("--eq-match-cap", type=float, default=2.0,
+                    help="предел коррекции на полосу, дБ (для --eq-match)")
     ap.add_argument("--ml-snapshot", default="",
                     help="id снапшота цели (или 'auto' — последний); цель берётся из модели")
     ap.add_argument("--wait", action="store_true", help="ждать освобождения лока restore")
@@ -96,6 +102,23 @@ def main() -> int:
     pol = Policy(mode=mode, r_expand=args.r, k=args.k, target_tp_dbfs=args.tp,
                  adaptive=adaptive, target_dcrest=args.target,
                  auto_policy=args.auto_policy)
+    eq_tilt = None
+    if args.eq_curve:
+        import json as _json
+        cur = _json.loads(Path(args.eq_curve).read_text(encoding="utf-8"))
+        bands = [(float(hz), float(g) * args.eq_scale)
+                 for hz, g in zip(cur["band_hz"], cur["gain_db"])]
+        if args.eq_match:
+            pol = dataclasses.replace(pol, eq_match=True, eq_match_curve=bands,
+                                      eq_match_cap_db=args.eq_match_cap,
+                                      normalize_tp=True)
+        else:
+            pol = dataclasses.replace(pol, eq_bands_db=bands)
+        eq_tilt = {"curve": str(args.eq_curve), "scale": args.eq_scale,
+                   "n_tracks_fit": cur.get("n_tracks"), "tilt_db": cur.get("tilt_out_db")}
+        mode_txt = f"замкнутый, cap {args.eq_match_cap} дБ" if args.eq_match else "фиксированный"
+        print(f"тилт: {len(bands)} полос из {args.eq_curve} ({mode_txt}), "
+              f"низ {bands[3][1]:+.2f} / верх {bands[21][1]:+.2f} дБ", flush=True)
     src = Path(args.src)
 
     if args.cue and src.is_file():
@@ -162,6 +185,8 @@ def main() -> int:
                 "class": dx.get("class"),
                 "target_dcrest": dx.get("target_dcrest", args.target),
                 "ml_snapshot": args.ml_snapshot or None,
+                "eq_tilt": eq_tilt,
+                "eq_match": (stages.get("eq_match") or None) if args.eq_match else None,
                 "ml_target": ml_target,
                 "r_fit": (stages.get("adaptive") or {}).get("r_fit"),
                 "tp_target": args.tp, "tp_actual": round(tp, 2),

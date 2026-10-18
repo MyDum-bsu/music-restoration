@@ -91,9 +91,19 @@ def one_pass(args) -> None:
             log("места всё ещё мало — пауза до следующего прохода")
             return
     left, rate = downloads_state()
-    if left > 0.05 and rate > 0.05:
+    if left > 0.05 and rate >= args.min_rate_mbps:
         log(f"качается {left:.2f} GB ({rate:.2f} MB/s) — ждём")
         return
+    if left > 0.05 and 0.05 <= rate < args.min_rate_mbps:
+        # «медленно» — это тоже застой: хвост партии может тянуться часами
+        # на 1 МБ/с, блокируя рост датасета. Не ждём, берём новую партию.
+        STALLS += 1
+        if STALLS < args.stall_passes:
+            log(f"качается {left:.2f} GB, но медленно ({rate:.2f} < "
+                f"{args.min_rate_mbps} МБ/с; {STALLS}/{args.stall_passes}) — ждём")
+            return
+        log(f"медленный хвост подтверждён ({rate:.2f} МБ/с) — берём новую партию")
+        STALLS = 0
     if left > 0.05:
         STALLS += 1
         if STALLS < args.stall_passes:
@@ -136,6 +146,8 @@ def main() -> int:
     ap.add_argument("--keep-window", type=int, default=12)
     ap.add_argument("--min-master-seeders", type=int, default=2)
     ap.add_argument("--min-free-gb", type=float, default=10.0)
+    ap.add_argument("--min-rate-mbps", type=float, default=2.0,
+                    help="ниже этой скорости качка считается медленным хвостом")
     ap.add_argument("--stall-passes", type=int, default=2,
                     help="сколько проходов ждать, если качается, но скорость 0")
     ap.add_argument("--once", action="store_true")
