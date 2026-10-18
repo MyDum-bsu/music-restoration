@@ -17,6 +17,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -222,7 +223,7 @@ def match_release(client: RTClient, d: dict, rel: dict, artist_tokens: list[str]
 
 def step_match(args) -> int:
     restored = sorted(corpus().glob("restored/*.json"))
-    out = corpus() / "dataset_plan.jsonl"
+    out = corpus() / (args.out or "dataset_plan.jsonl")
     prev = read_jsonl(out)
     done_topics = {r["restored_topic_id"] for r in prev}
     if args.rewrite:
@@ -360,6 +361,7 @@ def main() -> int:
     ap.add_argument("--refresh", action="store_true", help="перекачать разборы тем")
     ap.add_argument("--refresh-search", action="store_true", help="сбросить кеш поиска")
     ap.add_argument("--rewrite", action="store_true", help="перезаписать план с нуля")
+    ap.add_argument("--out", default=None, help="файл плана (по умолчанию dataset_plan.jsonl)")
     args = ap.parse_args()
     if args.step == "topics":
         return step_topics(args) or 0

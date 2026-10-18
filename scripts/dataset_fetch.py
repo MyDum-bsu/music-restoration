@@ -123,6 +123,11 @@ def album_dir_filter(files: list[dict], album: str | None) -> tuple[list[dict], 
             best = (cont, d, fs)
     if best and best[0] >= 0.5:
         return best[2], best[1]
+    # Многокаталожная раздача (сборник/дискография), но альбома в ней нет:
+    # отдаём ПУСТО, иначе скачали бы всю коллекцию (у JP-сборника это 3.2 ГБ
+    # вместо нужных 0.5 ГБ), а пара честно уйдёт в no_match.
+    if len(dirs) > 1:
+        return [], None
     return files, None
 
 
@@ -195,8 +200,9 @@ def add_paused(t: Transm, path: str, dl_dir: str) -> dict:
 
 
 def torrent_details(t: Transm, tid: int) -> dict | None:
-    for tor in t.torrents(["id", "hashString", "name", "files", "wanted", "totalSize",
-                           "percentDone", "status", "downloadDir", "leftUntilDone"]):
+    for tor in t.torrents(["id", "hashString", "name", "files", "wanted", "fileStats",
+                           "totalSize", "percentDone", "status", "downloadDir",
+                           "leftUntilDone"]):
         if tor["id"] == tid:
             tor["files"] = [{**f, "index": i} for i, f in enumerate(tor.get("files") or [])]
             return tor
@@ -260,10 +266,17 @@ def side_setup(t: Transm, client: RTClient, topic_id: int, dl_dir: str,
     t._call("torrent-set", {"ids": [ttid], "files-wanted": sorted(want),
                             "files-unwanted": unwanted})
     start(t, ttid)
+    stats = det.get("fileStats") or []
+    new_bytes = 0
+    for i in sorted(want):
+        ln = files[i].get("length") or 0
+        done = (stats[i].get("bytesCompleted") if i < len(stats) else 0) or 0
+        new_bytes += max(0, ln - done)
     return {"ok": True, "torrent_tid": ttid, "mode": mt["mode"],
             "wanted": sorted(want),
             "wanted_names": [files[i]["name"] for i in sorted(want)],
             "wanted_bytes": sum((files[i].get("length") or 0) for i in want),
+            "new_bytes": new_bytes,
             "matched": mt["matched"], "of": len(master_tracks),
             "album_dir": mt.get("album_dir"), "all_bytes": det.get("totalSize"),
             "name": det.get("name")}
@@ -541,9 +554,11 @@ def main() -> int:
                   f"{rel['album'][:40]}")
             processed += 1
             continue
-        if o["wanted_bytes"] + spent > int(args.max_gb * 1e9) or \
-                o["wanted_bytes"] + reserve > budget_left:
-            print(f"[budget] {key}: нужно {o['wanted_bytes'] / 1e6:.0f}MB — стоп по бюджету")
+        need_new = o.get("new_bytes", o["wanted_bytes"])
+        if need_new + spent > int(args.max_gb * 1e9) or \
+                need_new + reserve > budget_left:
+            print(f"[budget] {key}: нового {need_new / 1e6:.0f}MB "
+                  f"(всего в теме {o['wanted_bytes'] / 1e6:.0f}MB) — стоп по бюджету")
             t._call("torrent-remove", {"ids": [o["torrent_tid"]], "delete-local-data": True})
             break
 
@@ -559,7 +574,8 @@ def main() -> int:
                 print(f"[warn] {key}: мастер-сторона не встала ({mrec.get('error')}) — "
                       f"оставляем одну сторону")
 
-        spent += o["wanted_bytes"] + ((mrec or {}).get("wanted_bytes") or 0)
+        spent += o.get("new_bytes", o["wanted_bytes"]) + \
+            ((mrec or {}).get("new_bytes", (mrec or {}).get("wanted_bytes")) or 0)
         processed += 1
         append_state({
             "key": key, "state": "downloading", "dir": base,

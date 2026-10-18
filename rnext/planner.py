@@ -26,7 +26,7 @@ _YEAR = re.compile(r"(?<!\d)((?:19|20)\d{2})(?!\d)")
 OWN_MARK = re.compile(r"\[RM\]|restored|declipped|реставр|Declipped", re.IGNORECASE)
 LOSSY = re.compile(r"\bMP3\b|\bAAC\b|\bM4A\b|\bOGG\b|V0|V2|~?320", re.IGNORECASE)
 HIRES = re.compile(r"24/\d|24-?bit|\[TR24\]|\[Hi-?Res\]|\[\d{2}/\d{3}\]|DSD|MQA", re.IGNORECASE)
-GRAPH = re.compile(r"Дискография|Studio Albums|Studio Discography|\(releases\)|Collection|Сборник",
+GRAPH = re.compile(r"Дискография|Discography|Studio Albums|\(releases\)|Collection|Сборник",
                    re.IGNORECASE)
 BAD_MEDIA = re.compile(r"\[\d{0,2}LP\]|\bLPCM\b|\[SACD\]|\[DVD|\[VHS|\bVinyl\b|Винил", re.IGNORECASE)
 BOOTLEG = re.compile(r"CAMRip|Bootleg|\[Unofficial\]|концерт|самопал", re.IGNORECASE)
@@ -200,10 +200,15 @@ def score_candidate(row: dict, artist_tokens: list[str], album_tokens: list[str]
         flags.append("image_cue")
     # издание с другим содержимым (акапеллы/инструментал/кавер) — не оригинал
     alt = CONTENT_ALT.search(title)
-    if alt and not CONTENT_ALT.search(album_tokens and " ".join(album_tokens) or ""):
+    if alt and kind != "graphy" and \
+            not CONTENT_ALT.search(album_tokens and " ".join(album_tokens) or ""):
+        # дискографии часто содержат в названии «covers/bonus/demo» — это про
+        # состав бокса; конкретный альбом проверяется при загрузке (папка + длительности)
         return {"score": -1000.0, "flags": [f"content_alt:{alt.group(0).lower()}"],
                 "contain": cont}
-    if CONTENT_ALT_SOFT.search(title):
+    if CONTENT_ALT_SOFT.search(title) and kind != "graphy":
+        # «singles/hits/best of» в названии дискографии — это про состав бокса,
+        # а не про альтернативное издание конкретного альбома
         score -= 30
         flags.append("alt_edition")
     if re.search(r"\[CD\]", title):
@@ -216,7 +221,8 @@ def score_candidate(row: dict, artist_tokens: list[str], album_tokens: list[str]
     if GRAPH.search(title) and kind != "graphy":
         score -= 20
         flags.append("graphy")
-    if EDITION.search(title):
+    if EDITION.search(title) and kind != "graphy":
+        # у дискографии «Editions» в названии — это про состав бокса, не про издание
         score -= 25
         flags.append("edition")
     if BOOTLEG.search(title):
