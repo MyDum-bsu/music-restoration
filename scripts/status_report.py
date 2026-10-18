@@ -247,7 +247,7 @@ def sec_deep() -> None:
             dr_ok = rec["rest"]["dr"] - rec["orig"]["dr"] >= 2
             ml = rec.get("ml_target")
             line = (f"сквозной прогон: класс {rec['class']}, цель {rec['target_dcrest']:.2f}"
-                    + (f" (из модели {ml:.2f})" if ml else "")
+                    + (f" ({ml:.2f}, источник: {rec.get('ml_source')})" if ml else "")
                     + f", r_fit {round(rec.get('r_fit') or 0, 2)}, TP {rec['tp_actual']}, "
                       f"DR {rec['orig']['dr']}→{rec['rest']['dr']}")
             (ok if (tp_ok and dr_ok) else bad)(line + ("" if tp_ok and dr_ok else "  ← ПРОВЕРИТЬ"))

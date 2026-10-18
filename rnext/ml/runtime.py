@@ -72,7 +72,8 @@ def ood_z(X: np.ndarray, names: list[str], meta: dict) -> tuple[float, str | Non
 def predict_targets(feature_rows: list[dict], n_tracks: int,
                     model_id: str | None = None,
                     ood_max_z: float = 6.0,
-                    class_margin_db: float = 2.5) -> np.ndarray | None:
+                    class_margin_db: float = 2.5,
+                    sources: list | None = None) -> np.ndarray | None:
     """Цель для треков альбома: общий вход — строки фич исходника.
 
     Защиты (найдено валидацией: на непохожем материале ridge уходил в +33 дБ):
@@ -101,9 +102,31 @@ def predict_targets(feature_rows: list[dict], n_tracks: int,
         if phys or z > ood_max_z:
             # материал вне обучающего распределения (напр. моно, иной тилт)
             out.append(base)
+            if sources is not None:
+                sources.append(f"class_fallback ({phys or f'{zname} z={z:.1f}'})")
             continue
-        out.append(min(max(float(pred[i]), base - class_margin_db), base + class_margin_db))
+        val = min(max(float(pred[i]), base - class_margin_db), base + class_margin_db)
+        out.append(val)
+        if sources is not None:
+            sources.append("model" if val == float(pred[i]) else f"model_clamped({float(pred[i]):+.1f})")
     return np.clip(np.array(out, dtype=float), -1.5, cap)
+
+
+def predict_from_audio_src(x, sr, model_id: str | None = None, n_tracks: int = 10):
+    """Как predict_from_audio, но возвращает (цель, источник решения)."""
+    model_id = model_id or reg.latest_snapshot()
+    if not model_id:
+        return None, None
+    from rnext import features as F
+    try:
+        feats = F.feature_dict(x, sr)
+    except Exception:                                     # noqa: BLE001
+        return None, None
+    src: list = []
+    pred = predict_targets([feats], n_tracks, model_id=model_id, sources=src)
+    if pred is None:
+        return None, None
+    return float(pred[0]), (src[0] if src else None)
 
 
 def predict_from_audio(x, sr, model_id: str | None = None, n_tracks: int = 10) -> float | None:

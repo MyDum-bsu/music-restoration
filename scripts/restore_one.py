@@ -159,14 +159,15 @@ def main() -> int:
             ml_target = None
             if args.ml_snapshot and ml_ready:
                 mid = None if args.ml_snapshot == "auto" else args.ml_snapshot
-                ml_target = mlrt.predict_from_audio(x, sr, model_id=mid, n_tracks=len(items))
+                ml_target, ml_source = mlrt.predict_from_audio_src(x, sr, model_id=mid,
+                                                                   n_tracks=len(items))
                 if ml_target is not None:
                     # цель из модели + согласование классов: модель училась по
                     # границе healthy ≥ 12, а не ≥ 11
                     pol_t = dataclasses.replace(
                         pol, healthy_dr_min=12,
                         target_dcrest=float(min(ml_target, 8.0) if ml_target > 0 else ml_target))
-                    print(f"  t{ti}: цель из модели {ml_target:+.2f} дБ", flush=True)
+                    print(f"  t{ti}: цель {ml_target:+.2f} дБ [{ml_source}]", flush=True)
             y, stages = restore_track(x, sr, pol_t, return_stages=True)
             _d = F.tt_dr(y, sr)
             tp = true_peak_dbfs(y, sr)
@@ -188,6 +189,7 @@ def main() -> int:
                 "eq_tilt": eq_tilt,
                 "eq_match": (stages.get("eq_match") or None) if args.eq_match else None,
                 "ml_target": ml_target,
+                "ml_source": ml_source,
                 "r_fit": (stages.get("adaptive") or {}).get("r_fit"),
                 "tp_target": args.tp, "tp_actual": round(tp, 2),
                 "orig": {"dr": o_[0], "dr_exact": round(o_[1], 2),
