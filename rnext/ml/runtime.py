@@ -21,23 +21,89 @@ def _load(model_id: str):
     return _cache[model_id]
 
 
+def _class_target(dr: float) -> float:
+    """Цель по классу исходника (та же таблица, что в проде по умолчанию)."""
+    t = v0_targets()
+    if dr >= 12:
+        return float(t.get("healthy", 0.0))
+    if dr >= 9:
+        return float(t.get("mid", 2.3))
+    return float(t.get("crushed", 5.3))
+
+
+def v0_targets() -> dict:
+    import json as _json
+    from rnext import workspace
+    p = workspace.dir_of("corpus") / "targets_v0.json"
+    if p.is_file():
+        return _json.loads(p.read_text(encoding="utf-8")).get("recommendation", {})
+    return {}
+
+
+# Физические признаки «не тот материал»: работают даже без статистик обучения.
+# Валидация нашла: на моно-синтетике ridge уходил в +33 дБ — эти правила
+# отправляют такой вход на классовую таблицу.
+def physical_ood(r: dict) -> str | None:
+    side = r.get("side_mid_db")
+    if side is not None and np.isfinite(side) and side < -40:
+        return "mono (side/mid < -40 дБ)"
+    tilt = r.get("tilt_low_high")
+    if tilt is not None and np.isfinite(tilt) and (tilt > 35 or tilt < 5):
+        return f"экстремальный тилт ({tilt:.0f} дБ)"
+    if (r.get("rms_spread") or 0) == 0 and (r.get("attacks_per_s") or 0) == 0:
+        return "нет динамики/транзиентов (синтетика или тишина)"
+    return None
+
+
+def ood_z(X: np.ndarray, names: list[str], meta: dict) -> tuple[float, str | None]:
+    """Насколько вход выбивается из обучающего распределения (макс |z|)."""
+    stats = meta.get("feature_stats") or {}
+    worst, worst_name = 0.0, None
+    for i, name in enumerate(names):
+        st = stats.get(name)
+        if not st or not st.get("std"):
+            continue
+        z = abs((X[0, i] - st["mean"]) / st["std"]) if np.isfinite(X[0, i]) else 0.0
+        if z > worst:
+            worst, worst_name = z, name
+    return worst, worst_name
+
+
 def predict_targets(feature_rows: list[dict], n_tracks: int,
-                    model_id: str | None = None) -> np.ndarray | None:
+                    model_id: str | None = None,
+                    ood_max_z: float = 6.0,
+                    class_margin_db: float = 2.5) -> np.ndarray | None:
     """Цель для треков альбома: общий вход — строки фич исходника.
 
-    Возвращает Δcrest (дБ) по треку либо None, если снапшота нет.
+    Защиты (найдено валидацией: на непохожем материале ridge уходил в +33 дБ):
+      * OOD-гейт: если признак выбивается из обучающего распределения (|z| > 6),
+        модель не используется — берётся классовая таблица;
+      * скобка вокруг классовой цели ±2.5 дБ: даже «своя» модель не имеет права
+        заказывать перелёт;
+      * физический кап Δcrest ≤ 8 дБ.
+    Возвращает Δcrest по треку либо None (тогда работает авто-политика).
     """
     model_id = model_id or reg.latest_snapshot()
     if not model_id:
         return None
     model, meta = _load(model_id)
     names = meta.get("features") or ds.FEATURES
-    X = np.array([[ds._row_features({"original": r}, n_tracks).get(f, np.nan) for f in names]
-                  for r in feature_rows], dtype=float)
+    rows = [ds._row_features({"original": r}, n_tracks) for r in feature_rows]
+    X = np.array([[r.get(f, np.nan) for f in names] for r in rows], dtype=float)
     pred = np.asarray(model.predict(X), dtype=float)
-    # физические скобки: модель не имеет права заказывать перелёт
     cap = float(meta.get("caps", {}).get("dcrest_max", 8.0))
-    return np.clip(pred, -1.5, cap)
+    out = []
+    for i, r in enumerate(rows):
+        dr = r.get("dr", 10.0)
+        base = _class_target(dr)
+        phys = physical_ood(r)
+        z, zname = ood_z(X[i:i + 1], names, meta)
+        if phys or z > ood_max_z:
+            # материал вне обучающего распределения (напр. моно, иной тилт)
+            out.append(base)
+            continue
+        out.append(min(max(float(pred[i]), base - class_margin_db), base + class_margin_db))
+    return np.clip(np.array(out, dtype=float), -1.5, cap)
 
 
 def predict_from_audio(x, sr, model_id: str | None = None, n_tracks: int = 10) -> float | None:

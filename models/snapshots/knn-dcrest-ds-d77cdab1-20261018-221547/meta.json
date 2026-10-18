@@ -167,5 +167,96 @@
  },
  "model_id": "knn-dcrest-ds-d77cdab1-20261018-221547",
  "git": "8b93c25",
- "saved": 1792350947
+ "saved": 1792350947,
+ "feature_stats": {
+  "dr": {
+   "mean": 7.1494,
+   "std": 2.6081
+  },
+  "dr_exact": {
+   "mean": 7.1422,
+   "std": 2.6074
+  },
+  "crest_db": {
+   "mean": 11.8792,
+   "std": 2.856
+  },
+  "rms_db": {
+   "mean": -9.4631,
+   "std": 3.8562
+  },
+  "peak_db": {
+   "mean": -0.5912,
+   "std": 1.7579
+  },
+  "dur_s": {
+   "mean": 260.9258,
+   "std": 96.0529
+  },
+  "clip_samples": {
+   "mean": 2150.3182,
+   "std": 11574.7599
+  },
+  "clip_events": {
+   "mean": 1486.1916,
+   "std": 7793.1138
+  },
+  "longest_run": {
+   "mean": 1.1477,
+   "std": 5.336
+  },
+  "rms_p05": {
+   "mean": -19.0491,
+   "std": 11.8857
+  },
+  "rms_p50": {
+   "mean": -11.9433,
+   "std": 3.9703
+  },
+  "rms_p95": {
+   "mean": -10.3849,
+   "std": 3.8347
+  },
+  "rms_spread": {
+   "mean": 8.6642,
+   "std": 10.9583
+  },
+  "attacks_per_s": {
+   "mean": 0.9406,
+   "std": 0.7741
+  },
+  "flux_per_s": {
+   "mean": 25627.6094,
+   "std": 10422.0253
+  },
+  "rms_range_db": {
+   "mean": 158.2181,
+   "std": 78.2118
+  },
+  "side_mid_db": {
+   "mean": -6.7116,
+   "std": 2.2906
+  },
+  "side_mid_hf_db": {
+   "mean": -5.3322,
+   "std": 2.4509
+  },
+  "tp_overshoot_db": {
+   "mean": 0.5463,
+   "std": 0.5979
+  },
+  "tilt_low_high": {
+   "mean": 21.1457,
+   "std": 3.4823
+  },
+  "tilt_slope": {
+   "mean": -4.8948,
+   "std": 1.0128
+  },
+  "n_tracks": {
+   "mean": 13.836,
+   "std": 4.3865
+  }
+ },
+ "feature_stats_note": "добавлено при валидации: статистики по текущему корпусу (приближённо)"
 }

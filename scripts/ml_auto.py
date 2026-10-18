@@ -83,7 +83,16 @@ def train_and_eval(table, base: str, target: str, holdout_mode: str, seed: int) 
     stats["vs_noop"] = M.compare_to_baseline(stats, "noop")
     stats["vs_v0table"] = M.compare_to_baseline(stats, "v0table")
     stats["gate"] = M.auto_gate(yho, pred, Xho[:, table.feature_names.index("dr")])
+    Xf = Xtr[fit]
+    fstats = {}
+    for i, name in enumerate(table.feature_names):
+        col = Xf[:, i]
+        col = col[~np.isnan(col)]
+        if col.size:
+            fstats[name] = {"mean": round(float(np.mean(col)), 4),
+                            "std": round(float(np.std(col)) or 1.0, 4)}
     return {"model": model, "metrics": stats, "pred": pred, "y_hold": yho,
+            "feature_stats": fstats,
             "n_train": int(len(fit)), "n_cal": int(n_cal),
             "n_hold": int(len(hold_idx)), "holdout_mode": holdout_mode}
 
@@ -157,7 +166,9 @@ def run_once(args) -> None:
                 "dataset": {k: manifest[k] for k in ("pairs", "tracks", "trusted_tracks",
                                                      "by_author", "labels")},
                 "level": lvl, "seed": args.seed, "frac": 0.3,
-                "features": table.feature_names, "n_train": res["n_train"],
+                "features": table.feature_names,
+                "feature_stats": res.get("feature_stats"),
+                "n_train": res["n_train"],
                 "n_cal": res["n_cal"], "n_hold": res["n_hold"],
                 "holdout_mode": mode, "caps": {"dcrest_max": 8.0},
                 "promote": res["metrics"]["gate"]["promote"],

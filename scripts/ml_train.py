@@ -50,8 +50,17 @@ def train_one(table, base: str, train_idx, hold_idx, target: str, seed: int,
         stats["coverage_80"] = M.interval_coverage(yho, lo, hi)
     stats["vs_noop"] = M.compare_to_baseline(stats, "noop")
     stats["vs_v0table"] = M.compare_to_baseline(stats, "v0table")
+    Xf = Xtr[fit]
+    fstats = {}
+    for i, name in enumerate(table.feature_names):
+        col = Xf[:, i]
+        col = col[~np.isnan(col)]
+        if col.size:
+            fstats[name] = {"mean": round(float(np.mean(col)), 4),
+                            "std": round(float(np.std(col)) or 1.0, 4)}
     info = {"n_train": int(len(fit)), "n_cal": int(len(cal)), "n_hold": int(len(hold_idx)),
-            "features": table.feature_names, "conformal": conformal}
+            "features": table.feature_names, "conformal": conformal,
+            "feature_stats": fstats}
     return model, {"metrics": stats, **info}
 
 
