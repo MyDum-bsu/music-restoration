@@ -224,6 +224,8 @@ def match_release(client: RTClient, d: dict, rel: dict, artist_tokens: list[str]
 def step_match(args) -> int:
     restored = sorted(corpus().glob("restored/*.json"))
     out = corpus() / (args.out or "dataset_plan.jsonl")
+    if args.rewrite and out.is_file():
+        out.unlink()          # иначе append-режим добавит вторую копию плана
     prev = read_jsonl(out)
     done_topics = {r["restored_topic_id"] for r in prev}
     if args.rewrite:

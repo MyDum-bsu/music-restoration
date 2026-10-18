@@ -82,12 +82,18 @@ def resolve_side_dir(srec: dict | None, side: str, base: Path,
         p = Path(d)
         if p.is_dir():
             return p
+    tmap = tmap if tmap is not None else torrents_by_id(t)
     tid = srec.get("torrent_tid")
-    if tid is not None:
-        tmap = tmap if tmap is not None else torrents_by_id(t)
-        tor = tmap.get(tid)
-        if tor and tor.get("downloadDir"):
-            return Path(tor["downloadDir"])
+    tor = tmap.get(tid) if tid is not None else None
+    if tor and tor.get("downloadDir"):
+        return Path(tor["downloadDir"])
+    # id мог устареть (раздачу снимали и добавляли заново) — ищем по имени
+    nm = srec.get("name")
+    if nm:
+        for x in tmap.values():
+            d = x.get("downloadDir") or ""
+            if x.get("name") == nm and "/dataset/raw/" in d:
+                return Path(d)
     return base / side
 
 
