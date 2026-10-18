@@ -15,18 +15,24 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rnext import sides as S  # noqa: E402
+from rnext.transm import Transm  # noqa: E402
 from rnext import workspace  # noqa: E402
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--max-progress", type=float, default=0.5)
+    ap.add_argument("--peerless", action="store_true",
+                    help="снимать пары, у которых НЕТ пиров (мёртвые сиды) — "
+                         "они держат кап «в работе», блокируя новые партии")
     ap.add_argument("--keep", type=int, default=6, help="сколько свежих извлечённых пар не трогать")
     args = ap.parse_args()
 
     D = workspace.data_root() / "dataset"
     state = S.merged_state(D / "state.jsonl")
     tmap = S.torrents_by_id()
+    if args.peerless:
+        print("режим --peerless: снимаем пары без пиров")
     have = {p.parent.name.replace("__", "/") for p in (D / "pairs").glob("*/features.json")}
     freed = deleted = kept = 0
     for k, r in state.items():
@@ -47,6 +53,24 @@ def main() -> int:
         if prog >= args.max_progress:
             kept += 1
             continue
+        if args.peerless:
+            # проверяем, есть ли вообще пиры у раздач этой пары
+            peers = 0
+            for side in ("orig", "master"):
+                srec = r.get(side) if isinstance(r.get(side), dict) else None
+                tid = (srec or {}).get("torrent_tid")
+                tor = tmap.get(tid) if tid is not None else None
+                if tor is None:
+                    # id устарел — ищем по имени
+                    nm = (srec or {}).get("name")
+                    for x in tmap.values():
+                        if nm and x.get("name") == nm:
+                            tor = x
+                            break
+                peers += (tor or {}).get("peersConnected") or 0
+            if peers > 0:
+                kept += 1
+                continue
         sz = sum(f.stat().st_size for f in base.rglob("*") if f.is_file())
         with open(D / "state.jsonl", "a", encoding="utf-8") as f:
             f.write(json.dumps({**r, "state": "paused_space",

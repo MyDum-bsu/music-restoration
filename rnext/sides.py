@@ -68,7 +68,8 @@ def torrents_by_id(t: Transm | None = None) -> dict[int, dict]:
         t = t or Transm()
         return {x["id"]: x for x in t.torrents(
             ["id", "name", "downloadDir", "files", "wanted", "totalSize",
-             "leftUntilDone", "downloadedEver", "percentDone", "status"])}
+             "leftUntilDone", "downloadedEver", "percentDone", "status",
+             "peersConnected", "rateDownload"])}
     except Exception:                                     # noqa: BLE001
         return {}
 

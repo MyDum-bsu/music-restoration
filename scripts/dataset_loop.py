@@ -44,19 +44,27 @@ def run(cmd: list[str], timeout: int = 7200) -> int:
     return p.returncode
 
 
-def downloads_state() -> tuple[float, float]:
-    """(осталось GB, скорость MB/s) по нашим раздачам."""
+def downloads_state() -> tuple[float, float, float]:
+    """(осталось всего GB, скорость MB/s, осталось у РАЗДАЧ С ПИРАМИ).
+
+    Третье число — то, что реально может докачаться: мёртвые сиды (0 пиров)
+    не должны блокировать кап «в работе», иначе одна застрявшая раздача
+    останавливает весь конвейер.
+    """
     try:
         t = Transm()
-        left = rate = 0.0
-        for tor in t.torrents(["downloadDir", "leftUntilDone", "rateDownload"]):
+        left = rate = live = 0.0
+        for tor in t.torrents(["downloadDir", "leftUntilDone", "rateDownload",
+                               "peersConnected"]):
             if "/dataset/raw/" not in (tor["downloadDir"] or ""):
                 continue
             left += tor["leftUntilDone"]
             rate += tor["rateDownload"]
-        return left / 1e9, rate / 1e6
+            if (tor.get("peersConnected") or 0) > 0:
+                live += tor["leftUntilDone"]
+        return left / 1e9, rate / 1e6, live / 1e9
     except Exception:                                    # noqa: BLE001
-        return 0.0, 0.0
+        return 0.0, 0.0, 0.0
 
 
 STALLS = 0
@@ -100,6 +108,10 @@ def one_pass(args) -> None:
             subprocess.run([sys.executable, "scripts/dataset_prune_stalled.py",
                             "--max-progress", "0.5"], cwd=str(ROOT), check=False)
 
+    # 0) мёртвые сиды не должны держать кап: снимаем пары без пиров
+    subprocess.run([sys.executable, "scripts/dataset_prune_stalled.py", "--peerless"],
+                   cwd=str(ROOT), check=False, stdout=subprocess.DEVNULL)
+
     # 1) обработка готового — каждую проходку, независимо от качки
     run([sys.executable, "scripts/dataset_extract.py", "--all", "--excerpts", "1",
          "--keep-raw", "--keep-raw-window", str(args.keep_window)])
@@ -112,10 +124,10 @@ def one_pass(args) -> None:
         log(f"датасет {m['version']}: пар {m['pairs']}, trusted-треков {m['trusted_tracks']}")
 
     # 2) решаем, брать ли новую партию
-    left, rate = downloads_state()
-    if left > args.max_inflight_gb:
-        log(f"в работе {left:.1f} GB > капа {args.max_inflight_gb} GB — "
-            f"новую партию не берём (сначала закрываем текущие)")
+    left, rate, live = downloads_state()
+    if live > args.max_inflight_gb:
+        log(f"в работе (с пирами) {live:.1f} GB > капа {args.max_inflight_gb} GB — "
+            f"новую партию не берём")
         return
     if left > 0.05 and rate >= args.min_rate_mbps:
         log(f"качается {left:.2f} GB ({rate:.2f} MB/s) — ждём")
