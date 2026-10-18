@@ -39,10 +39,24 @@ def main() -> int:
     # RPC требует рукопожатие X-Transmission-Session-Id — используем клиент
     from rnext import transm as transm_mod
     rpc = transm_mod.check()
-    if rpc.get("ok"):
-        print(f"transmission rpc: ok {rpc['version']}")
-    else:
+    if not rpc.get("ok"):
         print(f"transmission rpc: оффа ({rpc.get('err')})")
+        return 0
+    print(f"transmission rpc: ok {rpc['version']}")
+    # Проверяем, что тюнинг качки на месте (иначе скорость упадёт в разы)
+    try:
+        sys.path.insert(0, "/home/mydum/Desktop/projects/restore-next")
+        from scripts.transmission_tune import WATCH, TUNE  # type: ignore
+    except Exception:                                      # noqa: BLE001
+        WATCH, TUNE = ["download-queue-size", "dht-enabled"], {}
+    s = transm_mod.Transm().session()
+    drift = {k: (s.get(k), TUNE.get(k)) for k in WATCH if k in TUNE and s.get(k) != TUNE[k]}
+    if drift:
+        print("transmission тюнинг: СБИЛСЯ " + ", ".join(f"{k}: {v[0]}≠{v[1]}" for k, v in drift.items()))
+        print("   → запустите: python3 scripts/transmission_tune.py --apply")
+    else:
+        print(f"transmission тюнинг: ок (очередь {s.get('download-queue-size')}, "
+              f"DHT {'вкл' if s.get('dht-enabled') else 'выкл'})")
     return 0
 
 

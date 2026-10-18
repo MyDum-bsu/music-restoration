@@ -142,6 +142,15 @@ def main() -> int:
     args = ap.parse_args()
     log(f"цикл обогащения: интервал {args.interval}s, партия {args.batch_pairs} пар "
         f"/ {args.batch_gb} GB, сырьё держим у {args.keep_window} последних пар")
+    # Настройки Transmission (очередь/DHT) живут только до перезапуска клиента —
+    # после ребута они возвращаются к дефолтам и скорость падает в ~20 раз.
+    # Применяем при каждом старте цикла: и в сессии, и в settings.json.
+    try:
+        subprocess.run([sys.executable, "scripts/transmission_tune.py", "--apply"],
+                       cwd=str(ROOT), check=False, timeout=60)
+        log("настройки Transmission применены (очередь 16, DHT вкл)")
+    except Exception as e:                                 # noqa: BLE001
+        log(f"не удалось применить настройки Transmission: {type(e).__name__}")
     while True:
         try:
             one_pass(args)
