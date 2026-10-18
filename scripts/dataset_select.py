@@ -105,16 +105,16 @@ def main() -> int:
         for (a, dec), n in sorted(have.items()):
             print(f"   {a} {dec}-е: {n}")
 
-    # что уже заведено (журнал загрузок) — чтобы не тратить слоты партии
+    # Что уже заведено. Пропускаем только ТЕРМИНАЛЬНЫЕ состояния: пары с
+    # ошибкой RPC/сети — временные, их надо пробовать снова (иначе они
+    # выпадают из работы навсегда).
+    TERMINAL = {"no_match", "edition_mismatch", "corrupt", "done", "extracting"}
     done_keys: set[str] = set()
+    from rnext import sides as _S
     st_file = workspace.data_root() / "dataset" / "state.jsonl"
-    if st_file.is_file():
-        for line in st_file.read_text(encoding="utf-8").splitlines():
-            if line.strip():
-                try:
-                    done_keys.add(json.loads(line)["key"])
-                except Exception:                          # noqa: BLE001
-                    pass
+    for key, rec in _S.merged_state(st_file).items():
+        if rec.get("state") in TERMINAL or rec.get("state") == "downloading":
+            done_keys.add(key)
     seen: set[tuple] = set()
     cand: list[dict] = []
     skipped_seed = skipped_alt = 0
