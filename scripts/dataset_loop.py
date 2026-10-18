@@ -81,66 +81,64 @@ def free_gb() -> float:
 
 
 def one_pass(args) -> None:
+    """Один проход: чистка → извлечение/аудит/обучение (ВСЕГДА) → возможно новая партия.
+
+    Раньше проход выходил рано, пока шла качка, — из-за этого готовые пары
+    часами лежали неизвлечёнными, а партии копились, пока диск не кончился.
+    Теперь обработка идёт каждую проходку, а новая партия берётся только если
+    в работе меньше max_inflight_gb.
+    """
     global STALLS
     free = free_gb()
     if free < args.min_free_gb:
-        log(f"свободно {free:.1f} GB < {args.min_free_gb} GB — чистим старое сырьё")
+        log(f"свободно {free:.1f} GB < {args.min_free_gb} GB — чистим сырьё")
         subprocess.run([sys.executable, "scripts/dataset_extract.py", "--prune",
                         "--prune-keep", str(args.keep_window)], cwd=str(ROOT), check=False)
         if free_gb() < args.min_free_gb:
-            log("места всё ещё мало — пауза до следующего прохода")
-            return
-    # раз в проход — профилактическая чистка: сырьё держим окном, чтобы
-    # автономная ночь не упиралась в 40 ГиБ бюджета
-    subprocess.run([sys.executable, "scripts/dataset_extract.py", "--prune",
-                    "--prune-keep", str(args.keep_window)], cwd=str(ROOT), check=False,
-                   stdout=subprocess.DEVNULL)
-    left, rate = downloads_state()
-    if left > 0.05 and rate >= args.min_rate_mbps:
-        log(f"качается {left:.2f} GB ({rate:.2f} MB/s) — ждём")
-        return
-    if left > 0.05 and 0.05 <= rate < args.min_rate_mbps:
-        # «медленно» — это тоже застой: хвост партии может тянуться часами
-        # на 1 МБ/с, блокируя рост датасета. Не ждём, берём новую партию.
-        STALLS += 1
-        if STALLS < args.stall_passes:
-            log(f"качается {left:.2f} GB, но медленно ({rate:.2f} < "
-                f"{args.min_rate_mbps} МБ/с; {STALLS}/{args.stall_passes}) — ждём")
-            return
-        log(f"медленный хвост подтверждён ({rate:.2f} МБ/с) — берём новую партию")
-        STALLS = 0
-    if left > 0.05:
-        STALLS += 1
-        if STALLS < args.stall_passes:
-            log(f"качается {left:.2f} GB, но 0 MB/s (застой {STALLS}/{args.stall_passes}) — ждём")
-            return
-        log(f"застой подтверждён: {left:.2f} GB висят без скорости — "
-            f"продолжаем цикл, не блокируясь на них")
-    STALLS = 0
+            # критично: сносим и НЕЗАВЕРШЁННЫЕ пары с малой готовностью
+            log("места всё ещё мало — снимаю незавершённые пары с низкой готовностью")
+            subprocess.run([sys.executable, "scripts/dataset_prune_stalled.py",
+                            "--max-progress", "0.5"], cwd=str(ROOT), check=False)
 
-    # 1) добор партии и загрузка
-    n = batch_counter() + 1
-    tag = f"batch-{n:03d}"
-    if run([sys.executable, "scripts/dataset_select.py", "--limit", str(args.batch_pairs),
-            "--min-master-seeders", str(args.min_master_seeders), "--out", tag]) != 0:
-        log("select не сработал")
-        return
-    plan = workspace.dir_of("corpus") / f"dataset_batch_{tag}.jsonl"
-    run([sys.executable, "scripts/dataset_fetch.py", "--go", "--limit", str(args.batch_pairs),
-         "--max-gb", str(args.batch_gb), "--plan", str(plan)])
-
-    # 2) извлечение + аудит + цели
+    # 1) обработка готового — каждую проходку, независимо от качки
     run([sys.executable, "scripts/dataset_extract.py", "--all", "--excerpts", "1",
          "--keep-raw", "--keep-raw-window", str(args.keep_window)])
     run([sys.executable, "scripts/reference_audit.py"])
     run([sys.executable, "scripts/target_model.py"])
-
-    # 3) авто-обучение с эвалами
     run([sys.executable, "scripts/ml_auto.py", "--with-audio"])
     man = dataset_dir() / "manifest.json"
     if man.is_file():
         m = json.loads(man.read_text(encoding="utf-8"))
         log(f"датасет {m['version']}: пар {m['pairs']}, trusted-треков {m['trusted_tracks']}")
+
+    # 2) решаем, брать ли новую партию
+    left, rate = downloads_state()
+    if left > args.max_inflight_gb:
+        log(f"в работе {left:.1f} GB > капа {args.max_inflight_gb} GB — "
+            f"новую партию не берём (сначала закрываем текущие)")
+        return
+    if left > 0.05 and rate >= args.min_rate_mbps:
+        log(f"качается {left:.2f} GB ({rate:.2f} MB/s) — ждём")
+        return
+    if left > 0.05:
+        STALLS += 1
+        if STALLS < args.stall_passes:
+            log(f"качается {left:.2f} GB, но медленно ({rate:.2f} MB/s; "
+                f"{STALLS}/{args.stall_passes}) — ждём")
+            return
+        log(f"медленный хвост подтверждён ({rate:.2f} MB/s) — берём новую партию")
+    STALLS = 0
+
+    n = batch_counter() + 1
+    tag = f"batch-{n:03d}"
+    if run([sys.executable, "scripts/dataset_select.py", "--limit", str(args.batch_pairs),
+            "--min-master-seeders", str(args.min_master_seeders),
+            "--max-master-gb", str(args.max_master_gb), "--out", tag]) != 0:
+        log("select не сработал")
+        return
+    plan = workspace.dir_of("corpus") / f"dataset_batch_{tag}.jsonl"
+    run([sys.executable, "scripts/dataset_fetch.py", "--go", "--limit", str(args.batch_pairs),
+         "--max-gb", str(args.batch_gb), "--plan", str(plan)])
 
 
 def main() -> int:
@@ -153,6 +151,10 @@ def main() -> int:
     ap.add_argument("--min-free-gb", type=float, default=10.0)
     ap.add_argument("--min-rate-mbps", type=float, default=2.0,
                     help="ниже этой скорости качка считается медленным хвостом")
+    ap.add_argument("--max-inflight-gb", type=float, default=12.0,
+                    help="кап на объём незакрытых загрузок: больше — новую партию не берём")
+    ap.add_argument("--max-master-gb", type=float, default=6.0,
+                    help="не брать пары, у которых тема мастера больше этого (гигантские дискографии)")
     ap.add_argument("--stall-passes", type=int, default=2,
                     help="сколько проходов ждать, если качается, но скорость 0")
     ap.add_argument("--once", action="store_true")

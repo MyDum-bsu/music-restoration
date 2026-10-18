@@ -1,0 +1,170 @@
+{
+ "model": "table",
+ "target": "dcrest",
+ "dataset_version": "ds-23574f0c",
+ "dataset": {
+  "pairs": 50,
+  "tracks": 559,
+  "trusted_tracks": 540,
+  "by_author": {
+   "5618698": 338,
+   "3048819": 202
+  },
+  "labels": {
+   "suspect": 2,
+   "trusted": 48
+  }
+ },
+ "level": 0,
+ "seed": 17,
+ "frac": 0.3,
+ "features": [
+  "dr",
+  "dr_exact",
+  "crest_db",
+  "rms_db",
+  "peak_db",
+  "dur_s",
+  "clip_samples",
+  "clip_events",
+  "longest_run",
+  "rms_p05",
+  "rms_p50",
+  "rms_p95",
+  "rms_spread",
+  "attacks_per_s",
+  "flux_per_s",
+  "rms_range_db",
+  "side_mid_db",
+  "side_mid_hf_db",
+  "tp_overshoot_db",
+  "tilt_low_high",
+  "tilt_slope",
+  "n_tracks"
+ ],
+ "n_train": 279,
+ "n_cal": 92,
+ "n_hold": 169,
+ "holdout_mode": "by-album",
+ "caps": {
+  "dcrest_max": 8.0
+ },
+ "promote": false,
+ "gate_gain_db": -0.32,
+ "gate_ci_low": -0.443,
+ "metrics": {
+  "all": {
+   "n": 169,
+   "median_abs": 1.121,
+   "mean_abs": 1.134,
+   "p90_abs": 1.817,
+   "share_le_0.5": 0.201,
+   "share_le_1.0": 0.367,
+   "bias": -0.695
+  },
+  "by_class": {
+   "crushed": {
+    "n": 140,
+    "median_abs": 1.119,
+    "mean_abs": 1.098,
+    "p90_abs": 1.749,
+    "share_le_0.5": 0.207,
+    "share_le_1.0": 0.364,
+    "bias": -0.501
+   },
+   "healthy": {
+    "n": 3,
+    "median_abs": 1.773,
+    "mean_abs": 1.949,
+    "p90_abs": 2.607,
+    "share_le_0.5": 0.0,
+    "share_le_1.0": 0.0,
+    "bias": -1.26
+   },
+   "mid": {
+    "n": 26,
+    "median_abs": 1.061,
+    "mean_abs": 1.229,
+    "p90_abs": 2.247,
+    "share_le_0.5": 0.192,
+    "share_le_1.0": 0.423,
+    "bias": -1.007
+   }
+  },
+  "baseline_noop": {
+   "n": 169,
+   "median_abs": 4.795,
+   "mean_abs": 4.397,
+   "p90_abs": 6.209,
+   "share_le_0.5": 0.041,
+   "share_le_1.0": 0.053,
+   "bias": -4.795
+  },
+  "baseline_const46": {
+   "n": 169,
+   "median_abs": 1.281,
+   "mean_abs": 1.428,
+   "p90_abs": 2.495,
+   "share_le_0.5": 0.183,
+   "share_le_1.0": 0.331,
+   "bias": -0.195
+  },
+  "baseline_v0table": {
+   "n": 169,
+   "median_abs": 0.801,
+   "mean_abs": 1.049,
+   "p90_abs": 2.097,
+   "share_le_0.5": 0.308,
+   "share_le_1.0": 0.598,
+   "bias": -0.003
+  },
+  "vs_noop": 0.234,
+  "vs_v0table": 1.4,
+  "gate": {
+   "min_gain_db": 0.1,
+   "by_baseline": {
+    "noop": {
+     "improvement_dB": 3.674,
+     "ci_low": 3.284,
+     "ci_high": 3.944,
+     "p_win": 1.0,
+     "n": 169,
+     "median_abs": 4.795,
+     "pass": true
+    },
+    "const46": {
+     "improvement_dB": 0.16,
+     "ci_low": 0.044,
+     "ci_high": 0.239,
+     "p_win": 0.996,
+     "n": 169,
+     "median_abs": 1.281,
+     "pass": true
+    },
+    "v0table": {
+     "improvement_dB": -0.32,
+     "ci_low": -0.443,
+     "ci_high": -0.186,
+     "p_win": 0.0,
+     "n": 169,
+     "median_abs": 0.801,
+     "pass": false
+    }
+   },
+   "best_baseline": "v0table",
+   "vs_best": {
+    "improvement_dB": -0.32,
+    "ci_low": -0.443,
+    "ci_high": -0.186,
+    "p_win": 0.0,
+    "n": 169,
+    "median_abs": 0.801,
+    "pass": false
+   },
+   "promote": false
+  }
+ },
+ "model_id": "table-dcrest-ds-23574f0c-20261018-075324",
+ "git": "b934bf0",
+ "saved": 1792299204
+}

@@ -53,6 +53,8 @@ def main() -> int:
     ap.add_argument("--min-per-stratum", type=int, default=200,
                     help="цель по трекам в страте (автор × декада): пустые ячейки добираем первыми")
     ap.add_argument("--only-author", default=None, help="качать только этого автора (pid)")
+    ap.add_argument("--max-master-gb", type=float, default=0.0,
+                    help="не брать пары, у которых тема мастера больше N ГБ (0 = без лимита)")
     args = ap.parse_args()
 
     rows = [r for r in read_jsonl(corpus() / "dataset_plan.jsonl")
@@ -60,14 +62,18 @@ def main() -> int:
     plan_index = {r["key"]: r for r in rows}
     print(f"matched в плане: {len(rows)}")
 
-    # сиды темы мастера — из разбора темы (крупные дискографии часто без сидов)
+    # сиды и РАЗМЕР темы мастера — из разбора темы. Большие темы (дискографии
+    # на 10+ ГБ) опасны: wanted-набор там общий для многих пар, мастер-сторона
+    # легко застревает на 0/N и сырьё копится, забивая диск.
     mseed: dict[int, int] = {}
+    msize: dict[int, int] = {}
     for p in (corpus() / "restored").glob("*.json"):
         try:
             d = json.loads(p.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             continue
         mseed[d.get("topic_id")] = d.get("topic_seeders") or 0
+        msize[d.get("topic_id")] = d.get("topic_size_bytes") or 0
 
     # сколько пар уже скачано/извлечено по авторам: отстающего добираем первым
     plan_author = {r["key"]: r.get("author_pid") for r in rows}
@@ -117,7 +123,7 @@ def main() -> int:
             done_keys.add(key)
     seen: set[tuple] = set()
     cand: list[dict] = []
-    skipped_seed = skipped_alt = 0
+    skipped_seed = skipped_alt = skipped_big = 0
     for r in rows:
         ch = r.get("chosen") or {}
         size = ch.get("size_bytes") or 0
@@ -142,18 +148,24 @@ def main() -> int:
         if ms < args.min_master_seeders:
             skipped_seed += 1
             continue
+        msz = msize.get(r["restored_topic_id"], 0)
+        if args.max_master_gb and msz > args.max_master_gb * 1e9:
+            skipped_big += 1
+            continue
         dedup = (r["artist"].lower(), (r["release"]["album"] or "").lower())
         if dedup in seen:
             continue
         seen.add(dedup)
         md = (r["release"].get("master_dr") or {}).get("official_dr") or 99
-        cand.append({**r, "_md": md, "_size": size, "_mse": ms,
+        cand.append({**r, "_md": md, "_size": size, "_mse": ms, "_msz": msz,
                      "_graphy": "graphy" in (ch.get("flags") or []),
                      "_dec": decade(r["release"].get("year"))})
     if skipped_seed:
         print(f"отброшено из-за слабых сидов темы мастера: {skipped_seed}")
     if skipped_alt:
         print(f"отброшено как другое издание (акапеллы/инструменталы): {skipped_alt}")
+    if skipped_big:
+        print(f"отброшено из-за гигантской темы мастера (>{args.max_master_gb:.0f} ГБ): {skipped_big}")
 
     # страта: автор × декада × класс раздавленности мастера
     def cls(md):
@@ -171,7 +183,8 @@ def main() -> int:
         # 1) сначала закрываем пустые страты (автор × декада),
         # 2) альбомные темы с известной целью, 3) низкий master DR (сильнее раздавлен),
         # 4) больше сидов, 5) меньше размер
-        return (-deficit(r), r["_graphy"], r["_md"] == 99, r["_md"], -r["_mse"], r["_size"])
+        return (-deficit(r), r["_graphy"], r["_md"] == 99, r["_md"],
+                r.get("_msz", 0), -r["_mse"], r["_size"])
 
     picked = []
     # круговой обход страт: по одному из каждой, пока не наберём лимит
