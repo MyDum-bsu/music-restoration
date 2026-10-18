@@ -34,6 +34,10 @@ def train_one(table, base: str, train_idx, hold_idx, target: str, seed: int,
     n_cal = max(1, int(0.25 * len(perm)))
     cal, fit = perm[:n_cal], perm[n_cal:]
 
+    if len(fit) < Z.MIN_N.get(base, 1):
+        print(f"  [{base}] после калибровочного сплита осталось {len(fit)} треков "
+              f"(нужно {Z.MIN_N.get(base)}) — пропуск")
+        return None
     model = Z.build(base, len(fit), seed=seed, feature_names=table.feature_names,
                     classes=table.classes[train_idx][fit], X_train=Xtr[fit], y_train=ytr[fit])
     if conformal:

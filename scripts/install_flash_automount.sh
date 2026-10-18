@@ -36,6 +36,12 @@ printf '%s\n' "$FSTAB_LINE" >> /tmp/fstab.new
 install -m 644 -o root -g root /tmp/fstab.new /etc/fstab
 echo "   добавлено: $FSTAB_LINE"
 
+echo "→ setuid на ntfs-3g (иначе опция user в fstab не даёт монтировать)"
+if [ -x /usr/bin/ntfs-3g ]; then
+  chmod 4755 /usr/bin/ntfs-3g
+  echo "   /usr/bin/ntfs-3g → $(stat -c %A /usr/bin/ntfs-3g)"
+fi
+
 echo "→ правило polkit (udisks без пароля)"
 mkdir -p /etc/polkit-1/rules.d
 cat > /etc/polkit-1/rules.d/49-udisks-mount.rules <<EOF
