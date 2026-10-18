@@ -179,7 +179,7 @@ def main() -> int:
     try:
         subprocess.run([sys.executable, "scripts/transmission_tune.py", "--apply"],
                        cwd=str(ROOT), check=False, timeout=60)
-        log("настройки Transmission применены (очередь 16, DHT вкл)")
+        log("настройки Transmission применены")
     except Exception as e:                                 # noqa: BLE001
         log(f"не удалось применить настройки Transmission: {type(e).__name__}")
     while True:
