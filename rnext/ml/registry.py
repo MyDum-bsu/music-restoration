@@ -145,9 +145,12 @@ def save_snapshot(model_obj, meta: dict, model_id: str) -> Path:
                                  encoding="utf-8")
     REGISTRY.parent.mkdir(parents=True, exist_ok=True)
     with open(REGISTRY, "a", encoding="utf-8") as f:
+        # promote и вердикт гейта ОБЯЗАТЕЛЬНЫ в реестре: без них рантайм не видит
+        # прошедших гейт на свежем датасете и откатывается на старую модель
         f.write(json.dumps({k: meta.get(k) for k in
                             ("model_id", "model", "target", "dataset_version",
                              "n_train", "n_hold", "holdout_mode", "metrics",
+                             "promote", "gate_vs_best", "gate_ci_low", "level",
                              "git", "saved")}, ensure_ascii=False) + "\n")
     return d
 
@@ -188,12 +191,22 @@ def latest_snapshot(model: str | None = None, target: str = "dcrest",
         rows = ok
     if not rows:
         return None
+    # рантайм обслуживает незнакомые альбомы, поэтому смотрим сплит by-album
+    album = [r for r in rows if r.get("holdout_mode") == "by-album"]
+    rows = album or rows
+    # 1) свежая версия датасета (больше данных), 2) лучшая медиана, 3) порядок моделей
+    # (knn на равных не должен выигрывать за счёт запоминания)
+    newest = max(r.get("saved") or 0 for r in rows)
+    ver = max((r.get("dataset_version") or "" for r in rows
+               if (r.get("saved") or 0) == newest), default="")
+    same = [r for r in rows if (r.get("dataset_version") or "") == ver] or rows
     def rank(r):
+        med = ((r.get("metrics") or {}).get("all") or {}).get("median_abs")
         m = r.get("model") or ""
         pref = MODEL_PREFERENCE.index(m) if m in MODEL_PREFERENCE else len(MODEL_PREFERENCE)
-        return (pref, -(r.get("saved") or 0))
-    rows.sort(key=rank)
-    return rows[0]["model_id"]
+        return (med if med is not None else 9e9, pref, -(r.get("saved") or 0))
+    same.sort(key=rank)
+    return same[0]["model_id"]
 
 
 def already_trained(ds_version: str, model: str, target: str = "dcrest") -> bool:

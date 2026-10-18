@@ -173,11 +173,15 @@ def sec_models() -> None:
         rows = reg.list_snapshots()
         prom = [r for r in rows if r.get("promote")]
         ok(f"снапшотов {len(rows)}, прошедших гейт {len(prom)}")
-        for r in prom[-3:]:
+        # свежие сверху: важно видеть, на какой версии датасета обучено
+        prom.sort(key=lambda r: (r.get("dataset_version") or "", r.get("saved") or 0))
+        for r in prom[-4:]:
             m = r["metrics"]["all"]
+            gain, ci = r.get("gate_vs_best"), r.get("gate_ci_low")
+            tail = (f"выигрыш {gain:+.2f}, CI низ {ci:+.2f}" if isinstance(gain, (int, float))
+                    and isinstance(ci, (int, float)) else "вердикт гейта не записан")
             ok(f"PROMOTE {r['model']}/{r['holdout_mode']} ds={r['dataset_version']} "
-               f"n={r['n_train']} медиана {m['median_abs']} дБ "
-               f"(выигрыш {r.get('gate_gain_db'):+.2f}, CI низ {r.get('gate_ci_low'):+.2f})")
+               f"n={r['n_train']} медиана {m['median_abs']} дБ ({tail})")
         mid = reg.latest_snapshot()
         if mid:
             _, meta = reg.load_snapshot(mid)

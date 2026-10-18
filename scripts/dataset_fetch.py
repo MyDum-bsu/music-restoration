@@ -332,44 +332,69 @@ def backfill_masters(args) -> int:
 
 
 def repair_masters(args) -> int:
-    """Пересчитать wanted-набор у мастер-сторон и у оригиналов по факту файлов.
+    """Пересчитать wanted-наборы раздач: ОБЪЕДИНЕНИЕ по живым парам + снятие «зомби».
 
-    Нужно после серии повторных запусков: files-unwanted ставится явно
-    вместе с files-wanted, чтобы не оставалось раздач «всё снято».
+    Одна тема-дискография обслуживает несколько пар, а wanted-набор у раздачи
+    один — поэтому считаем объединение по всем ЖИВЫМ (downloading) парам.
+    Раздачи, на которые не ссылается ни одна живая пара (пары отложены по месту
+    или сняты), убираем из сессии: иначе они молча качают в удалённые каталоги,
+    сырьё возвращается и место утекает.
     """
     t = Transm()
     plan = {r["key"]: r for r in plan_rows(args)}
     st = state_map()
+    # downloadDir обязателен: по нему отличаем НАШИ раздачи от чужих (у пользователя
+    # в Transmission есть свои торренты, их трогать нельзя)
     cur = {tor["id"]: tor for tor in t.torrents(
-        ["id", "name", "files", "wanted", "totalSize", "status"])}
-    fixed = 0
+        ["id", "name", "files", "wanted", "totalSize", "status", "downloadDir",
+         "peersConnected", "leftUntilDone"])}
+
+    want_by_torrent: dict[int, set[int]] = {}
+    label: dict[int, str] = {}
     for key, r in st.items():
         src = plan.get(key)
-        if not src or r.get("state") not in ("downloading", "dry"):
+        if not src or r.get("state") != "downloading":
             continue
         tracks = src["release"].get("tracks") or []
-        for side, topic, album in (("orig", r.get("orig_topic_id"), src["release"].get("album")),
-                                   ("master", r.get("master_topic_id"), src["release"].get("album"))):
+        if not tracks:
+            tracks = (src["release"].get("master_dr") or {}).get("tracks") or []
+        for side in ("orig", "master"):
             rec = r.get(side) if isinstance(r.get(side), dict) else None
             tid = (rec or {}).get("torrent_tid")
             if tid is None or tid not in cur:
                 continue
-            tor = cur[tid]
-            files = [{**f, "index": i} for i, f in enumerate(tor.get("files") or [])]
-            mt = match_tracks(tracks, files, album=album)
+            files = [{**f, "index": i} for i, f in enumerate(cur[tid].get("files") or [])]
+            mt = match_tracks(tracks, files, album=src["release"].get("album"))
             if not mt["wanted"]:
-                print(f"  [keep] {key}/{side}: нечего выбрать ({mt['mode']}, "
-                      f"{mt['matched']} совпало) — не трогаю")
                 continue
-            want = set(mt["wanted"])
-            unw = [f["index"] for f in files if f["index"] not in want]
-            t._call("torrent-set", {"ids": [tid], "files-wanted": sorted(want),
-                                    "files-unwanted": unw})
-            start(t, tid)
-            fixed += 1
-            print(f"  [fix] {key}/{side} t={tid}: wanted {len(want)} из {len(files)}, "
-                  f"{mt['size'] / 1e6:.0f} MB")
-    print(f"починено раздач: {fixed}")
+            want_by_torrent.setdefault(tid, set()).update(mt["wanted"])
+            label.setdefault(tid, f"{cur[tid]['name'][:34]} ({side} {key})")
+
+    fixed = 0
+    for tid, want in want_by_torrent.items():
+        files = [{**f, "index": i} for i, f in enumerate(cur[tid].get("files") or [])]
+        unw = [f["index"] for f in files if f["index"] not in want]
+        t._call("torrent-set", {"ids": [tid], "files-wanted": sorted(want),
+                                "files-unwanted": unw})
+        t._call("torrent-verify", {"ids": [tid]})
+        start(t, tid)
+        size = sum(files[i].get("length") or 0 for i in want)
+        fixed += 1
+        print(f"  [fix] t={tid}: wanted {len(want)} из {len(files)} ({size / 1e6:.0f} MB) "
+              f"— {label.get(tid, '')}")
+
+    # «зомби»: наши раздачи, на которые не ссылается ни одна живая пара
+    zombies = [tid for tid, x in cur.items()
+               if "/dataset/raw/" in (x.get("downloadDir") or "")
+               and tid not in want_by_torrent and any(x.get("wanted") or [])]
+    for tid in zombies:
+        name = (cur[tid].get("name") or "")[:40]
+        nw = sum(cur[tid].get("wanted") or [])
+        # данных нет (сырьё снято), живых пар нет — держать в сессии смысла нет:
+        # .torrent остаётся в кэше и добавится заново, если пара вернётся
+        t._call("torrent-remove", {"ids": [tid], "delete-local-data": False})
+        print(f"  [zombie] t={tid} {name}: убрана из сессии ({nw} файлов wanted)")
+    print(f"починено раздач: {fixed}, убрано зомби: {len(zombies)}")
     return 0
 
 

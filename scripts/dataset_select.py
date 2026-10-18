@@ -114,7 +114,8 @@ def main() -> int:
     # Что уже заведено. Пропускаем только ТЕРМИНАЛЬНЫЕ состояния: пары с
     # ошибкой RPC/сети — временные, их надо пробовать снова (иначе они
     # выпадают из работы навсегда).
-    TERMINAL = {"no_match", "edition_mismatch", "corrupt", "done", "extracting"}
+    TERMINAL = {"no_match", "edition_mismatch", "corrupt", "done", "extracting",
+                "dead_swarm"}
     done_keys: set[str] = set()
     from rnext import sides as _S
     st_file = workspace.data_root() / "dataset" / "state.jsonl"

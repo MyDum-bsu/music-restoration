@@ -111,6 +111,10 @@ def one_pass(args) -> None:
     # 0) мёртвые сиды не должны держать кап: снимаем пары без пиров
     subprocess.run([sys.executable, "scripts/dataset_prune_stalled.py", "--peerless"],
                    cwd=str(ROOT), check=False, stdout=subprocess.DEVNULL)
+    # ...и сразу пересчитываем wanted-наборы: без этого раздачи снятых пар
+    # продолжают качать в удалённые каталоги (сырьё возвращается, место утекает)
+    subprocess.run([sys.executable, "scripts/dataset_fetch.py", "--repair"],
+                   cwd=str(ROOT), check=False, stdout=subprocess.DEVNULL)
 
     # 1) обработка готового — каждую проходку, независимо от качки
     run([sys.executable, "scripts/dataset_extract.py", "--all", "--excerpts", "1",
