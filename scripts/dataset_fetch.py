@@ -31,7 +31,7 @@ from rnext import planner, workspace  # noqa: E402
 from rnext.rtclient import FORUM, RTClient  # noqa: E402
 from rnext.transm import Transm  # noqa: E402
 
-AUDIO_EXT = (".flac", ".ape", ".wv", ".wav", ".alac")
+AUDIO_EXT = (".flac", ".ape", ".wv", ".wav", ".alac", ".m4a", ".aiff", ".aif")
 _NUM = re.compile(r"(?:^|[/_\-\s])(\d{1,3})\s*[-._)\s]\s*(?=\D)", re.UNICODE)
 _DISC = re.compile(r"(?:\bcd|\bdisc|\bdisk)[\s_-]?(\d)", re.IGNORECASE)
 
