@@ -70,9 +70,13 @@ def make_pipeline(base: str, seed: int = 17):
                          ("sc", StandardScaler()),
                          ("m", KNeighborsRegressor(n_neighbors=min(10, 5), weights="distance"))])
     if base == "hgb":
+        # ранняя остановка и листья 30 выбраны замером на 5 сплитах: разрыв
+        # обучение/отложено падает с 0.54 до 0.40 дБ, а отложенная медиана
+        # с 0.759 до 0.694 (при 400 треках без этого hgb запоминает корпус)
         return Pipeline([("m", HistGradientBoostingRegressor(
             loss="squared_error", max_depth=3, learning_rate=0.05, max_iter=400,
-            min_samples_leaf=15, l2_regularization=1.0, random_state=seed))])
+            min_samples_leaf=30, l2_regularization=1.0, random_state=seed,
+            early_stopping=True, validation_fraction=0.2, n_iter_no_change=20))])
     raise ValueError(base)
 
 

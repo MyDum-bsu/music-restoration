@@ -38,18 +38,23 @@ def train_one(table, base: str, train_idx, hold_idx, target: str, seed: int,
         print(f"  [{base}] после калибровочного сплита осталось {len(fit)} треков "
               f"(нужно {Z.MIN_N.get(base)}) — пропуск")
         return None
-    model = Z.build(base, len(fit), seed=seed, feature_names=table.feature_names,
+    # conformal — надстройка, а не базовая модель: строим поверх ridge
+    real_base = "ridge" if base == "conformal" else base
+    model = Z.build(real_base, len(fit), seed=seed, feature_names=table.feature_names,
                     classes=table.classes[train_idx][fit], X_train=Xtr[fit], y_train=ytr[fit])
-    if conformal:
+    if base == "conformal":
         model = Z.fit_conformal(model, Xtr[cal], ytr[cal], level=0.8)
     pred = np.asarray(model.predict(Xho))
     stats = M.evaluate(yho, pred, Xho[:, table.feature_names.index("dr")],
                        classes=table.classes[hold_idx])
-    if conformal:
+    if base == "conformal":
         lo, hi = model.interval(Xho, level=0.8)
         stats["coverage_80"] = M.interval_coverage(yho, lo, hi)
     stats["vs_noop"] = M.compare_to_baseline(stats, "noop")
     stats["vs_v0table"] = M.compare_to_baseline(stats, "v0table")
+    # гейт обязателен и здесь: без вердикта снапшот невидим для рантайма
+    # (он берёт только прошедшие гейт) — ручной прогон давал «мёртвые» снапшоты
+    stats["gate"] = M.auto_gate(yho, pred, Xho[:, table.feature_names.index("dr")])
     Xf = Xtr[fit]
     fstats = {}
     for i, name in enumerate(table.feature_names):
@@ -122,8 +127,13 @@ def main() -> int:
         results.append((base, model, info))
         if not args.no_save:
             mid = reg.snapshot_id(base, args.target, manifest["version"])
+            gate = info["metrics"].get("gate") or {}
             meta = {"model": base, "target": args.target,
                     "dataset_version": manifest["version"],
+                    "promote": bool(gate.get("promote")),
+                    "gate_vs_best": (gate.get("vs_best") or {}).get("improvement_dB"),
+                    "gate_ci_low": (gate.get("vs_best") or {}).get("ci_low"),
+                    "level": len(candidates),
                     "dataset": {k: manifest[k] for k in ("pairs", "tracks", "trusted_tracks",
                                                          "by_author", "labels")},
                     "holdout_mode": mode, "seed": args.seed, "frac": args.frac,
