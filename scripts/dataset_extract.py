@@ -460,16 +460,33 @@ def main() -> int:
     ap.add_argument("--keep-raw-window", type=int, default=0,
                     help="с --keep-raw: держать сырьё только у N последних пар")
     ap.add_argument("--prune", action="store_true", help="снести сырьё у готовых пар")
+    ap.add_argument("--prune-keep", type=int, default=0,
+                    help="при --prune оставить сырьё у N самых свежих пар (0 = у всех)")
     args = ap.parse_args()
 
     if args.prune:
+        metas = sorted((dataset_dir() / "pairs").glob("*/meta.json"),
+                       key=lambda p: p.stat().st_mtime, reverse=True)
+        keep = max(0, args.prune_keep)
+        state = _merged_state()
+        refs = dir_refcounts()
         n = 0
-        for meta in (dataset_dir() / "pairs").glob("*/meta.json"):
-            raw = dataset_dir() / "raw" / meta.parent.name
-            if raw.is_dir():
-                shutil.rmtree(raw, ignore_errors=True)
+        for meta in metas[keep:]:
+            key = meta.parent.name.replace("__", "/")
+            rec = state.get(key)
+            if not rec:
+                continue
+            for side in ("orig", "master"):
+                srec = rec.get(side) if isinstance(rec.get(side), dict) else None
+                d = (srec or {}).get("dir")
+                if not d:
+                    continue
+                pp = Path(d)
+                if not pp.is_dir() or refs.get(d, 0) > 1:
+                    continue        # каталог ещё нужен другим парам
+                shutil.rmtree(pp, ignore_errors=True)
                 n += 1
-        print(f"prune: удалено сырьё у {n} пар")
+        print(f"prune: удалено каталогов сырья {n} (оставлено у {keep} свежих пар)")
         return 0
 
     from rnext import sides as S
@@ -496,6 +513,11 @@ def main() -> int:
     if args.keep_raw and args.keep_raw_window > 0:
         prune_raw_window(args.keep_raw_window)
     return 0
+
+
+def _merged_state() -> dict:
+    from rnext import sides as _S
+    return _S.merged_state(dataset_dir() / "state.jsonl")
 
 
 def prune_raw_window(window: int) -> None:

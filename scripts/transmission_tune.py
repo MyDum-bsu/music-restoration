@@ -26,11 +26,11 @@ SETTINGS = Path.home() / ".config" / "transmission" / "settings.json"
 # Обоснование — в README: с дефолтами (очередь 2, DHT выкл) датасет рос
 # ~1.9 ГБ/ч, с этими — ~40 ГБ/ч.
 TUNE = {
-    "download-queue-size": 16,
+    "download-queue-size": 24,
     "download-queue-enabled": True,
     "queue-stalled-enabled": True,
-    "queue-stalled-minutes": 15,
-    "peer-limit-global": 300,
+    "queue-stalled-minutes": 20,
+    "peer-limit-global": 500,
     "dht-enabled": True,
     "pex-enabled": True,
     "lpd-enabled": True,

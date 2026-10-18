@@ -85,11 +85,16 @@ def one_pass(args) -> None:
     free = free_gb()
     if free < args.min_free_gb:
         log(f"свободно {free:.1f} GB < {args.min_free_gb} GB — чистим старое сырьё")
-        subprocess.run([sys.executable, "scripts/dataset_extract.py", "--prune"],
-                       cwd=str(ROOT), check=False)
+        subprocess.run([sys.executable, "scripts/dataset_extract.py", "--prune",
+                        "--prune-keep", str(args.keep_window)], cwd=str(ROOT), check=False)
         if free_gb() < args.min_free_gb:
             log("места всё ещё мало — пауза до следующего прохода")
             return
+    # раз в проход — профилактическая чистка: сырьё держим окном, чтобы
+    # автономная ночь не упиралась в 40 ГиБ бюджета
+    subprocess.run([sys.executable, "scripts/dataset_extract.py", "--prune",
+                    "--prune-keep", str(args.keep_window)], cwd=str(ROOT), check=False,
+                   stdout=subprocess.DEVNULL)
     left, rate = downloads_state()
     if left > 0.05 and rate >= args.min_rate_mbps:
         log(f"качается {left:.2f} GB ({rate:.2f} MB/s) — ждём")
