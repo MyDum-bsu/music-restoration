@@ -86,10 +86,8 @@ def check_log(log: Path, root: Path | None) -> list[str]:
                 warns.append(f"[не всё скопировано] {name[:52]}: {got} из {total}")
         if "проверка ок" not in b and "скопировано" in b:
             warns.append(f"[нет проверки md5] {name[:52]}")
-        # тексты
-        for m2 in re.finditer(r"тексты: ([^\n]+)", b):
-            if "NOMATCH" in m2.group(1):
-                warns.append(f"[без текста] {name[:52]}: {m2.group(1)[:80]}")
+        # Тексты по логу НЕ проверяем: лог отражает момент прогона, а тексты
+        # могли добрать позже (Place Vendome, Q5). Факт проверяет телефон.
         # «обложка не найдена» из лога НЕ считаем тревогой: обложку могли вшить
         # позже (как у Bring Me Your Love), а факт проверяет check_phone_albums
     return warns
