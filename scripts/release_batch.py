@@ -33,10 +33,11 @@ SCRIPTS = Path(__file__).resolve().parent
 DATA = workspace.data_root()
 
 
-def run(cmd: list[str], log, timeout: int = 7200) -> tuple[int, str]:
+def run(cmd: list[str], log, timeout: int = 7200, cwd: Path | None = None) -> tuple[int, str]:
     log.write(f"$ {' '.join(cmd)}\n")
     log.flush()
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
+                       cwd=str(cwd) if cwd else None)
     out = (r.stdout or "") + (r.stderr or "")
     log.write(out[-4000:] + "\n")
     log.flush()
@@ -98,8 +99,11 @@ def split_image(src: Path, log) -> Path:
     if not cues or not imgs:
         return src
     img = imgs[0]
+    # cwd=src обязателен: иначе shntool кладёт треки в рабочий каталог процесса
+    # (каталог репозитория), а в источнике их не оказывается — и образ уходил
+    # в реставрацию целиком как «один трек»
     code, out = run(["shntool", "split", "-f", str(cues[0]), "-o", "flac",
-                     "-t", "%n - %t", str(img)], log)
+                     "-t", "%n - %t", str(img)], log, cwd=src)
     made = [p for p in src.glob("[0-9]*.flac") if p != img]
     if not made:
         log.write(f"[warn] разбиение не дало треков: {out[-300:]}\n")

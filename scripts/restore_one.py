@@ -237,20 +237,52 @@ def main() -> int:
                      "n_tracks": len(items), "out_dir": out_dir})
 
     n_jobs = max(1, int(getattr(args, "jobs", 1) or 1))
+    # Ограничение по памяти: копии массивов растут с длиной трека, а воркеры
+    # гибнут от OOM (это и случилось на 50-минутном образе). Размер файла —
+    # грубый, но доступный признак длины.
+    sizes = [j["path"].stat().st_size for j in jobs if j.get("path")]
+    if sizes:
+        biggest = max(sizes)
+        cap = 1 if biggest > 250e6 else (2 if biggest > 100e6 else n_jobs)
+        if cap < n_jobs:
+            print(f"длинный трек ({biggest / 1e6:.0f} МБ) — потоков {cap} вместо {n_jobs}",
+                  flush=True)
+            n_jobs = cap
     if n_jobs > 1:
         print(f"треков {len(jobs)}, параллельно {n_jobs} (порядок отчёта сохраняется)",
               flush=True)
     results: list[dict] = []
     if n_jobs > 1:
         from concurrent.futures import ProcessPoolExecutor, as_completed
-        with ProcessPoolExecutor(max_workers=n_jobs) as ex:
-            futs = {ex.submit(process_track, j): j["ti"] for j in jobs}
-            for fut in as_completed(futs):
-                try:
-                    res = fut.result()
-                except Exception as e:                      # noqa: BLE001
-                    print(f"  [ошибка] трек {futs[fut]}: {type(e).__name__}: {e}", flush=True)
-                    continue
+        done: set[int] = set()
+        broken = False
+        try:
+            with ProcessPoolExecutor(max_workers=n_jobs) as ex:
+                futs = {ex.submit(process_track, j): j["ti"] for j in jobs}
+                for fut in as_completed(futs):
+                    try:
+                        res = fut.result()
+                    except Exception as e:                  # noqa: BLE001
+                        print(f"  [ошибка] трек {futs[fut]}: {type(e).__name__}: {e}",
+                              flush=True)
+                        broken = broken or "BrokenProcessPool" in type(e).__name__
+                        continue
+                    if res:
+                        print("  " + res["msg"], flush=True)
+                        results.append(res)
+                    done.add(futs[fut])
+        except Exception as e:                              # noqa: BLE001
+            print(f"  [пул упал] {type(e).__name__}: {e} — добиваю последовательно",
+                  flush=True)
+            broken = True
+        if broken:
+            # Воркеры гибнут от нехватки памяти (обычно на очень длинных треках
+            # или образах). Дожимаем остаток в один поток — лучше медленно, чем
+            # потерять альбом.
+            left = [j for j in jobs if j["ti"] not in done]
+            print(f"  последовательно: {len(left)} треков", flush=True)
+            for j in left:
+                res = process_track(j)
                 if res:
                     print("  " + res["msg"], flush=True)
                     results.append(res)

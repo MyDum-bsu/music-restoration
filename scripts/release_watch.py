@@ -133,8 +133,10 @@ def check_phone_albums(root: Path, limit: int = 0) -> list[str]:
                 r = subprocess.run(["metaflac", "--list", "--block-type=PICTURE",
                                     "--block-type=VORBIS_COMMENT", str(tmp)],
                                    capture_output=True, text=True)
+                low = r.stdout.lower()
                 got = {"cover": "type: 6" in r.stdout,
-                       "lyrics": "LYRICS=" in r.stdout or "lyrics=" in r.stdout}
+                       # тег может быть LYRICS/lyrics/Lyrics — сравниваем без регистра
+                       "lyrics": "lyrics=" in low or "unsyncedlyrics=" in low}
             except Exception:  # noqa: BLE001
                 got = {"cover": True, "lyrics": True}   # не смогли — не тревожим
             finally:
