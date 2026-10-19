@@ -64,16 +64,11 @@ def phone_flacs(root: Path, rel: str) -> int | None:
     return n
 
 
-def check_log(log: Path, root: Path | None) -> list[str]:
-    """Разбор лога конвейера: что завершено, что с ошибками."""
+def check_blocks(latest: dict[str, str]) -> list[str]:
+    """Разбор последних блоков логов: что завершено, что с ошибками."""
     warns: list[str] = []
-    if not log.is_file():
-        return warns
-    text = log.read_text(encoding="utf-8", errors="ignore")
-    blocks = re.split(r"^=== ", text, flags=re.M)[1:]
-    for b in blocks:
-        head = b.splitlines()[0] if b.splitlines() else "?"
-        name = head.split(" ", 1)[1] if " " in head else head
+    for nm, b in latest.items():
+        name = nm
         if "Traceback" in b or "ошибка" in b.lower():
             line = next((l for l in b.splitlines() if "ошибка" in l.lower()
                          or "Traceback" in l), "")
@@ -192,8 +187,21 @@ def one_pass(args) -> int:
     root = phone_root()
     if root is None:
         warns.append("[телефон] не найден (MTP не подключён?)")
-    for log in Path("/tmp").glob("release_*.log"):
-        warns += check_log(log, root)
+    # Логов несколько (cc, wave2, retry, fix...), и альбом мог прогоняться
+    # повторно. Склеиваем ВСЕ блоки и берём последний по имени альбома.
+    all_blocks: dict[str, str] = {}
+    # по ВРЕМЕНИ изменения: успешная переделка должна перекрывать прежний провал
+    logs = sorted(Path("/tmp").glob("release_*.log"),
+                  key=lambda p: p.stat().st_mtime if p.is_file() else 0)
+    for log in logs:
+        if not log.is_file():
+            continue
+        for b in re.split(r"^=== ", log.read_text(encoding="utf-8", errors="ignore"),
+                          flags=re.M)[1:]:
+            head = b.splitlines()[0] if b.splitlines() else "?"
+            nm = head.split(" ", 1)[1] if " " in head else head
+            all_blocks[nm] = b
+    warns += check_blocks(all_blocks)
     if root is not None:
         warns += check_phone_albums(root, limit=args.phone_limit)
     warns += check_disk() + check_loop() + check_stalled()
