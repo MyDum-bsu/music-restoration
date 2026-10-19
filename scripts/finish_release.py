@@ -71,15 +71,31 @@ def find_cover(*dirs: Path, explicit: Path | None = None) -> Path | None:
                               and not any(b in p.name.lower() for b in COVER_BAD)]
     if not cands:
         # Именованной обложки нет — берём любую картинку (у Papa Roach она
-        # называлась «The Paramour Sessions.jpg» и под шаблоны не подошла),
-        # но не задник/инлей/буклет.
+        # называлась «The Paramour Sessions.jpg»), но не задник/инлей/буклет.
+        # Обложка почти квадратная: отсекаем «оби»-полоски и развороты
+        # (у Q5 первой попалась полоска оби и ушла на телефон как обложка).
+        pool = []
         for d in list(dirs) + extra:
             if not d or not d.is_dir():
                 continue
             for p in d.iterdir():
                 if (p.suffix.lower() in (".jpg", ".jpeg", ".png")
                         and not any(b in p.name.lower() for b in COVER_BAD)):
-                    cands.append(p)
+                    pool.append(p)
+        square = []
+        for p in pool:
+            try:
+                from PIL import Image
+                w, h = Image.open(p).size
+            except Exception:  # noqa: BLE001
+                continue
+            if 0.8 <= min(w, h) / max(w, h):
+                square.append((w * h, p))
+        if square:
+            square.sort(reverse=True)      # самая крупная квадратная
+            cands = [square[0][1]]
+        else:
+            cands = pool[:1]
     if not cands:
         return None
     # предпочитаем маленькие: огромные сканы раздувают каждый трек
