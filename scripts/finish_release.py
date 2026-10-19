@@ -70,6 +70,17 @@ def find_cover(*dirs: Path, explicit: Path | None = None) -> Path | None:
                               if p.suffix.lower() in (".jpg", ".jpeg", ".png")
                               and not any(b in p.name.lower() for b in COVER_BAD)]
     if not cands:
+        # Именованной обложки нет — берём любую картинку (у Papa Roach она
+        # называлась «The Paramour Sessions.jpg» и под шаблоны не подошла),
+        # но не задник/инлей/буклет.
+        for d in list(dirs) + extra:
+            if not d or not d.is_dir():
+                continue
+            for p in d.iterdir():
+                if (p.suffix.lower() in (".jpg", ".jpeg", ".png")
+                        and not any(b in p.name.lower() for b in COVER_BAD)):
+                    cands.append(p)
+    if not cands:
         return None
     # предпочитаем маленькие: огромные сканы раздувают каждый трек
     cands.sort(key=lambda p: p.stat().st_size)
