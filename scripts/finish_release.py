@@ -122,6 +122,65 @@ def copy_tags(src: Path, dst: Path) -> int:
     return len(sf.tags or [])
 
 
+def unify_album(rest_files: list[Path]) -> str:
+    """Один ALBUM/ARTIST/ALBUMARTIST на весь альбом + нумерация 01..N.
+
+    Часть треков приходит с другим написанием альбома (Q5: 8 треков
+    «… [VDP-1141]», 2 — без каталожного номера), и плеер делит альбом на два:
+    «видно только 10 и 11, остальные живут отдельно». Нумерация чинится тоже:
+    если pregap из cue выпал, треки шли с 02.
+    """
+    import re as _re
+    from collections import Counter
+    from mutagen.flac import FLAC
+    if not rest_files:
+        return ""
+    files = []
+    for f in rest_files:
+        try:
+            files.append((f, FLAC(str(f))))
+        except Exception:  # noqa: BLE001
+            continue
+    if not files:
+        return ""
+    def vote(key: str) -> str:
+        c = Counter()
+        for _f, fl in files:
+            v = fl.get(key) or fl.get(key.lower()) or [""]
+            if v and v[0].strip():
+                c[v[0].strip()] += 1
+        if not c:
+            return ""
+        # большинство; при равенстве — более длинное (обычно с каталогом)
+        return max(c.items(), key=lambda kv: (kv[1], len(kv[0])))[0]
+    album, artist = vote("ALBUM"), vote("ARTIST")
+    changed = []
+    for f, fl in files:
+        cur = (fl.get("ALBUM") or [""])[0]
+        if album and cur != album:
+            fl["ALBUM"] = album; changed.append(f.name)
+        if artist:
+            if (fl.get("ARTIST") or [""])[0] != artist:
+                fl["ARTIST"] = artist; changed.append(f.name)
+            if (fl.get("ALBUMARTIST") or [""])[0] != artist:
+                fl["ALBUMARTIST"] = artist
+        fl.save()
+    # нумерация подряд, если она не 1..N
+    nums = []
+    for f, fl in files:
+        m = _re.match(r"^(\d{1,3})\b", (fl.get("TRACKNUMBER") or [""])[0])
+        nums.append(int(m.group(1)) if m else None)
+    if None in nums or sorted(nums) != list(range(1, len(files) + 1)):
+        order = sorted(range(len(files)), key=lambda i: (nums[i] is None, nums[i] or 0))
+        for pos, idx in enumerate(order, 1):
+            f, fl = files[idx]
+            if nums[idx] != pos:
+                fl["TRACKNUMBER"] = f"{pos:02d}"; fl.save()
+                changed.append(f.name)
+        changed.append(f"перенумеровано 01..{len(files):02d}")
+    return f"album=[{album}], artist=[{artist}], правок {len(set(changed))}" if changed else ""
+
+
 def normalize_titles(rest_files: list[Path]) -> int:
     """Выправить СДВИГ тегов: когда TITLE одного трека принадлежит другому.
 
@@ -273,6 +332,11 @@ def main() -> int:
     missing = fill_from_cue(r_files, src, rest)
     if missing:
         print(f"теги из cue: {missing}")
+
+    # --- единство альбома ---------------------------------------------------
+    uni = unify_album(r_files)
+    if uni:
+        print(f"теги альбома выровнены: {uni}")
 
     # --- обложка ------------------------------------------------------------
     cover = find_cover(rest, src, explicit=Path(args.cover).expanduser() if args.cover else None)
