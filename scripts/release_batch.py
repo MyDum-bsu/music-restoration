@@ -74,6 +74,23 @@ def find_discs(src: Path) -> list[tuple[str, Path]]:
     return [(d.name, d) for d in sorted(leaves)]
 
 
+def needs_split(d: Path) -> bool:
+    """Это образ+cue? Признак: есть cue И ровно один FLAC (или все FLAC — крупные).
+
+    Раньше split вызывался только когда FLAC в каталоге НЕТ, поэтому образ
+    (один большой .flac + .cue) уходил в реставрацию как «один трек» — и альбом
+    молча терялся.
+    """
+    if not list(d.glob("*.cue")):
+        return False
+    fs = flacs(d)
+    if not fs:
+        return False
+    if len(fs) == 1:
+        return True
+    return all(f.stat().st_size > 80 * 1024 * 1024 for f in fs) and len(fs) <= 2
+
+
 def split_image(src: Path, log) -> Path:
     """image+cue → треки рядом; образ уводится в _image/, чтобы не попал в --src."""
     cues = list(src.glob("*.cue"))
@@ -121,7 +138,7 @@ def process(job: str, log, clean_src: bool, skip_phone: bool, jobs: int = 1) -> 
     res["cover"] = True
 
     for label, ddir in discs:
-        if not flacs(ddir):
+        if needs_split(ddir):
             ddir = split_image(ddir, log)
         d_out = out / label if label else out
         d_phone = f"{phone_rel}/{label}" if (label and phone_rel) else phone_rel
