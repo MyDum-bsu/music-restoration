@@ -62,6 +62,18 @@ def encode_flac(y16: np.ndarray, sr: int, out_path: Path, tmp_wav: Path) -> None
     tmp_wav.unlink(missing_ok=True)
 
 
+def _clean_title(stem: str) -> str:
+    """Убрать номер трека из имени файла: «01 - Foo» → «Foo».
+
+    Номер всё равно печатается префиксом при сохранении, иначе получалось
+    «01. 01 In the Name of War.flac».
+    """
+    import re as _re
+    s = stem.strip()
+    s = _re.sub(r"^\s*\d{1,3}\s*(?:[-._)]|\s)\s*", "", s, count=1)
+    return s.strip() or stem
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True, help="image (с --cue) или каталог/файл с треками")
@@ -130,7 +142,7 @@ def main() -> int:
         items = [(i + 1, s, e, cs[i]["title"], None) for i, (s, e) in enumerate(bounds)]
     else:
         cands = sorted(src.glob("*.flac")) if src.is_dir() else [src]
-        items = [(i + 1, 0, 0, c.stem, c) for i, c in enumerate(cands)]
+        items = [(i + 1, 0, 0, _clean_title(c.stem), c) for i, c in enumerate(cands)]
 
     ml_ready = False
     if args.ml_snapshot:
