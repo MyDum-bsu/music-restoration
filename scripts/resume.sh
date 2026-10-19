@@ -51,8 +51,12 @@ say "4/5 цикл обогащения"
 if pgrep -f "[d]ataset_loop.py" >/dev/null; then
   echo "цикл уже работает"
 else
-  setsid nohup python3 -u scripts/dataset_loop.py --interval 600 --batch-pairs 24 \
-    --batch-gb 16 --keep-window 12 --stall-passes 1 >/tmp/dataset_loop.out 2>&1 </dev/null &
+  # параметры те же, что у watchdog.sh: агрессивные (24 пары / 16 ГБ) забивали
+  # раздел — держим консервативные, с капом по живым пирам и минимумом места
+  setsid nohup python3 -u scripts/dataset_loop.py --interval 420 --batch-pairs 10 \
+    --batch-gb 6 --keep-window 6 --stall-passes 1 --min-rate-mbps 2.0 \
+    --min-free-gb 15 --max-inflight-gb 12 --max-master-gb 6 \
+    >/tmp/dataset_loop.out 2>&1 </dev/null &
   sleep 5; echo "цикл запущен (лог /tmp/dataset_loop.out)"
 fi
 

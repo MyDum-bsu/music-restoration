@@ -68,7 +68,10 @@ def find_discs(src: Path) -> list[tuple[str, Path]]:
         return [(d.name.upper(), d) for d in sorted(discs)]
     if len(leaves) == 1:
         return [("", leaves[0])]
-    return [("", d) for d in sorted(leaves)]
+    # Несколько подпапок без меток CD1/CD2 (например «Steel The Light» + «mini»):
+    # их НЕЛЬЗЯ вести в один каталог телефона — второй затрёт первый. Берём имя
+    # подпапки как метку, чтобы каждая ушла в свой подкаталог.
+    return [(d.name, d) for d in sorted(leaves)]
 
 
 def split_image(src: Path, log) -> Path:
