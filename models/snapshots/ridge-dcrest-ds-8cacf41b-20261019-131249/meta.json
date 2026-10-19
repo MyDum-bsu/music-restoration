@@ -1,0 +1,261 @@
+{
+ "model": "ridge",
+ "target": "dcrest",
+ "dataset_version": "ds-8cacf41b",
+ "dataset": {
+  "pairs": 109,
+  "tracks": 1282,
+  "trusted_tracks": 1084,
+  "by_author": {
+   "5618698": 725,
+   "3048819": 359
+  },
+  "labels": {
+   "trusted": 97,
+   "suspect": 11,
+   "unlabeled": 1
+  }
+ },
+ "level": 2,
+ "seed": 17,
+ "frac": 0.3,
+ "features": [
+  "dr",
+  "dr_exact",
+  "crest_db",
+  "rms_db",
+  "peak_db",
+  "dur_s",
+  "clip_samples",
+  "clip_events",
+  "longest_run",
+  "rms_p05",
+  "rms_p50",
+  "rms_p95",
+  "rms_spread",
+  "attacks_per_s",
+  "flux_per_s",
+  "rms_range_db",
+  "side_mid_db",
+  "side_mid_hf_db",
+  "tp_overshoot_db",
+  "tilt_low_high",
+  "tilt_slope",
+  "n_tracks"
+ ],
+ "feature_stats": {
+  "dr": {
+   "mean": 7.0593,
+   "std": 2.8591
+  },
+  "dr_exact": {
+   "mean": 7.0547,
+   "std": 2.8678
+  },
+  "crest_db": {
+   "mean": 11.6032,
+   "std": 3.2972
+  },
+  "rms_db": {
+   "mean": -9.0612,
+   "std": 3.9098
+  },
+  "peak_db": {
+   "mean": -0.4661,
+   "std": 1.0469
+  },
+  "dur_s": {
+   "mean": 267.1003,
+   "std": 92.6782
+  },
+  "clip_samples": {
+   "mean": 2503.6296,
+   "std": 13924.9596
+  },
+  "clip_events": {
+   "mean": 1635.8444,
+   "std": 9042.7889
+  },
+  "longest_run": {
+   "mean": 1.3111,
+   "std": 6.101
+  },
+  "rms_p05": {
+   "mean": -17.319,
+   "std": 6.3727
+  },
+  "rms_p50": {
+   "mean": -11.6951,
+   "std": 3.999
+  },
+  "rms_p95": {
+   "mean": -10.4018,
+   "std": 3.6791
+  },
+  "rms_spread": {
+   "mean": 6.9174,
+   "std": 5.308
+  },
+  "attacks_per_s": {
+   "mean": 0.725,
+   "std": 0.6814
+  },
+  "flux_per_s": {
+   "mean": 28372.6893,
+   "std": 11552.0008
+  },
+  "rms_range_db": {
+   "mean": 154.3712,
+   "std": 80.6123
+  },
+  "side_mid_db": {
+   "mean": -6.0123,
+   "std": 2.0008
+  },
+  "side_mid_hf_db": {
+   "mean": -4.6987,
+   "std": 2.0522
+  },
+  "tp_overshoot_db": {
+   "mean": 0.5715,
+   "std": 0.5564
+  },
+  "tilt_low_high": {
+   "mean": 20.5446,
+   "std": 3.0506
+  },
+  "tilt_slope": {
+   "mean": -4.8095,
+   "std": 0.9007
+  },
+  "n_tracks": {
+   "mean": 13.4148,
+   "std": 4.7241
+  }
+ },
+ "n_train": 270,
+ "n_cal": 89,
+ "n_hold": 725,
+ "holdout_mode": "by-author",
+ "caps": {
+  "dcrest_max": 8.0
+ },
+ "promote": false,
+ "gate_gain_db": -0.02,
+ "gate_ci_low": -0.102,
+ "metrics": {
+  "all": {
+   "n": 725,
+   "median_abs": 0.949,
+   "mean_abs": 1.084,
+   "p90_abs": 2.019,
+   "share_le_0.5": 0.258,
+   "share_le_1.0": 0.535,
+   "bias": -0.631
+  },
+  "by_class": {
+   "crushed": {
+    "n": 587,
+    "median_abs": 0.91,
+    "mean_abs": 1.004,
+    "p90_abs": 1.868,
+    "share_le_0.5": 0.269,
+    "share_le_1.0": 0.569,
+    "bias": -0.795
+   },
+   "healthy": {
+    "n": 53,
+    "median_abs": 1.428,
+    "mean_abs": 1.717,
+    "p90_abs": 3.235,
+    "share_le_0.5": 0.132,
+    "share_le_1.0": 0.302,
+    "bias": 1.246
+   },
+   "mid": {
+    "n": 85,
+    "median_abs": 1.142,
+    "mean_abs": 1.243,
+    "p90_abs": 2.277,
+    "share_le_0.5": 0.259,
+    "share_le_1.0": 0.447,
+    "bias": 0.491
+   }
+  },
+  "baseline_noop": {
+   "n": 725,
+   "median_abs": 4.684,
+   "mean_abs": 4.362,
+   "p90_abs": 6.434,
+   "share_le_0.5": 0.041,
+   "share_le_1.0": 0.079,
+   "bias": -4.684
+  },
+  "baseline_const46": {
+   "n": 725,
+   "median_abs": 1.162,
+   "mean_abs": 1.575,
+   "p90_abs": 4.252,
+   "share_le_0.5": 0.255,
+   "share_le_1.0": 0.43,
+   "bias": -0.084
+  },
+  "baseline_v0table": {
+   "n": 725,
+   "median_abs": 0.929,
+   "mean_abs": 1.027,
+   "p90_abs": 1.96,
+   "share_le_0.5": 0.283,
+   "share_le_1.0": 0.542,
+   "bias": 0.293
+  },
+  "vs_noop": 0.203,
+  "vs_v0table": 1.022,
+  "gate": {
+   "min_gain_db": 0.1,
+   "by_baseline": {
+    "noop": {
+     "improvement_dB": 3.735,
+     "ci_low": 3.546,
+     "ci_high": 3.882,
+     "p_win": 1.0,
+     "n": 725,
+     "median_abs": 4.684,
+     "pass": true
+    },
+    "const46": {
+     "improvement_dB": 0.213,
+     "ci_low": 0.13,
+     "ci_high": 0.323,
+     "p_win": 1.0,
+     "n": 725,
+     "median_abs": 1.162,
+     "pass": true
+    },
+    "v0table": {
+     "improvement_dB": -0.02,
+     "ci_low": -0.102,
+     "ci_high": 0.059,
+     "p_win": 0.323,
+     "n": 725,
+     "median_abs": 0.929,
+     "pass": false
+    }
+   },
+   "best_baseline": "v0table",
+   "vs_best": {
+    "improvement_dB": -0.02,
+    "ci_low": -0.102,
+    "ci_high": 0.059,
+    "p_win": 0.323,
+    "n": 725,
+    "median_abs": 0.929,
+    "pass": false
+   },
+   "promote": false
+  }
+ },
+ "model_id": "ridge-dcrest-ds-8cacf41b-20261019-131249",
+ "git": "c31b610",
+ "saved": 1792404769
+}

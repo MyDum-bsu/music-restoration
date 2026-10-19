@@ -75,6 +75,30 @@ def find_discs(src: Path) -> list[tuple[str, Path]]:
     return [(d.name, d) for d in sorted(leaves)]
 
 
+def cue_disc_tags(cue: Path) -> dict:
+    """TITLE/PERFORMER/REM DATE/REM GENRE уровня диска из cue."""
+    txt = cue.read_text(encoding="utf-8", errors="ignore")
+    top = txt.split("TRACK ", 1)[0]
+    def grab(pat: str) -> str:
+        m = re.search(pat, top, re.M)
+        return m.group(1).strip() if m else ""
+    album = grab(r'^\s*TITLE\s+"?([^"\n]+)"?')
+    artist = grab(r'^\s*PERFORMER\s+"?([^"\n]+)"?')
+    date = grab(r'^\s*REM\s+DATE\s+"?([^"\n]+)"?')
+    genre = grab(r'^\s*REM\s+GENRE\s+"?([^"\n]+)"?')
+    tags = {}
+    if album:
+        tags["ALBUM"] = album
+    if artist:
+        tags["ARTIST"] = artist
+        tags["ALBUMARTIST"] = artist
+    if date:
+        tags["DATE"] = date
+    if genre:
+        tags["GENRE"] = genre
+    return tags
+
+
 def needs_split(d: Path) -> bool:
     """Это образ+cue? Признак: есть cue И ровно один FLAC (или все FLAC — крупные).
 
@@ -114,6 +138,17 @@ def split_image(src: Path, log) -> Path:
         if f.is_file() and f.parent == src:
             shutil.move(str(f), str(hold / f.name))
     run(["cuetag", str(hold / cues[0].name)] + [str(p) for p in made], log)
+    # cuetag ставит только трековые TITLE/PERFORMER. Исполнитель и название
+    # альбома в cue часто заданы на УРОВНЕ ДИСКА — без переноса треки уезжают
+    # на телефон как <unknown> (так случилось с Perfect Plan).
+    tags = cue_disc_tags(hold / cues[0].name)
+    if tags:
+        args = []
+        for k, v in tags.items():
+            args += [f"--set-tag={k}={v}"]
+        for p in made:
+            run(["metaflac", *args, str(p)], log)
+        log.write(f"метаданные диска перенесены: {tags}\n")
     log.write(f"разбито на {len(made)} треков\n")
     return src
 

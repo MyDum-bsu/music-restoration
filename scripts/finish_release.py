@@ -91,6 +91,74 @@ def copy_tags(src: Path, dst: Path) -> int:
     return len(sf.tags or [])
 
 
+def fill_from_cue(rest_files: list[Path], src: Path | None,
+                  rest: Path | None = None) -> str:
+    """Если у треков нет ARTIST/ALBUM — взять их из cue рядом с источником.
+
+    cue задаёт исполнителя на уровне диска; cuetag его не переносит, и треки
+    уезжают на телефон как <unknown> (Perfect Plan, Place Vendome).
+    """
+    cue = None
+    if src is not None:
+        for d in (src, src.parent, src.parent.parent):
+            if d.is_dir() and list(d.glob("*.cue")):
+                cue = next(iter(d.glob("*.cue")))
+                break
+    if cue is None:
+        # Источник уже удалён (--clean-src) — берём из имени релиза
+        # «Artist - Album (Год) [restored]».
+        name = (rest or Path("")).name.replace(" [restored]", "")
+        m = re.match(r"^(.*?)\s+-\s+(.*?)\s*\((\d{4})\)$", name)
+        if not m:
+            return ""
+        album, artist, date = m.group(2).strip(), m.group(1).strip(), m.group(3)
+        from mutagen.flac import FLAC
+        fixed = 0
+        for f in rest_files:
+            fl = FLAC(str(f))
+            changed = False
+            for k, v in (("artist", artist), ("albumartist", artist),
+                         ("album", album), ("date", date)):
+                if k not in fl:
+                    fl[k] = v; changed = True
+            if changed:
+                fl.save(); fixed += 1
+        return f"из имени: album={album}, artist={artist}, date={date} → {fixed} треков" if fixed else ""
+    txt = cue.read_text(encoding="utf-8", errors="ignore")
+    top = txt.split("TRACK ", 1)[0]
+    def grab(pat: str) -> str:
+        m = re.search(pat, top, re.M)
+        return m.group(1).strip() if m else ""
+    album = grab(r'^\s*TITLE\s+"?([^"\n]+)"?')
+    artist = grab(r'^\s*PERFORMER\s+"?([^"\n]+)"?')
+    date = grab(r'^\s*REM\s+DATE\s+"?([^"\n]+)"?')
+    genre = grab(r'^\s*REM\s+GENRE\s+"?([^"\n]+)"?')
+    if not (album or artist):
+        return ""
+    from mutagen.flac import FLAC
+    fixed = []
+    for f in rest_files:
+        fl = FLAC(str(f))
+        changed = False
+        if artist and "artist" not in fl:
+            fl["artist"] = artist; changed = True
+        if artist and "albumartist" not in fl:
+            fl["albumartist"] = artist; changed = True
+        if album and "album" not in fl:
+            fl["album"] = album; changed = True
+        if date and "date" not in fl:
+            fl["date"] = date; changed = True
+        if genre and "genre" not in fl:
+            fl["genre"] = genre; changed = True
+        if changed:
+            fl.save(); fixed.append(f.name[:24])
+    if not fixed:
+        return ""
+    bits = [b for b in (f"album={album}" if album else "", f"artist={artist}" if artist else "",
+                        f"date={date}" if date else "") if b]
+    return ", ".join(bits) + f" → {len(fixed)} треков"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--restored", required=True)
@@ -129,6 +197,11 @@ def main() -> int:
             except RuntimeError as e:
                 print(f"  [warn] теги {rp.name}: {e}")
         print(f"теги перенесены в {tagged}/{len(r_files)} треков")
+
+    # --- добор недостающих тегов из cue -------------------------------------
+    missing = fill_from_cue(r_files, src, rest)
+    if missing:
+        print(f"теги из cue: {missing}")
 
     # --- обложка ------------------------------------------------------------
     cover = find_cover(rest, src, explicit=Path(args.cover).expanduser() if args.cover else None)
