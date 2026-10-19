@@ -1,6 +1,6 @@
 ---
 name: restore-status
-description: Отчёт о состоянии проекта restore-next (реставрация аудио) одной командой — датасет, план пар, качка, процессы, модели и их метрики, плюс глубокая проверка (целостность данных, тесты DSP, сквозной прогон пайплайна). Использовать, когда просят «как дела», «что по датасету», «статус», «сколько треков», «провалидируй состояние», «идёт ли прогресс», «status report», «проверь, что всё работает». Не для запуска реставрации конкретного альбома (это restore-dr / restore_one.py).
+description: Отчёт о состоянии проекта restore-next (реставрация аудио) одной командой — датасет, план пар, качка, процессы, модели и их метрики, плюс глубокая проверка (целостность данных, тесты DSP, сквозной прогон пайплайна). Использовать, когда просят «как дела», «что по датасету», «статус», «сколько треков», «провалидируй состояние», «идёт ли прогресс», «status report», «проверь, что всё работает». Не для запуска реставрации конкретного альбома (это release-restore).
 ---
 
 # restore-next: состояние проекта
@@ -30,6 +30,26 @@ python3 ~/Desktop/projects/restore-next/scripts/status_report.py --deep   # + ц
 | 6. Модели | сколько снапшотов, какие прошли гейт, что выберет рантайм, последний лидерборд |
 | 7. Глубокая (--deep) | целостность данных, тесты DSP, сквозной прогон пайплайна с моделью |
 
+## Что важно знать про модели (проверено замерами)
+
+- **Выбор рантайм-модели**: свежая версия датасета → лучшая медиана (by-album) →
+  только потом фиксированный порядок моделей. Вердикт гейта (`promote`) пишется
+  в реестр снапшотов — без него снапшот для рантайма невидим.
+- **hgbq** (квантильные HGB q10/q50/q90) реализован и даёт свою полосу доверия
+  рядом с конформной.
+- **Сквозная оценка на вырезках** (`dataset_eval.py`, варианты `flat,class,model`,
+  флаг `--holdout-only`): в-выборке модель лучшая (0.86 против 0.99 у классовой
+  таблицы), но **на holdout преимущество исчезает** (0.92 против 0.79–0.85;
+  разница в пределах шума, CI пересекает ноль). Зато пайплайн против «ничего не
+  делать» выигрывает огромно: −2.5 дБ, CI [−3.7, −1.6].
+- **By-author не проходит ни одна модель** (хуже классовой таблицы). Причина не
+  в объёме: **во всём плане всего 2 реставратора** (3164 и 1192 пары), и на
+  одинаковом материале они расходятся на 0.2–0.7 дБ. Больше треков от тех же
+  двух людей кросс-авторского обобщения не даст — нужны другие реставраторы.
+- **Продовая готовность: бета.** Ядро реставрации (DSP + классовая таблица +
+  физические инварианты) надёжно; ML-модель безопасна (зажата в ±2.5 дБ,
+  OOD-гейт), но её выигрыш вне обучающего корпуса пока не доказан.
+
 ## Как читать
 
 - **Уровни объёма** привязаны к порогам моделей: **M1 = 300 треков**
@@ -57,6 +77,8 @@ python3 ~/Desktop/projects/restore-next/scripts/status_report.py --deep   # + ц
 | «нет продвинутой модели» | ничего не делать: копить треки, гейт пропустит сам; ускорить можно `scripts/ml_auto.py --force` |
 | Transmission RPC оффа | `transmission-gtk` не запущен: `scripts/resume.sh` поднимет; тюнинг — `scripts/transmission_tune.py --apply` |
 | много `paused_space` в журнале | пары отложены по месту/мёртвым сидам — селектор вернёт их в работу; при желании `scripts/dataset_fetch.py --refetch` |
+| много `dead_swarm` в журнале | пары с 0 пиров после двух заходов помечены терминально — это норма, слоты партий они не занимают |
+| зависшие раздачи в Transmission | `scripts/dataset_prune_stalled.py --peerless`, затем `scripts/dataset_fetch.py --repair` (снимает wanted у снятых пар и убирает «зомби»-раздачи) |
 
 ## Полезные команды (глубже)
 
@@ -66,10 +88,22 @@ python3 scripts/dataset_audit.py --integrity
 python3 scripts/dataset_select.py --limit 12   # что попадёт в следующую партию
 python3 scripts/ml_auto.py --force             # переобучить на текущих данных
 python3 scripts/fit_tilt.py --report           # тональная кривая корпуса
-python3 scripts/restore_one.py --src <img.flac> --cue <f.cue> --out out/ \
-        --ml-snapshot auto                     # прогон с целью из модели
+python3 scripts/dataset_eval.py --all --variants flat,class,model   # сквозная оценка
+python3 scripts/dataset_eval.py --all --holdout-only                # честная (не-в-выборке)
+
+# реставрация и оформление релиза (подробнее — скилл release-restore)
 python3 scripts/restore_one.py --src <dir> --out out/ \
-        --eq-curve corpus/tilt_curve.json --eq-match   # замкнутый тональный матч
+        --auto-policy --adaptive --ml-snapshot auto --tp -0.5
+python3 scripts/finish_release.py --restored out/ --source <src> \
+        --dest ~/Music/restorations/<name> --lyrics
+
+# поиск и выбор материала на трекере (подробнее — скилл tracker)
+python3 scripts/tracker_hunt.py search "Artist" --facts
+python3 scripts/tracker_hunt.py compare <tid> <tid>
+python3 scripts/fetch_release.py --topic <tid> --dir "Artist/Album" --priority high
+
+# качество и подлинность аудио (подробнее — скилл audio-measure)
+python3 scripts/audio_measure.py <каталог>
 ```
 
 ## Ключевые пути
@@ -82,9 +116,16 @@ python3 scripts/restore_one.py --src <dir> --out out/ \
   corpus/tilt_curve.json           подогнанная тональная кривая
   dataset/pairs/<key>/             фичи (features.json), meta.json, вырезки
   dataset/raw/<key>/{orig,master}  сырьё (транзит, окно свежих пар)
-  dataset/state.jsonl              журнал загрузок (сливается по ключу)
+  dataset/state.jsonl              журнал загрузок (сливается по ключу);
+                                   статусы: downloading, paused_space, dead_swarm,
+                                   no_match, edition_mismatch, error
   dataset/loop.log                 лог цикла обогащения
   release/                         оформленные реставрации (теги, текст, обложка)
+  release_src/                     скачанные исходники релизов (мимо датасетного сырья)
+
+~/Music/restorations/              готовое к прослушиванию (копия из release/)
+~/Desktop/projects/restore-next/skills/   скиллы проекта (audio-measure, tracker,
+                                   release-restore, restore-status)
 
 ~/Desktop/projects/restore-next/models/registry.jsonl      снапшоты моделей
 ~/Desktop/projects/restore-next/models/leaderboard.jsonl   результаты прогонов
