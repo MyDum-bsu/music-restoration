@@ -91,6 +91,44 @@ def copy_tags(src: Path, dst: Path) -> int:
     return len(sf.tags or [])
 
 
+def normalize_titles(rest_files: list[Path]) -> int:
+    """Выправить СДВИГ тегов: когда TITLE одного трека принадлежит другому.
+
+    Имя файла берётся из cue и потому верное, но не всегда пригодно как тег:
+    бывает урезано («Strong (Orchestral Version - B…»), санитизировано
+    («F_d My Way») или содержит «/», заменённый на « - » («Foreplay - Long
+    Time»). Поэтому имя правит тег ТОЛЬКО когда тег явно чужой — совпадает с
+    названием другого трека этого же альбома (признак сдвига на единицу),
+    либо тега нет вовсе.
+    """
+    from mutagen.flac import FLAC
+    derived: dict[Path, tuple[int, str]] = {}
+    for f in rest_files:
+        m = re.match(r"^\s*(\d{1,3})\s*[.\-]\s*(.+)$", f.stem)
+        if m:
+            derived[f] = (int(m.group(1)), m.group(2).strip())
+    if not derived:
+        return 0
+    # сколько раз каждое «имя из файла» встречается — по нему ловим сдвиг
+    names = {f: n for f, (_num, n) in derived.items()}
+    fixed = 0
+    for f, (num, name) in derived.items():
+        fl = FLAC(str(f))
+        title = (fl.get("title") or fl.get("TITLE") or [""])[0].strip()
+        trk = (fl.get("tracknumber") or fl.get("TRACKNUMBER") or [""])[0].strip()
+        others = {n for g, n in names.items() if g != f}
+        shifted = bool(title) and title in others
+        if not title or shifted:
+            if shifted:
+                print(f"  [сдвиг] {f.name[:30]}: было [{title[:30]}] → [{name[:30]}]")
+            fl["TITLE"] = name
+            fixed += 1
+        if (not trk) or (trk.isdigit() and int(trk) != num):
+            fl["TRACKNUMBER"] = f"{num:02d}"
+        fl.save()
+    return fixed
+
+
 def fill_from_cue(rest_files: list[Path], src: Path | None,
                   rest: Path | None = None) -> str:
     """Если у треков нет ARTIST/ALBUM — взять их из cue рядом с источником.
@@ -117,9 +155,11 @@ def fill_from_cue(rest_files: list[Path], src: Path | None,
         for f in rest_files:
             fl = FLAC(str(f))
             changed = False
-            for k, v in (("artist", artist), ("albumartist", artist),
-                         ("album", album), ("date", date)):
-                if k not in fl:
+            # Ключи ЗАГЛАВНЫМИ: в остальной библиотеке теги в верхнем регистре,
+            # и смешение регистров выглядит как разные теги у разных плееров.
+            for k, v in (("ARTIST", artist), ("ALBUMARTIST", artist),
+                         ("ALBUM", album), ("DATE", date)):
+                if k.lower() not in {x.lower() for x in fl}:
                     fl[k] = v; changed = True
             if changed:
                 fl.save(); fixed += 1
@@ -140,16 +180,11 @@ def fill_from_cue(rest_files: list[Path], src: Path | None,
     for f in rest_files:
         fl = FLAC(str(f))
         changed = False
-        if artist and "artist" not in fl:
-            fl["artist"] = artist; changed = True
-        if artist and "albumartist" not in fl:
-            fl["albumartist"] = artist; changed = True
-        if album and "album" not in fl:
-            fl["album"] = album; changed = True
-        if date and "date" not in fl:
-            fl["date"] = date; changed = True
-        if genre and "genre" not in fl:
-            fl["genre"] = genre; changed = True
+        have = {x.lower() for x in fl}
+        for k, v in (("ARTIST", artist), ("ALBUMARTIST", artist), ("ALBUM", album),
+                     ("DATE", date), ("GENRE", genre)):
+            if v and k.lower() not in have:
+                fl[k] = v; changed = True
         if changed:
             fl.save(); fixed.append(f.name[:24])
     if not fixed:
@@ -197,6 +232,11 @@ def main() -> int:
             except RuntimeError as e:
                 print(f"  [warn] теги {rp.name}: {e}")
         print(f"теги перенесены в {tagged}/{len(r_files)} треков")
+
+    # --- нормализация названий из имён файлов -------------------------------
+    fixed_n = normalize_titles(r_files)
+    if fixed_n:
+        print(f"названия/номера выправлены: {fixed_n} треков")
 
     # --- добор недостающих тегов из cue -------------------------------------
     missing = fill_from_cue(r_files, src, rest)
