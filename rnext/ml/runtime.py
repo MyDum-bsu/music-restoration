@@ -16,6 +16,8 @@ _cache: dict[str, tuple] = {}
 
 
 def _load(model_id: str):
+    """Загрузка снапшота с кэшем на процесс: без него каждый трек читал бы
+    model.joblib с диска (в параллельном прогоне это лишний I/O и память)."""
     if model_id not in _cache:
         _cache[model_id] = reg.load_snapshot(model_id)
     return _cache[model_id]

@@ -97,7 +97,7 @@ def split_image(src: Path, log) -> Path:
     return src
 
 
-def process(job: str, log, clean_src: bool, skip_phone: bool) -> dict:
+def process(job: str, log, clean_src: bool, skip_phone: bool, jobs: int = 1) -> dict:
     parts = [p.strip() for p in job.split("|")]
     src_rel, phone_rel = parts[0], parts[1] if len(parts) > 1 else ""
     name = parts[2] if len(parts) > 2 else Path(src_rel).name
@@ -129,7 +129,7 @@ def process(job: str, log, clean_src: bool, skip_phone: bool) -> dict:
         code, _ = run([sys.executable, "-u", str(SCRIPTS / "restore_one.py"),
                        "--src", str(ddir), "--out", str(d_out),
                        "--auto-policy", "--adaptive", "--ml-snapshot", "auto",
-                       "--tp", "-0.5", "--wait"], log)
+                       "--tp", "-0.5", "--wait", "--jobs", str(jobs)], log)
         res["steps"][f"restore:{label or '-'}"] = code
         if code != 0 or not flacs(d_out):
             res["error"] = f"реставрация не дала треков ({label or 'cd1'})"
@@ -170,6 +170,9 @@ def main() -> int:
     ap.add_argument("--log", default="/tmp/release_batch.log")
     ap.add_argument("--clean-src", action="store_true")
     ap.add_argument("--skip-phone", action="store_true")
+    ap.add_argument("--jobs", type=int, default=3,
+                    help="треков параллельно внутри альбома (результат не зависит "
+                         "от числа потоков; память ~0.5 ГБ на поток)")
     ap.add_argument("--report", default="")
     args = ap.parse_args()
 
@@ -177,7 +180,7 @@ def main() -> int:
     with open(args.log, "a", encoding="utf-8") as log:
         for job in args.job:
             try:
-                results.append(process(job, log, args.clean_src, args.skip_phone))
+                results.append(process(job, log, args.clean_src, args.skip_phone, args.jobs))
             except Exception as e:  # noqa: BLE001
                 log.write(f"[exception] {type(e).__name__}: {e}\n")
                 results.append({"job": job, "error": f"{type(e).__name__}: {e}"})

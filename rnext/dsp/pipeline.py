@@ -163,10 +163,13 @@ def tail_stage(y: np.ndarray, sr: int, pol: "Policy", x_ref: np.ndarray) -> tupl
 
 
 def restore_track(x: np.ndarray, sr: int, pol: Policy | None = None,
-                  return_stages: bool = False):
+                  return_stages: bool = False, keep_arrays: bool = True):
     """x [n, 2] float32 [-1,1) → реставрированный [n, 2].
 
     stages: dict c промежуточными массивами (для дип-приладки/диффа).
+    keep_arrays=False — не копировать сами массивы, оставив только словари
+    (diagnosis/adaptive/eq_match). Отчёту массивы не нужны, а каждая копия
+    это ~127 МБ на 6-минутный трек: без них параллельный прогон влезает в RAM.
     """
     pol = pol or Policy()
     stages = {}
@@ -182,7 +185,7 @@ def restore_track(x: np.ndarray, sr: int, pol: Policy | None = None,
         y = hpf25(x, sr, hz)
     else:
         y = x.copy()
-    stages["hpf"] = y.copy()
+    stages["hpf"] = y.copy() if keep_arrays else True
 
     need_declip = None
     if pol.declip:
@@ -193,11 +196,11 @@ def restore_track(x: np.ndarray, sr: int, pol: Policy | None = None,
             y16, n = declip.declip_track(x16)
             y = (y16.astype(np.float64) / 32768.0).astype(np.float32)
             need_declip = n
-        stages["declip"] = (y.copy(), need_declip)
+        stages["declip"] = (y.copy() if keep_arrays else True, need_declip)
 
     if eq_on:
         y = dsp_eq.apply_eq(y, sr, pol.eq_bands_db, frame=pol.frame)
-        stages["eq"] = y.copy()
+        stages["eq"] = y.copy() if keep_arrays else True
 
     if contour_on:
         r_eff = pol.r_expand
@@ -224,12 +227,12 @@ def restore_track(x: np.ndarray, sr: int, pol: Policy | None = None,
                                    ramp_to_hz=pol.ramp_to_hz,
                                    mode=pol.mode, r_expand=r_eff)
         y = contour.contour_expand(y, sr, cp)
-        stages["contour"] = y.copy()
+        stages["contour"] = y.copy() if keep_arrays else True
 
     # ── хвост: EQ-подгонка → TP-нормализация → лимитер ─────────────────────
     y, eq_info = tail_stage(y, sr, pol, x)
     if eq_info:
         stages["eq_match"] = eq_info
-    stages["limit"] = y.copy()
+    stages["limit"] = y.copy() if keep_arrays else True
 
     return (y, stages) if return_stages else y

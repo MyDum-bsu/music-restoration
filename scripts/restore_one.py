@@ -74,6 +74,76 @@ def _clean_title(stem: str) -> str:
     return s.strip() or stem
 
 
+
+def process_track(job: dict) -> dict | None:
+    """Обработка ОДНОГО трека — отдельная функция, чтобы гнать треки пулом.
+
+    Треки независимы: цель от модели считается на альбом заранее, адаптивная
+    подгонка идёт по треку, дизеринг засеян номером трека. Поэтому параллельный
+    прогон не меняет результат — он побайтово тот же, что последовательный.
+    """
+    import dataclasses as _dc
+    ti, title, path = job["ti"], job["title"], job["path"]
+    args, pol = job["args"], job["pol"]
+    mode, adaptive, eq_tilt = job["mode"], job["adaptive"], job["eq_tilt"]
+    if path is None:
+        sr0 = F.ffprobe_audio(job["src"])["sr"]
+        x, sr = F.decode_f32(job["src"], start_s=job["start"] / sr0,
+                             dur_s=(job["end"] - job["start"]) / sr0)
+    else:
+        x, sr = F.decode_f32(str(path))
+    if x is None or x.shape[0] < sr * 5:
+        return None
+    o_ = F.tt_dr(x, sr)
+    pol_t, ml_target, ml_source = pol, None, None
+    if args.ml_snapshot and job["ml_ready"]:
+        from rnext.ml import runtime as mlrt
+        mid = None if args.ml_snapshot == "auto" else args.ml_snapshot
+        ml_target, ml_source = mlrt.predict_from_audio_src(
+            x, sr, model_id=mid, n_tracks=job["n_tracks"])
+        if ml_target is not None:
+            # модель училась по границе healthy ≥ 12, а не ≥ 11
+            pol_t = _dc.replace(pol, healthy_dr_min=12,
+                                target_dcrest=float(min(ml_target, 8.0)
+                                                    if ml_target > 0 else ml_target))
+    # keep_arrays=False: копии промежуточных массивов (~127 МБ на трек) отчёту
+    # не нужны, а в параллельном прогоне это решающая экономия памяти
+    y, stages = restore_track(x, sr, pol_t, return_stages=True, keep_arrays=False)
+    _d = F.tt_dr(y, sr)
+    tp = true_peak_dbfs(y, sr)
+    rng = np.random.default_rng(0xC0FFEE + ti)
+    dith = rng.random(y.shape) + rng.random(y.shape) - 1.0   # TPDF ±1 LSB
+    y16 = np.clip(np.round(y * 32768.0 + dith), -32768, 32767).astype(np.int16)
+    flac_path = job["out_dir"] / f"{ti:02d}. {title}.flac"
+    encode_flac(y16, sr, flac_path, job["out_dir"] / f"__tmp{ti}.wav")
+    dx = stages.get("diagnosis", {})
+    rec = {
+        "track": ti, "title": title,
+        "mode": mode, "r": args.r, "adaptive": adaptive,
+        "auto_policy": args.auto_policy,
+        "class": dx.get("class"),
+        "target_dcrest": dx.get("target_dcrest", args.target),
+        "ml_snapshot": args.ml_snapshot or None,
+        "eq_tilt": eq_tilt,
+        "eq_match": (stages.get("eq_match") or None) if args.eq_match else None,
+        "ml_target": ml_target, "ml_source": ml_source,
+        "r_fit": (stages.get("adaptive") or {}).get("r_fit"),
+        "tp_target": args.tp, "tp_actual": round(tp, 2),
+        "orig": {"dr": o_[0], "dr_exact": round(o_[1], 2),
+                 "crest_tt": round(o_[3] - o_[4], 2),
+                 "peak_dbfs": round(o_[3], 2), "rms_db": round(o_[4], 2)},
+        "rest": {"dr": _d[0], "dr_exact": round(_d[1], 2),
+                 "crest_tt": round(_d[3] - _d[4], 2),
+                 "peak_dbfs": round(_d[3], 2), "rms_db": round(_d[4], 2)},
+        "delta": {"dr": _d[0] - o_[0],
+                  "crest": round((_d[3] - _d[4]) - (o_[3] - o_[4]), 2)},
+    }
+    msg = (f"t{ti:>2} DR {o_[0]}->{_d[0]}  TP {tp:5.2f}  [{dx.get('class')}] {title}")
+    if ml_target is not None:
+        msg += f"  (цель {ml_target:+.2f} [{ml_source}])"
+    return {"rec": rec, "msg": msg}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", required=True, help="image (с --cue) или каталог/файл с треками")
@@ -98,6 +168,9 @@ def main() -> int:
     ap.add_argument("--ml-snapshot", default="",
                     help="id снапшота цели (или 'auto' — последний); цель берётся из модели")
     ap.add_argument("--wait", action="store_true", help="ждать освобождения лока restore")
+    ap.add_argument("--jobs", type=int, default=1,
+                    help="сколько треков обрабатывать параллельно (по умолчанию 1). "
+                         "Результат не зависит от числа потоков")
     args = ap.parse_args()
 
     try:
@@ -156,66 +229,44 @@ def main() -> int:
             print(f"WARN: ML недоступен ({type(e).__name__}) — авто-политика", flush=True)
 
     report = out_dir / "restore_report.jsonl"
+    jobs = []
+    for ti, st, en, title, path in items:
+        jobs.append({"ti": ti, "title": title, "path": path, "start": st, "end": en,
+                     "src": str(src), "pol": pol, "args": args, "mode": mode,
+                     "adaptive": adaptive, "eq_tilt": eq_tilt, "ml_ready": ml_ready,
+                     "n_tracks": len(items), "out_dir": out_dir})
+
+    n_jobs = max(1, int(getattr(args, "jobs", 1) or 1))
+    if n_jobs > 1:
+        print(f"треков {len(jobs)}, параллельно {n_jobs} (порядок отчёта сохраняется)",
+              flush=True)
+    results: list[dict] = []
+    if n_jobs > 1:
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+        with ProcessPoolExecutor(max_workers=n_jobs) as ex:
+            futs = {ex.submit(process_track, j): j["ti"] for j in jobs}
+            for fut in as_completed(futs):
+                try:
+                    res = fut.result()
+                except Exception as e:                      # noqa: BLE001
+                    print(f"  [ошибка] трек {futs[fut]}: {type(e).__name__}: {e}", flush=True)
+                    continue
+                if res:
+                    print("  " + res["msg"], flush=True)
+                    results.append(res)
+    else:
+        for j in jobs:
+            res = process_track(j)
+            if res:
+                print("  " + res["msg"], flush=True)
+                results.append(res)
+
     with report.open("w", encoding="utf-8") as fh:
-        for ti, st, en, title, path in items:
-            if path is None:
-                sr0 = F.ffprobe_audio(str(src))["sr"]
-                x, sr = F.decode_f32(str(src), start_s=st / sr0, dur_s=(en - st) / sr0)
-            else:
-                x, sr = F.decode_f32(str(path))
-            if x is None or x.shape[0] < sr * 5:
-                print(f"SKIP t{ti} {title}", flush=True)
-                continue
-            o_ = F.tt_dr(x, sr)
-            pol_t = pol
-            ml_target = None
-            if args.ml_snapshot and ml_ready:
-                mid = None if args.ml_snapshot == "auto" else args.ml_snapshot
-                ml_target, ml_source = mlrt.predict_from_audio_src(x, sr, model_id=mid,
-                                                                   n_tracks=len(items))
-                if ml_target is not None:
-                    # цель из модели + согласование классов: модель училась по
-                    # границе healthy ≥ 12, а не ≥ 11
-                    pol_t = dataclasses.replace(
-                        pol, healthy_dr_min=12,
-                        target_dcrest=float(min(ml_target, 8.0) if ml_target > 0 else ml_target))
-                    print(f"  t{ti}: цель {ml_target:+.2f} дБ [{ml_source}]", flush=True)
-            y, stages = restore_track(x, sr, pol_t, return_stages=True)
-            _d = F.tt_dr(y, sr)
-            tp = true_peak_dbfs(y, sr)
-            # TPDF-дизеринг при 16-битном квантовании: убирает коррелированную
-            # ошибку округления (в особенности на тихих хвостах)
-            rng = np.random.default_rng(0xC0FFEE + ti)
-            dith = rng.random(y.shape) + rng.random(y.shape) - 1.0   # TPDF ±1 LSB
-            y16 = np.clip(np.round(y * 32768.0 + dith), -32768, 32767).astype(np.int16)
-            flac_path = out_dir / f"{ti:02d}. {title}.flac"
-            encode_flac(y16, sr, flac_path, out_dir / "__tmp.wav")
-            dx = stages.get("diagnosis", {})
-            rec = {
-                "track": ti, "title": title,
-                "mode": mode, "r": args.r, "adaptive": adaptive,
-                "auto_policy": args.auto_policy,
-                "class": dx.get("class"),
-                "target_dcrest": dx.get("target_dcrest", args.target),
-                "ml_snapshot": args.ml_snapshot or None,
-                "eq_tilt": eq_tilt,
-                "eq_match": (stages.get("eq_match") or None) if args.eq_match else None,
-                "ml_target": ml_target,
-                "ml_source": ml_source,
-                "r_fit": (stages.get("adaptive") or {}).get("r_fit"),
-                "tp_target": args.tp, "tp_actual": round(tp, 2),
-                "orig": {"dr": o_[0], "dr_exact": round(o_[1], 2),
-                         "crest_tt": round(o_[3] - o_[4], 2),
-                         "peak_dbfs": round(o_[3], 2), "rms_db": round(o_[4], 2)},
-                "rest": {"dr": _d[0], "dr_exact": round(_d[1], 2),
-                         "crest_tt": round(_d[3] - _d[4], 2),
-                         "peak_dbfs": round(_d[3], 2), "rms_db": round(_d[4], 2)},
-                "delta": {"dr": _d[0] - o_[0], "crest": round((_d[3] - _d[4]) - (o_[3] - o_[4]), 2)},
-            }
-            fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
-            fh.flush()
-            print(f"t{ti:>2} DR {o_[0]}->{_d[0]}  TP {tp:5.2f}  "
-                  f"[{dx.get('class')}] {title}", flush=True)
+        for res in sorted(results, key=lambda r: r["rec"]["track"]):
+            fh.write(json.dumps(res["rec"], ensure_ascii=False) + "\n")
+    # убрать временные wav, если остались
+    for tmp in out_dir.glob("__tmp*.wav"):
+        tmp.unlink(missing_ok=True)
 
     fcntl.flock(lock, fcntl.LOCK_UN)
     lock.close()
