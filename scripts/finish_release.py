@@ -51,7 +51,11 @@ def find_cover(*dirs: Path, explicit: Path | None = None) -> Path | None:
     if explicit:
         return explicit if explicit.is_file() else None
     cands: list[Path] = []
+    extra = []
     for d in dirs:
+        if d and d.is_dir() and d.parent not in dirs:
+            extra.append(d.parent)      # корень торрента (обложка бывает там)
+    for d in list(dirs) + extra:
         if not d or not d.is_dir():
             continue
         for name in COVER_HINTS:

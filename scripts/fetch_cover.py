@@ -99,7 +99,14 @@ def main() -> int:
     if args.donor:
         ok = from_donor(Path(args.donor).expanduser(), out)
     if not ok and args.artist and args.album:
-        ok = from_musicbrainz(args.artist, args.album, out)
+        for attempt in (1, 2):          # сеть/лимиты MusicBrainz — повторяем
+            ok = from_musicbrainz(args.artist, args.album, out)
+            if ok:
+                break
+            if attempt == 1:
+                print("  повтор запроса обложки...")
+                import time
+                time.sleep(3)
     if not ok:
         print("  обложка не найдена ни в MusicBrainz, ни у донора")
         return 1
