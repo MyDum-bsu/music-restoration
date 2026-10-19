@@ -73,24 +73,22 @@ def find_cover(*dirs: Path, explicit: Path | None = None) -> Path | None:
 
 
 def copy_tags(src: Path, dst: Path) -> int:
-    tags = metaflac("--export-tags-to=-", str(src))
-    if not tags.strip():
-        return 0
-    # тексты уже могут быть вшиты (повторный прогон) — их нельзя терять:
-    # --remove-all-tags стирает всё, поэтому сохраняем и возвращаем обратно
-    keep = ""
-    for key in ("LYRICS", "UNSYNCEDLYRICS", "USLT"):
-        try:
-            v = metaflac(f"--show-tag={key}", str(dst))
-        except RuntimeError:
-            v = ""
-        if v.strip():
-            keep += v if v.endswith("\n") else v + "\n"
-    metaflac("--remove-all-tags", str(dst))
-    metaflac("--import-tags-from=-", str(dst), input_text=tags)
-    if keep:
-        metaflac("--import-tags-from=-", str(dst), input_text=keep)
-    return sum(1 for l in tags.splitlines() if "=" in l)
+    """Перенести теги источника в результат, СОХРАНИВ уже вшитые тексты.
+
+    Через metaflac не выходит: многострочное значение (LYRICS) он не принимает
+    обратно на импорте — «malformed vorbis comment field», и текст теряется.
+    mutagen переносит такие поля корректно.
+    """
+    from mutagen.flac import FLAC
+    sf, df = FLAC(str(src)), FLAC(str(dst))
+    keep = {k: list(df[k]) for k in ("lyrics", "unsyncedlyrics") if k in df}
+    df.delete()
+    for k, v in sf.tags or []:
+        df[k] = v
+    for k, v in keep.items():
+        df[k] = v
+    df.save()
+    return len(sf.tags or [])
 
 
 def main() -> int:
