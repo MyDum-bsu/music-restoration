@@ -70,13 +70,7 @@ def make_pipeline(base: str, seed: int = 17):
                          ("sc", StandardScaler()),
                          ("m", KNeighborsRegressor(n_neighbors=min(10, 5), weights="distance"))])
     if base == "hgb":
-        # ранняя остановка и листья 30 выбраны замером на 5 сплитах: разрыв
-        # обучение/отложено падает с 0.54 до 0.40 дБ, а отложенная медиана
-        # с 0.759 до 0.694 (при 400 треках без этого hgb запоминает корпус)
-        return Pipeline([("m", HistGradientBoostingRegressor(
-            loss="squared_error", max_depth=3, learning_rate=0.05, max_iter=400,
-            min_samples_leaf=30, l2_regularization=1.0, random_state=seed,
-            early_stopping=True, validation_fraction=0.2, n_iter_no_change=20))])
+        return Pipeline([("m", _hgb(seed))])
     raise ValueError(base)
 
 
@@ -88,6 +82,8 @@ def build(base: str, n_train: int, seed: int = 17, feature_names: list[str] | No
         raise ValueError(f"{base}: нужно ≥ {need} треков, есть {n_train}")
     if base == "table":
         return TableModel().fit(X_train, y_train, classes=classes, feature_names=feature_names)
+    if base == "hgbq":
+        return fit_hgbq(X_train, y_train, seed=seed)
     return make_pipeline(base, seed).fit(X_train, y_train)
 
 
@@ -108,6 +104,46 @@ class Conformal:
     def interval(self, X, level: float = 0.8):
         p = self.predict(X)
         return p - self.half_width, p + self.half_width
+
+
+@dataclass
+class QuantileHGB:
+    """Квантильные HGB (q10/q50/q90): своя полоса доверия, без калибровки.
+
+    Конформная надстройка даёт гарантию покрытия, но только вокруг точечного
+    прогноза. Здесь ширина полосы — из самих данных: если модель на части
+    материала честно не уверена, полоса там шире.
+    """
+    q10: object
+    q50: object
+    q90: object
+
+    def predict(self, X):
+        return self.q50.predict(X)
+
+    def interval(self, X, level: float = 0.8):
+        lo, hi = self.q10.predict(X), self.q90.predict(X)
+        # квантильные оценки не обязаны быть монотонными — правим порядок
+        return np.minimum(lo, hi), np.maximum(lo, hi)
+
+
+def _hgb(seed: int, quantile: float | None = None) -> HistGradientBoostingRegressor:
+    # ранняя остановка и листья 30 выбраны замером на 5 сплитах: разрыв
+    # обучение/отложено падает с 0.54 до 0.40 дБ, а отложенная медиана
+    # с 0.759 до 0.694 (при 400 треках без этого hgb запоминает корпус)
+    kw = dict(max_depth=3, learning_rate=0.05, max_iter=400, min_samples_leaf=30,
+              l2_regularization=1.0, random_state=seed,
+              early_stopping=True, validation_fraction=0.2, n_iter_no_change=20)
+    if quantile is None:
+        return HistGradientBoostingRegressor(loss="squared_error", **kw)
+    return HistGradientBoostingRegressor(loss="quantile", quantile=quantile, **kw)
+
+
+def fit_hgbq(X, y, seed: int = 17) -> QuantileHGB:
+    return QuantileHGB(
+        q10=_hgb(seed, 0.10).fit(X, y),
+        q50=_hgb(seed, 0.50).fit(X, y),
+        q90=_hgb(seed, 0.90).fit(X, y))
 
 
 def fit_conformal(model, X_cal, y_cal, level: float = 0.8) -> Conformal:

@@ -80,6 +80,9 @@ def train_and_eval(table, base: str, target: str, holdout_mode: str, seed: int) 
     if base == "conformal":
         lo, hi = model.interval(Xho, level=0.8)
         stats["coverage_80"] = M.interval_coverage(yho, lo, hi)
+    elif base == "hgbq":
+        lo, hi = model.interval(Xho, level=0.8)
+        stats["coverage_80"] = M.interval_coverage(yho, lo, hi)
     stats["vs_noop"] = M.compare_to_baseline(stats, "noop")
     stats["vs_v0table"] = M.compare_to_baseline(stats, "v0table")
     stats["gate"] = M.auto_gate(yho, pred, Xho[:, table.feature_names.index("dr")])
