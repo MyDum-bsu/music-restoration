@@ -112,36 +112,39 @@ def check_phone_albums(root: Path, limit: int = 0) -> list[str]:
         if not d.is_dir():
             warns.append(f"[телефон] нет каталога: {rel}")
             continue
-        first = None
         try:
             cands = sorted(p for p in d.rglob("*.flac"))
-            first = cands[0] if cands else None
         except OSError:
             continue
-        if first is None:
+        if not cands:
             warns.append(f"[телефон] нет FLAC: {rel}")
             continue
-        key = (str(first), first.stat().st_size)
-        if key in PHONE_CACHE:
-            got = PHONE_CACHE[key]
-        else:
-            with tempfile.NamedTemporaryFile(suffix=".flac", delete=False) as t:
-                tmp = Path(t.name)
-            try:
-                subprocess.run(["gio", "cat", str(first)], stdout=open(tmp, "wb"),
-                               timeout=180)
-                r = subprocess.run(["metaflac", "--list", "--block-type=PICTURE",
-                                    "--block-type=VORBIS_COMMENT", str(tmp)],
-                                   capture_output=True, text=True)
-                low = r.stdout.lower()
-                got = {"cover": "type: 6" in r.stdout,
-                       # тег может быть LYRICS/lyrics/Lyrics — сравниваем без регистра
-                       "lyrics": "lyrics=" in low or "unsyncedlyrics=" in low}
-            except Exception:  # noqa: BLE001
-                got = {"cover": True, "lyrics": True}   # не смогли — не тревожим
-            finally:
-                tmp.unlink(missing_ok=True)
-            PHONE_CACHE[key] = got
+        # Смотрим НЕСКОЛЬКО треков: первый может быть инструменталом (у Subsignal
+        # «271 Days» — интро без текста), и одиночная проверка давала ложную тревогу.
+        sample = cands if len(cands) <= 3 else [cands[0], cands[len(cands) // 2], cands[-1]]
+        got = {"cover": False, "lyrics": False}
+        for f in sample:
+            key = (str(f), f.stat().st_size)
+            if key not in PHONE_CACHE:
+                with tempfile.NamedTemporaryFile(suffix=".flac", delete=False) as t:
+                    tmp = Path(t.name)
+                try:
+                    subprocess.run(["gio", "cat", str(f)], stdout=open(tmp, "wb"),
+                                   timeout=180)
+                    r = subprocess.run(["metaflac", "--list", "--block-type=PICTURE",
+                                        "--block-type=VORBIS_COMMENT", str(tmp)],
+                                       capture_output=True, text=True)
+                    low = r.stdout.lower()
+                    PHONE_CACHE[key] = {"cover": "type: 6" in r.stdout,
+                                        "lyrics": "lyrics=" in low
+                                                  or "unsyncedlyrics=" in low}
+                except Exception:  # noqa: BLE001
+                    PHONE_CACHE[key] = {"cover": True, "lyrics": True}
+                finally:
+                    tmp.unlink(missing_ok=True)
+            v = PHONE_CACHE[key]
+            got["cover"] = got["cover"] or v["cover"]
+            got["lyrics"] = got["lyrics"] or v["lyrics"]
         if not got["cover"]:
             warns.append(f"[телефон: нет обложки] {rel}")
         if not got["lyrics"]:
