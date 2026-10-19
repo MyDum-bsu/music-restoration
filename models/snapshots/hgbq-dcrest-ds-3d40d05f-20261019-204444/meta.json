@@ -1,0 +1,262 @@
+{
+ "model": "hgbq",
+ "target": "dcrest",
+ "dataset_version": "ds-3d40d05f",
+ "dataset": {
+  "pairs": 112,
+  "tracks": 1319,
+  "trusted_tracks": 1121,
+  "by_author": {
+   "5618698": 750,
+   "3048819": 371
+  },
+  "labels": {
+   "unlabeled": 1,
+   "suspect": 11,
+   "trusted": 100
+  }
+ },
+ "level": 2,
+ "seed": 17,
+ "frac": 0.3,
+ "features": [
+  "dr",
+  "dr_exact",
+  "crest_db",
+  "rms_db",
+  "peak_db",
+  "dur_s",
+  "clip_samples",
+  "clip_events",
+  "longest_run",
+  "rms_p05",
+  "rms_p50",
+  "rms_p95",
+  "rms_spread",
+  "attacks_per_s",
+  "flux_per_s",
+  "rms_range_db",
+  "side_mid_db",
+  "side_mid_hf_db",
+  "tp_overshoot_db",
+  "tilt_low_high",
+  "tilt_slope",
+  "n_tracks"
+ ],
+ "feature_stats": {
+  "dr": {
+   "mean": 6.7903,
+   "std": 2.5417
+  },
+  "dr_exact": {
+   "mean": 6.7802,
+   "std": 2.5272
+  },
+  "crest_db": {
+   "mean": 11.5377,
+   "std": 2.567
+  },
+  "rms_db": {
+   "mean": -8.9654,
+   "std": 3.4516
+  },
+  "peak_db": {
+   "mean": -0.4351,
+   "std": 1.578
+  },
+  "dur_s": {
+   "mean": 251.2623,
+   "std": 81.5112
+  },
+  "clip_samples": {
+   "mean": 2883.7002,
+   "std": 12502.3209
+  },
+  "clip_events": {
+   "mean": 1847.4853,
+   "std": 8155.0679
+  },
+  "longest_run": {
+   "mean": 2.5927,
+   "std": 11.0687
+  },
+  "rms_p05": {
+   "mean": -18.7821,
+   "std": 12.0858
+  },
+  "rms_p50": {
+   "mean": -11.4487,
+   "std": 3.5905
+  },
+  "rms_p95": {
+   "mean": -9.8956,
+   "std": 3.2343
+  },
+  "rms_spread": {
+   "mean": 8.8864,
+   "std": 11.35
+  },
+  "attacks_per_s": {
+   "mean": 1.0254,
+   "std": 0.8604
+  },
+  "flux_per_s": {
+   "mean": 26755.2827,
+   "std": 10387.8231
+  },
+  "rms_range_db": {
+   "mean": 154.9795,
+   "std": 78.4089
+  },
+  "side_mid_db": {
+   "mean": -6.8593,
+   "std": 2.4856
+  },
+  "side_mid_hf_db": {
+   "mean": -5.6498,
+   "std": 2.6859
+  },
+  "tp_overshoot_db": {
+   "mean": 0.6593,
+   "std": 0.6575
+  },
+  "tilt_low_high": {
+   "mean": 21.3686,
+   "std": 3.9381
+  },
+  "tilt_slope": {
+   "mean": -4.9258,
+   "std": 0.9974
+  },
+  "n_tracks": {
+   "mean": 12.6828,
+   "std": 3.5012
+  }
+ },
+ "n_train": 577,
+ "n_cal": 192,
+ "n_hold": 352,
+ "holdout_mode": "by-album",
+ "caps": {
+  "dcrest_max": 8.0
+ },
+ "promote": true,
+ "gate_gain_db": 0.375,
+ "gate_ci_low": 0.262,
+ "metrics": {
+  "all": {
+   "n": 352,
+   "median_abs": 0.737,
+   "mean_abs": 0.928,
+   "p90_abs": 1.994,
+   "share_le_0.5": 0.332,
+   "share_le_1.0": 0.631,
+   "bias": 0.438
+  },
+  "by_class": {
+   "crushed": {
+    "n": 245,
+    "median_abs": 0.624,
+    "mean_abs": 0.7,
+    "p90_abs": 1.392,
+    "share_le_0.5": 0.42,
+    "share_le_1.0": 0.771,
+    "bias": 0.214
+   },
+   "healthy": {
+    "n": 48,
+    "median_abs": 1.799,
+    "mean_abs": 1.722,
+    "p90_abs": 2.253,
+    "share_le_0.5": 0.062,
+    "share_le_1.0": 0.146,
+    "bias": 1.799
+   },
+   "mid": {
+    "n": 59,
+    "median_abs": 1.071,
+    "mean_abs": 1.231,
+    "p90_abs": 2.279,
+    "share_le_0.5": 0.186,
+    "share_le_1.0": 0.441,
+    "bias": 0.855
+   }
+  },
+  "baseline_noop": {
+   "n": 352,
+   "median_abs": 3.987,
+   "mean_abs": 3.612,
+   "p90_abs": 5.909,
+   "share_le_0.5": 0.071,
+   "share_le_1.0": 0.136,
+   "bias": -3.987
+  },
+  "baseline_const46": {
+   "n": 352,
+   "median_abs": 1.221,
+   "mean_abs": 2.017,
+   "p90_abs": 5.647,
+   "share_le_0.5": 0.293,
+   "share_le_1.0": 0.423,
+   "bias": 0.613
+  },
+  "baseline_v0table": {
+   "n": 352,
+   "median_abs": 1.112,
+   "mean_abs": 1.208,
+   "p90_abs": 2.142,
+   "share_le_0.5": 0.202,
+   "share_le_1.0": 0.443,
+   "bias": 0.873
+  },
+  "coverage_80": 0.594,
+  "vs_noop": 0.185,
+  "vs_v0table": 0.663,
+  "gate": {
+   "min_gain_db": 0.1,
+   "by_baseline": {
+    "noop": {
+     "improvement_dB": 3.25,
+     "ci_low": 2.86,
+     "ci_high": 3.481,
+     "p_win": 1.0,
+     "n": 352,
+     "median_abs": 3.987,
+     "pass": true
+    },
+    "const46": {
+     "improvement_dB": 0.484,
+     "ci_low": 0.343,
+     "ci_high": 0.584,
+     "p_win": 1.0,
+     "n": 352,
+     "median_abs": 1.221,
+     "pass": true
+    },
+    "v0table": {
+     "improvement_dB": 0.375,
+     "ci_low": 0.262,
+     "ci_high": 0.473,
+     "p_win": 1.0,
+     "n": 352,
+     "median_abs": 1.112,
+     "pass": true
+    }
+   },
+   "best_baseline": "v0table",
+   "vs_best": {
+    "improvement_dB": 0.375,
+    "ci_low": 0.262,
+    "ci_high": 0.473,
+    "p_win": 1.0,
+    "n": 352,
+    "median_abs": 1.112,
+    "pass": true
+   },
+   "promote": true
+  }
+ },
+ "model_id": "hgbq-dcrest-ds-3d40d05f-20261019-204444",
+ "git": "c848863",
+ "saved": 1792431884
+}
