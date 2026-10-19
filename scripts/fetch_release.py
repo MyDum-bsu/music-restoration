@@ -66,24 +66,23 @@ def fetch_one(tid: str, subdir: str, priority: str, start: bool = True) -> dict:
     dest = release_root() / subdir
     dest.mkdir(parents=True, exist_ok=True)
     t = Transm()
-    # не плодим дубли: ищем по хешу из .torrent
+    # Дубли определяет САМ Transmission по infohash. Проверка «по имени» была
+    # багом: имя «Q5» совпадало с другим релизом, и раздача не добавлялась.
     import hashlib
-    raw = tp.read_bytes()
-    m = re.search(rb"4:infod", raw)
-    existing = [x for x in t.torrents(["id", "name", "hashString", "downloadDir"])
-                if (x.get("name") or "") and (x["name"] in title or title in x["name"])]
-    if existing:
-        tid_ = existing[0]["id"]
-        print(f"  уже в Transmission: t={tid_} «{existing[0]['name'][:50]}»")
+    r = t.add_torrent_file(str(tp), str(dest), stopped=not start)
+    added = r.get("torrent-added") or {}
+    dup = r.get("torrent-duplicate") or {}
+    tid_ = (added or dup).get("id")
+    if dup and not added:
+        cur = next((x for x in t.torrents(["id", "downloadDir"]) if x["id"] == tid_), {})
+        print(f"  уже был (t={tid_}, {cur.get('downloadDir', '?')}) — приоритет обновлён")
     else:
-        r = t.add_torrent_file(str(tp), str(dest), stopped=not start)
-        tid_ = (r.get("torrent-added") or r.get("torrent-duplicate") or {}).get("id")
         print(f"  добавлено: t={tid_} → {dest}")
     t._call("torrent-set", {"ids": [tid_], "bandwidthPriority": PRIO[priority]})
     if start:
         t._call("torrent-start", {"ids": [tid_]})
     return {"topic": tid, "title": title, "transmission_id": tid_, "dir": str(dest),
-            "priority": priority, "_hash": hashlib.sha1(raw).hexdigest()[:12]}
+            "priority": priority, "_hash": hashlib.sha1(tp.read_bytes()).hexdigest()[:12]}
 
 
 def add_local(src: Path, subdir: str, priority: str) -> dict:
