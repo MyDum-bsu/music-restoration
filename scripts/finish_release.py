@@ -157,7 +157,33 @@ def main() -> int:
         print(f"обложка: {small.name} ({small.stat().st_size // 1024} KB) → {len(r_files)} треков")
         cover = small
     else:
-        print("[warn] обложка не найдена")
+        # Запасной путь: у WEB-релизов обложки-файла часто нет вовсе (Subsignal
+        # «La Muerta»), и альбом уходил на телефон «голым». Тянем из MusicBrainz
+        # по тегам первого трека.
+        try:
+            from mutagen.flac import FLAC as _FLAC
+            t = _FLAC(str(r_files[0]))
+            art = (t.get("albumartist") or t.get("artist") or [""])[0]
+            alb = (t.get("album") or [""])[0]
+            if art and alb:
+                cand = rest / "_cover_fetch.jpg"
+                r = subprocess.run([sys.executable, str(Path(__file__).parent / "fetch_cover.py"),
+                                    "--artist", art, "--album", alb, "--out", str(cand)],
+                                   capture_output=True, text=True)
+                if r.returncode == 0 and cand.is_file():
+                    print(r.stdout.strip())
+                    for rp in r_files:
+                        subprocess.run(["metaflac", "--remove", "--block-type=PICTURE", str(rp)],
+                                       capture_output=True)
+                        metaflac("--import-picture-from", str(cand), str(rp))
+                    cover = cand
+                    print(f"обложка (из MusicBrainz) → {len(r_files)} треков")
+                else:
+                    print("[warn] обложка не найдена ни в источнике, ни в MusicBrainz")
+            else:
+                print("[warn] обложка не найдена, теги пусты — нечем искать")
+        except Exception as e:  # noqa: BLE001
+            print(f"[warn] обложка не найдена ({type(e).__name__})")
 
     # --- тексты -------------------------------------------------------------
     if args.lyrics:
