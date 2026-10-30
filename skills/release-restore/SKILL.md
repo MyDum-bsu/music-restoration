@@ -41,9 +41,7 @@ python3 $S/restore_per_track.py --src "<source>" \
    catches a Δcrest outside the 5.0–7.5 dB window and re-processes the track
    with neighboring parameters, then writes `per_track_report.json` and
    `PER_TRACK_REPORT.md`. One track or a quick pass — `restore_one.py` (see
-   references/quality.md). If a corpus/models are present,
-   `restore_one.py --ml-snapshot auto` refines the target; without them the
-   class table works.
+   references/quality.md).
 5. **QC.** `python3 $S/qc_gates.py --orig "<source>" "$OUT"/*.flac` — TP,
    clipping, sample spikes (12/12 OK is the norm). Then `audio_measure.py` on
    the result: DR up, LUFS down (expected), no clipping.

@@ -9,7 +9,7 @@
 #   ./install.sh --venv             # also create .venv and pip-install requirements
 #
 # Skills: music-care (router), release-restore (album restoration), audio-measure,
-#         tracker (search/compare/download), restore-status (project health),
+#         tracker (search/compare/download),
 #         add-lyrics (lyrics into tags), phone-music (MTP library care),
 #         split-flac-album (image+cue splitting).
 # Idempotent: re-run any time. Never touches your music files.
@@ -17,7 +17,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 REPO="$(pwd)"
 
-ALL_SKILLS="music-care release-restore audio-measure tracker restore-status add-lyrics phone-music split-flac-album"
+ALL_SKILLS="music-care release-restore audio-measure tracker add-lyrics phone-music split-flac-album"
 SKILLS_DIR="${HOME}/.agents/skills"
 MODE=symlink
 VENV=0
