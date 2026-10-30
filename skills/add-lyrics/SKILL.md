@@ -22,7 +22,9 @@ Tags written (for maximum phone-player compatibility):
 `scripts/genius_lyrics.py` (next to this file). Subcommands:
 
 ```bash
-S=<path-to-repo>/add-lyrics/scripts/genius_lyrics.py
+S=<path-to-repo>/skills/add-lyrics/scripts/genius_lyrics.py
+# если скилл установлен через install.sh:
+# S=~/.agents/skills/add-lyrics/scripts/genius_lyrics.py
 
 # 1. Dry run: resolve matches for everything, write nothing
 python3 $S tag --dir "/path/to/album" --dry-run

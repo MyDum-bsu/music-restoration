@@ -41,9 +41,10 @@ With `--root /path` the same scripts audit and enrich any local library.
 ## Workflow 1 — Audit
 
 ```bash
-python3 scripts/inventory.py                        # whole library (~5 min / 2800 files)
-python3 scripts/inventory.py --dir "Place Vendome"  # one group
-python3 scripts/inventory.py --missing cover --missing tracknumber
+S=~/.agents/skills/phone-music/scripts
+python3 $S/inventory.py                        # whole library (~5 min / 2800 files)
+python3 $S/inventory.py --dir "Place Vendome"  # one group
+python3 $S/inventory.py --missing cover --missing tracknumber
 ```
 
 Per file: lyrics, embedded cover, tracknumber, artist/title/album. Full TSV in
@@ -53,9 +54,10 @@ dir. Always start here and show the user the gaps before running bulk fixes.
 ## Workflow 2 — Lyrics (bulk, resume-safe)
 
 ```bash
-python3 scripts/embed_lyrics.py                     # everything missing lyrics
-python3 scripts/embed_lyrics.py --dir "Helloween"
-python3 scripts/embed_lyrics.py --force             # re-embed even if present
+S=~/.agents/skills/phone-music/scripts
+python3 $S/embed_lyrics.py                     # everything missing lyrics
+python3 $S/embed_lyrics.py --dir "Helloween"
+python3 $S/embed_lyrics.py --force             # re-embed even if present
 ```
 
 Chunked (~4 GB per chunk): stage → transplant from the local library
@@ -73,10 +75,11 @@ NOMATCH/AMBIGUOUS/ERROR lines:
 ## Workflow 3 — Covers + track numbers (album enrichment)
 
 ```bash
-python3 scripts/embed_covers.py --dir "Place Vendome" --dry-run
-python3 scripts/embed_covers.py --dir "Place Vendome"
-python3 scripts/embed_covers.py --album "<album dir name>"
-python3 scripts/embed_covers.py --all
+S=~/.agents/skills/phone-music/scripts
+python3 $S/embed_covers.py --dir "Place Vendome" --dry-run
+python3 $S/embed_covers.py --dir "Place Vendome"
+python3 $S/embed_covers.py --album "<album dir name>"
+python3 $S/embed_covers.py --all
 ```
 
 Picks the cover from the album folder (Cover.jpg > Front.jpg > ...), downscales
