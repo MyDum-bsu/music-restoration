@@ -1,4 +1,4 @@
-"""Юнит-тесты DSP-ядра restore-next (pytest)."""
+"""Юнит-тесты DSP-ядра music-restoration (pytest)."""
 import numpy as np
 import pytest
 

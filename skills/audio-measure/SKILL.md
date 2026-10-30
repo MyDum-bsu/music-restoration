@@ -8,9 +8,9 @@ description: Измерить качество и подлинность ауд�
 Один скрипт, один ответ на вопрос «что это за файл на самом деле».
 
 ```bash
-python3 ~/Desktop/projects/restore-next/scripts/audio_measure.py <файл|каталог> [...]
-python3 ~/Desktop/projects/restore-next/scripts/audio_measure.py --json out.json <каталог>
-python3 ~/Desktop/projects/restore-next/scripts/audio_measure.py --quick <каталог>   # без спектра/LUFS
+python3 ~/Desktop/projects/music-restoration/scripts/audio_measure.py <файл|каталог> [...]
+python3 ~/Desktop/projects/music-restoration/scripts/audio_measure.py --json out.json <каталог>
+python3 ~/Desktop/projects/music-restoration/scripts/audio_measure.py --quick <каталог>   # без спектра/LUFS
 ```
 
 Печатает таблицу: формат (частота/битность), DR, crest, LUFS, TP, спектральный

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Полный отчёт о состоянии проекта restore-next одной командой.
+"""Полный отчёт о состоянии проекта music-restoration одной командой.
 
 Секции: флешка и бюджет · датасет · план и журнал · качка · процессы ·
 модели · (в --deep: целостность данных, тесты, сквозной прогон пайплайна).
@@ -152,7 +152,7 @@ def sec_processes() -> None:
         for pat, name in (("[d]ataset_loop.py", "цикл обогащения"),
                           ("[w]atchdog.sh", "сторож"),
                           ("[t]ransmission-gtk", "Transmission"),
-                          ("restore-next/app/node_modules/[e]lectron/dist", "плеер")):
+                          ("music-restoration/app/node_modules/[e]lectron/dist", "плеер")):
             n = subprocess.run(["pgrep", "-cf", pat], capture_output=True, text=True).stdout.strip()
             (ok if int(n or 0) > 0 else warn)(f"{name}: {'работает' if int(n or 0) > 0 else 'не запущен'}")
         log = workspace.data_root() / "dataset" / "loop.log"
@@ -265,7 +265,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--deep", action="store_true")
     args = ap.parse_args()
-    print(f"\033[1mrestore-next — состояние на {time.strftime('%d.%m %H:%M')}\033[0m")
+    print(f"\033[1mmusic-restoration — состояние на {time.strftime('%d.%m %H:%M')}\033[0m")
     sec_disk()
     sec_dataset()
     sec_plan()

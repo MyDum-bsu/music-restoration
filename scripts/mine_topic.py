@@ -3,10 +3,11 @@
 import json
 import sys
 
-sys.path.insert(0, "/home/mydum/Desktop/projects/restore-next")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rnext.rtclient import RTClient  # noqa: E402
 from rnext.rttopic import fetch_topic  # noqa: E402
+from pathlib import Path
 
 
 def main() -> int:

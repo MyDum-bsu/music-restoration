@@ -7,3 +7,11 @@ node_modules/
 
 # secrets are never committed
 .secrets/
+
+# model snapshots are local artifacts; registry.jsonl / leaderboard.jsonl are tracked
+/models/snapshots/
+
+# local run artifacts
+/out/
+/release_src/
+/dataset/

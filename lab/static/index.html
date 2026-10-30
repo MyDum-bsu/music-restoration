@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Restoration Lab</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/static/style.css?v=__V__">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/icon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/static/icon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/static/icon-180.png">
+</head>
+<body>
+<header>
+  <a class="brand" href="#home">
+    <svg class="mark" viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
+      <rect x="2" y="13" width="10" height="6" rx="1.4" fill="currentColor"/>
+      <path d="M12 16h2l2-7.5 2.6 15 2.8-19 2.6 12 1.8-0.5H30" fill="none"
+            stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span>Restoration Lab</span>
+  </a>
+  <nav>
+    <a href="#home" data-tab="home">Overview</a>
+    <a href="#dataset" data-tab="dataset">Dataset</a>
+    <a href="#models" data-tab="models">Models</a>
+    <a href="#pipeline" data-tab="pipeline">Pipeline</a>
+  </nav>
+  <span id="status" class="status"></span>
+  <button class="theme" id="theme" title="Switch theme" aria-label="Switch theme">◐</button>
+</header>
+<main id="main"></main>
+<svg id="bg-notes" aria-hidden="true" focusable="false"></svg>
+<footer>
+  <span>music-restoration · local corpus</span>
+  <span id="foot-note"></span>
+</footer>
+<script src="/static/app.js?v=__V__"></script>
+<script src="/static/bg-notes.js?v=__V__"></script>
+</body>
+</html>

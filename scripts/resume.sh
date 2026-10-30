@@ -66,7 +66,7 @@ python3 scripts/ml_auto.py --force --with-audio 2>&1 | tail -20
 # Плеер запускается только по явному запросу: он нужен на последней стадии,
 # при обычном возобновлении работы мешает.
 if [ "${1:-}" = "--with-app" ] && [ -d app/node_modules ]; then
-  pgrep -f "restore-next/app/node_modules/[e]lectron/dist" >/dev/null || {
+  pgrep -f "music-restoration/app/node_modules/[e]lectron/dist" >/dev/null || {
     echo "запускаю плеер"
     (cd app && setsid nohup ./node_modules/.bin/electron --no-sandbox --disable-gpu . \
        >/tmp/electron.log 2>&1 </dev/null &)

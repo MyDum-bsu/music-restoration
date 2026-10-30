@@ -1,165 +1,168 @@
-# restore-next
+# music-restoration
 
-Универсальный инструмент реставрации аудиоальбомов (динамика, деклип, спектр),
-калибруемый на парах «оригинал → профессиональная реставрация».
+Снятие «войны громкости» с музыкальной библиотеки: задавленные мастера DR4–6
+возвращаются к DR8–12 без потери тембра. Плюс полный цикл релиза — разбиение
+образа, теги, обложки, тексты, копия в коллекцию и доставка на телефон.
 
-## Цель (зафиксирована)
+Это **v2** проекта. Старая версия (v1.0, Stereo Tool CLI + фиксированная
+цепочка) сохранена тегом `v1.0` в истории репозитория; её движок больше не
+используется и в текущем дереве отсутствует.
 
-> Инструмент на входе принимает оригинал (CD 16/44), на выходе даёт
-> реставрацию уровня референсных мастеров: ΔDR ≈ +4 дБ на сжатых
-> материалах, TP ≤ −0.5 dBFS, спектр в допуске относительно
-> reference-реставрации. Артефакты ниже порогов гейтов. Автономно
-> работает на новых альбомах без учителя.
+## Чем v2 отличается от v1
 
-## Архитектура DSP-ядра
+| | v1.0 | v2 |
+|---|---|---|
+| Движок | ffmpeg + Stereo Tool CLI + `sts`-профили | собственное DSP-ядро `rnext/dsp/` |
+| Платный софт | нужен для стадии ND2 | не нужен |
+| Настройка | фиксированная цепочка | калибровка по парам «оригинал → мастер-реставрация» |
+| Цель | константа | модель предсказывает Δcrest по треку, ограничена физикой |
+| Проверка | метрики | метрики + гейты (TP, внесённый клип, OOD) + слепые сравнения |
 
-Пайплайн `rnext/dsp/pipeline.py`:
+## Что умеет
 
-1. **HPF 25 Гц** — sosfiltfilt, убирает рокот/DC.
-2. **Деклип** `rnext/dsp/declip.py` — только при наличии клипа:
-   AR-экстраполяция (Levinson по контексту, forward+backward blend),
-   стабильная рекурсия, edge-guard на мелких рывках.
-3. **EQ** `rnext/dsp/eq.py` — спектральная дельта относительна
-   reference (пока off по умолчанию; фазонейтрально через STFT-бины).
-4. **Контур** `rnext/dsp/contour.py` — главный этап, два режима:
-   - `expand` (по умолчанию): per-band, per-frame уровень над
-     сглаженным телом растягивается `r_expand` раз; транзиенты в
-     верхний TP не заедают благодаря перекрёстному WOLA и TP-клипу
-     в конце; crest растёт, body остаётся.
-   - `flatten`: медленная модуляция гейна вокруг аchoра полосы
-     (k<1), bass_scale ослабляет НЧ.
-   - Реализация: собственный chunked WOLA (Hann, hop=frame/4,
-     кроссоверы между полосами 1/3-октавы по log-freq), паддинг
-     краёв, two-pass (levels → gains → synthesis). Identity при
-     r=1 точна (rel-err ~1e-8).
-5. **TP-лимит** `rnext/dsp/limit.py` — статическое измерение 4×-oversample
-   TP и мягкое приведение к потолку политики (по умолчанию −0.5 dBFS).
-6. Вывод 16-бит FLAC (+ histogram позже — TPDF-дизер).
+- **Реставрация альбома** — образ+cue или каталог треков; авто-политика по
+  классу материала, деклип только при реальном клипе, TP ≤ −0.5 dBFS.
+- **Оформление релиза** — теги из источника/cue, обложка, тексты, копия в
+  коллекцию.
+- **Телефон** — замена альбома по MTP с побайтовой проверкой md5, инвентарь
+  библиотеки, массовые тексты и обложки.
+- **Измерения** — TT DR, LUFS, true peak, клиппинг, фейковый hi-res, lossy-транскод.
+- **Корпус и ML** — пары «оригинал → реставрация мастера», версии датасета,
+  обучение оценщика цели, снапшоты и гейт продвижения.
+- **Слепые сравнения** — пак вариантов, выровненных по LUFS, и Electron-плеер.
 
-**Адаптивный r** (`rnext/dsp/adaptive.py`): пробный проход на полном
-треке при r₀=1.5 → измеренный Δcrest → линейная инверсия к целевому
-Δcrest (по умолчанию +4.4 дБ — уровень, наблюдаемый у референсных
-мастеров корпуса).
+## Установка
 
-## Калибровка на корпусе (май 2026, Michael Romeo пары)
-
-`scripts/calibrate_pair.py`: наш пайплайн против master-restoration,
-full-track метрики TT DR/crest + band deltas:
-
-| альбом | r | crest_err (наши−мастер) | dr_err | bandΔ |
-|---|---|---|---|---|
-| WotW Pt.1 (2018) | 1.5 | −0.54 | −1.65 | ±0…2 дБ |
-| WotW Pt.1 | 1.6 | +0.30 | −1.07 | +0…4 дБ |
-| WotW Pt.2 CD1 (2022) | 1.5 | −0.37 | −1.15 | ±0…3 дБ |
-| WotW Pt.2 | 1.6 | +0.47 | −0.48 | +0…4 дБ |
-
-Адаптив (target Δcrest +4.4) на полном альбоме Pt.1 дал crest-ошибки
-±0.43 дБ (среднее −0.06) на всех 9 треках.
-
-## Датасет: два независимых автора
-
-Полное описание — `docs/dataset.md`. Кратко:
-
-В индексе 678 тем двух реставраторов: **Лисной Йожыг** (`pid=5618698`, 178 тем,
-классический рок/хард, чаще `image+.cue`, публикует текстовую таблицу DR-метра)
-и **Alias Divas** (`pid=3048819`, 500 тем, тяжёлые жанры, `tracks+.cue`).
-Каталоги почти не пересекаются (3 общих артиста из 176 и 499) — это два
-независимых вкуса, а не перезалив одного корпуса. Поэтому оценка обязана
-держать 30 % альбомов КАЖДОГО автора вне настройки.
-
-Артефакты: `corpus/authors/{pid}.jsonl` (каталоги), `corpus/restored/{tid}.json`
-(разбор тем), `corpus/dataset_plan.jsonl` (релиз → оригинал), `corpus/master_targets.jsonl`
-(цели мастера из его таблиц DR: релизов/треков), `dataset/` (пары, фичи, вырезки,
-журнал загрузок, снапшоты моделей).
+Нужны Python 3.10+, `ffmpeg`, `flac` (с `metaflac`), `curl`. Для телефона —
+`gio` (gvfs MTP).
 
 ```bash
-python3 scripts/dataset_plan.py topics --author 5618698,3048819   # разбор тем
-python3 scripts/dataset_plan.py match                             # релиз → оригинал
-python3 scripts/dataset_select.py --limit 12                      # выбор партии
-python3 scripts/dataset_fetch.py --go --max-gb 8                  # загрузка (только нужное)
-python3 scripts/dataset_extract.py --all --excerpts 1             # фичи + вырезки
-python3 scripts/reference_audit.py                                # метки референсов
-python3 scripts/dataset_audit.py                                  # не потерялось ли сырьё
-python3 scripts/dataset_loop.py --interval 900                    # непрерывное обогащение
+git clone https://github.com/MyDum-bsu/music-restoration.git
+cd music-restoration
+./install.sh                 # проверка зависимостей + симлинки скиллов в ~/.agents/skills
+./install.sh --venv          # то же + .venv и pip install -r requirements.txt
 ```
 
-Скачивание только нужного: раздача добавляется на паузе, файлы сопоставляются с
-трек-листом мастера, лишние снимаются (`files-unwanted`); из CD-дискографии
-берётся только нужный диск. Одна тема-дискография обслуживает несколько пар —
-wanted-набор считается объединением (`dataset_fetch.py --repair`).
-
-## ML-слой: цель по треку вместо константы
-
-Полное описание — `docs/ml.md`. Пайплайн (DSP) фиксирован, обучается **оценщик
-цели** `Δcrest`; модель подставляется в физику и всегда проходит инварианты
-(TP-потолок, отсутствие внесённого клипа, скобки).
-
-Версионирование: `dataset/manifest.json` даёт версию `ds-<хэш>` по содержимому
-(ключи пар + байты фич + метки), паспорт версии кладётся в `dataset_manifests/`;
-снапшоты моделей — в `models/snapshots/<id>/` с метаданными (версия датасета,
-признаки, сплит, метрики, git-коммит), реестр — `models/registry.jsonl`,
-лидерборд — `models/leaderboard.jsonl`.
+Без агентских скиллов всё работает обычным CLI:
 
 ```bash
-python3 scripts/ml_auto.py                  # версия → обучение → эвалы → сводка
-python3 scripts/ml_auto.py --interval 1800  # то же в цикле
-python3 scripts/ml_train.py --model ridge --by-author
-python3 scripts/restore_one.py --src <img.flac> --cue <cue> --out out/ --ml-snapshot auto
+python3 scripts/audio_measure.py "album/"                  # DR/LUFS/TP/клиппинг
+python3 scripts/restore_one.py --src "album/" --out out/   # реставрация
+python3 scripts/finish_release.py --restored out/ --source "album/" --dest ~/Music/restored --lyrics
 ```
 
-Модели выбираются по объёму (`table` → `ridge`/`conformal`/`knn` → `hgb`/`hgbq`),
-продвижение в рантайм — только если модель лучше лучшей базы по медиане |err| с
-95 % CI > 0 и выигрышем ≥ 0.10 дБ (парный бутстрэп), иначе остаётся прежняя логика.
-
-## Плеер слепых сравнений
-
-`scripts/listen_pack.py` собирает пак (варианты выравниваются по LUFS, слепая
-раскладка A/B/C), `app/` — Electron-приложение для прослушивания и оценок
-(`cd app && npm install && npm start`). Полное описание — `app/README.md`.
-
-## Команды
+## Реставрация альбома
 
 ```bash
-# реставрация целого альбома (image+cue или каталог треков)
-python3 scripts/restore_one.py --src <img.flac> --cue <cue> \
-        --out out/<name> --mode expand --adaptive --target 4.4 --tp -0.5
+# образ + cue
+python3 scripts/restore_one.py \
+    --src "Artist - Album (1993)/image.flac" --cue "Artist - Album (1993)/image.cue" \
+    --out "out/Artist - Album (1993)" \
+    --auto-policy --adaptive --ml-snapshot auto --tp -0.5
 
-# сравнить наш прогон с master-restoration по корпусной паре
-python3 scripts/compare_run.py --report out/<name>/restore_report.jsonl --key mrpt1-2018
-
-# калибровка r по корпусной паре
-python3 scripts/calibrate_pair.py --key mrpt1-2018 --tracks 1,2,3 \
-        --r-list 1.4,1.5,1.6 --restored <dir> --orig-image <img> --cue <cue>
-
-# фичи пары (TT DR/crest/band/clip) → corpus/feature_pairs/{key}.jsonl
-python3 scripts/pair_features.py --key <key> --restored <dir> \
-        --orig-image <img> --cue <cue>
-
-# поиск оригинального издания под реставрацию мастера
-python3 - <<'EOF'
-from rnext.rtclient import RTClient
-from rnext.pairsearch import find_originals
-print(find_originals("Artist", "Album", 1993, client=RTClient()))
-EOF
-
-# статусы дашборда
-python3 scripts/status.py
+# каталог треков
+python3 scripts/restore_one.py \
+    --src "Artist - Album (1993)/" --out "out/Artist - Album (1993)" \
+    --auto-policy --adaptive --ml-snapshot auto --tp -0.5
 ```
 
-## Инфраструктура
+`--auto-policy` выбирает режим по классу материала, `--adaptive` подбирает
+силу контура под целевой Δcrest, `--ml-snapshot auto` подставляет лучшую
+прошедшую гейт модель. Без корпуса и моделей работает классовая таблица:
+DSP-ядро самодостаточно.
 
-- `rnext/rtclient.py` — rutracker cookie-jar клиент (dl.php и поиск);
-- `rnext/transm.py` — Transmission RPC (batch загрузки;
-  torrent-ы мастера не трогаем, наши id ≥ 4);
-- `rnext/workspace.py` — бюджет 40 GiB на flash-разделе;
-- корпус: `/media/.../restore/corpus/` (JSONL метрики, `master_topics.jsonl`);
-- тесты: `tests/test_dsp.py` (pytest, 7).
+Полный цикл (разбиение → реставрация → теги/обложка/тексты → телефон):
 
-## Планы
+```bash
+python3 scripts/release_batch.py \
+    --job "release_src/Artist/1993 - Album|Artist/Album (1993)|Artist - Album (1993)" \
+    --log /tmp/batch.log
+```
 
-- деклип длинных ранов (cubic fallback >120 семплов) — для ререков
-  клипогенных изданий;
-- EQ-подгонка спектральной дельты (от corpus бланс) для calibrated mode;
-- ABX-выписки 12/8-сек и артефакт-гейты (regression от гейтов корпуса);
-- batch-002 (Aerosmith Get a Grip 1993): первый тест на чужой
-  дискографии, эра клипов.
+## Пайплайн
+
+`rnext/dsp/pipeline.py`:
+
+1. **HPF 25 Гц** — убирает рокот/DC (zero-phase).
+2. **Деклип** — только при реальном клипе: AR-экстраполяция, forward+backward blend.
+3. **EQ** — спектральная дельта относительно reference (по умолчанию off).
+4. **Контур** — главный этап: per-band, per-frame уровень над сглаженным телом
+   растягивается в `r` раз; транзиенты держит WOLA и TP-клип.
+5. **TP-лимит** — измерение с 4× oversample, мягкое приведение к −0.5 dBFS.
+6. **Вывод** — 16-бит FLAC, TPDF-дизер.
+
+Адаптивный режим делает пробный проход и линейно инвертирует измеренный
+Δcrest к цели (по умолчанию +4.4 дБ — уровень референсных мастеров корпуса).
+
+Подробности и калибровка — в [docs/dataset.md](docs/dataset.md) и [docs/ml.md](docs/ml.md).
+
+## Скиллы
+
+`./install.sh` ставит в `~/.agents/skills`:
+
+| скилл | для чего |
+|---|---|
+| `release-restore` | полный цикл релиза: источник → реставрация → оформление → коллекция |
+| `audio-measure` | измерить DR/громкость/подлинность файла или каталога |
+| `tracker` | поиск, сравнение и закачка раздач |
+| `restore-status` | состояние проекта: датасет, качки, процессы, модели |
+| `add-lyrics` | тексты в теги (genius.com + lrclib) |
+| `phone-music` | инвентарь, тексты и обложки на телефоне по MTP |
+| `split-flac-album` | разбиение image+cue на треки |
+
+Скиллы — тонкие обёртки над `scripts/`; каждый работает и без агента.
+
+## Данные и конфигурация
+
+- Корпус и релизы: `config/workspace.json` → `data_root` (по умолчанию флешка
+  `/media/<user>/Data/Music/restore`). Переопределяется `RESTORE_DATA_ROOT`.
+- Личный конфиг: `~/.config/music-restoration/config.env` (образец —
+  `config.env.example`). Ключи необязательны.
+- Секреты (cookies rutracker, Transmission RPC): `~/.config/music-restoration/secrets/`.
+- Состояние и кэши: `~/.local/state/music-restoration/`.
+- Модели: `models/snapshots/` (локальные артефакты, в git не коммитятся),
+  реестр и лидерборд — `models/registry.jsonl`, `models/leaderboard.jsonl`.
+
+## Корпус и ML
+
+Корпус — пары «оригинал → реставрация мастера» двух независимых
+реставраторов (Лисной Йожыг и Alias Divas). Датасет версионируется по
+содержимому (`ds-<хэш>`), паспорт версии кладётся в `dataset_manifests/`.
+
+```bash
+python3 scripts/dataset_plan.py topics --author 5618698,3048819
+python3 scripts/dataset_select.py --limit 12
+python3 scripts/dataset_fetch.py --go --max-gb 8
+python3 scripts/dataset_extract.py --all --excerpts 1
+python3 scripts/ml_auto.py                 # версия → обучение → эвалы → сводка
+python3 scripts/status_report.py --deep    # состояние проекта
+```
+
+Модель выбирается по объёму (`table` → `ridge`/`conformal`/`knn` → `hgb`/`hgbq`)
+и продвигается в рантайм только если лучше лучшей базы по медиане |err| при
+95 % CI > 0 и выигрыше ≥ 0.10 дБ.
+
+## Слепые сравнения
+
+```bash
+python3 scripts/listen_pack.py ...   # пак вариантов, выровненных по LUFS
+cd app && npm install && npm start   # Electron-плеер A/B/C
+```
+
+Локальный обзор датасета и пайплайна: `python3 lab/server.py` →
+http://127.0.0.1:8765 (см. [lab/README.md](lab/README.md)).
+
+## Тесты
+
+```bash
+python3 -m pytest tests/ -q
+```
+
+## История
+
+- `v1.0` — старый движок на Stereo Tool CLI. Сохранён тегом и историей git.
+- `v2.0` — текущее дерево: собственное DSP-ядро, корпус, ML, релизный цикл.
+
+## Лицензия
+
+MIT — см. [LICENSE](LICENSE).

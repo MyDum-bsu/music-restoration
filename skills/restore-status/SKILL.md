@@ -1,11 +1,11 @@
 ---
 name: restore-status
-description: Отчёт о состоянии проекта restore-next (реставрация аудио) одной командой — датасет, план пар, качка, процессы, модели и их метрики, плюс глубокая проверка (целостность данных, тесты DSP, сквозной прогон пайплайна). Использовать, когда просят «как дела», «что по датасету», «статус», «сколько треков», «провалидируй состояние», «идёт ли прогресс», «status report», «проверь, что всё работает». Не для запуска реставрации конкретного альбома (это release-restore).
+description: Отчёт о состоянии проекта music-restoration (реставрация аудио) одной командой — датасет, план пар, качка, процессы, модели и их метрики, плюс глубокая проверка (целостность данных, тесты DSP, сквозной прогон пайплайна). Использовать, когда просят «как дела», «что по датасету», «статус», «сколько треков», «провалидируй состояние», «идёт ли прогресс», «status report», «проверь, что всё работает». Не для запуска реставрации конкретного альбома (это release-restore).
 ---
 
-# restore-next: состояние проекта
+# music-restoration: состояние проекта
 
-Проект: `~/Desktop/projects/restore-next` — пайплайн DR-реставрации, обучаемый на
+Проект: `~/Desktop/projects/music-restoration` — пайплайн DR-реставрации, обучаемый на
 парах «оригинал → мастер-реставрация» с rutracker (два автора: Лисной Йожыг
 `pid=5618698`, Alias Divas `pid=3048819`). Данные — на флешке
 `/media/mydum/Data/Music/restore` (бюджет 40 ГиБ).
@@ -13,8 +13,8 @@ description: Отчёт о состоянии проекта restore-next (ре�
 ## Быстрый ответ
 
 ```bash
-python3 ~/Desktop/projects/restore-next/scripts/status_report.py          # отчёт
-python3 ~/Desktop/projects/restore-next/scripts/status_report.py --deep   # + целостность, тесты, прогон
+python3 ~/Desktop/projects/music-restoration/scripts/status_report.py          # отчёт
+python3 ~/Desktop/projects/music-restoration/scripts/status_report.py --deep   # + целостность, тесты, прогон
 ```
 
 Скрипт печатает 6 (или 7 с `--deep`) секций и не падает, если одна из них
@@ -124,9 +124,9 @@ python3 scripts/audio_measure.py <каталог>
   release_src/                     скачанные исходники релизов (мимо датасетного сырья)
 
 ~/Music/restorations/              готовое к прослушиванию (копия из release/)
-~/Desktop/projects/restore-next/skills/   скиллы проекта (audio-measure, tracker,
+~/Desktop/projects/music-restoration/skills/   скиллы проекта (audio-measure, tracker,
                                    release-restore, restore-status)
 
-~/Desktop/projects/restore-next/models/registry.jsonl      снапшоты моделей
-~/Desktop/projects/restore-next/models/leaderboard.jsonl   результаты прогонов
+~/Desktop/projects/music-restoration/models/registry.jsonl      снапшоты моделей
+~/Desktop/projects/music-restoration/models/leaderboard.jsonl   результаты прогонов
 ```

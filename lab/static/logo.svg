@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Restoration Lab">
+  <title>Restoration Lab</title>
+  <!-- A flat-topped block (the brickwalled master) that breaks open into
+       peaks (what dynamic restoration gives back). Single closed palette. -->
+  <rect x="2" y="13" width="10" height="6" rx="1.4" fill="currentColor"/>
+  <path d="M12 16h2l2-7.5 2.6 15 2.8-19 2.6 12 1.8-0.5H30"
+        fill="none" stroke="currentColor" stroke-width="2.1"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

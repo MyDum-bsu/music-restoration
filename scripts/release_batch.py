@@ -30,7 +30,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from rnext import workspace  # noqa: E402
 
 SCRIPTS = Path(__file__).resolve().parent
-DATA = workspace.data_root()
+
+
+def _data_root() -> Path:
+    """Каталог корпуса/релизов: config/workspace.json, иначе $RESTORE_DATA_ROOT,
+    иначе ~/Music/restorations. Без флешки базовый прогон не должен падать."""
+    try:
+        return workspace.data_root()
+    except Exception:  # noqa: BLE001
+        import os
+        return Path(os.environ.get("RESTORE_DATA_ROOT", Path.home() / "Music" / "restorations"))
+
+
+DATA = _data_root()
 
 
 def run(cmd: list[str], log, timeout: int = 7200, cwd: Path | None = None) -> tuple[int, str]:

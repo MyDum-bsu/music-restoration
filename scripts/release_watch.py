@@ -32,8 +32,7 @@ PHONE_CACHE: dict = {}
 
 def phone_root() -> Path | None:
     try:
-        sys.path.insert(0, "/home/mydum/Desktop/projects/music-restoration/restore-dr/scripts")
-        from drlib import mtp
+        from rnext.phone import mtp
         return mtp.phone_dir()
     except Exception:  # noqa: BLE001
         return None

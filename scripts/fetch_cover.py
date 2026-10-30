@@ -19,7 +19,7 @@ import sys
 import urllib.parse
 from pathlib import Path
 
-UA = "restore-next/0.1 ( audio-restoration )"
+UA = "music-restoration/2.0 ( audio-restoration )"
 
 
 def curl(url: str, out: Path, timeout: int = 90) -> int:

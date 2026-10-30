@@ -18,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.insert(0, "/home/mydum/Desktop/projects/restore-next")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from rnext import features as F  # noqa: E402
 from restore_one import encode_flac  # noqa: E402
 

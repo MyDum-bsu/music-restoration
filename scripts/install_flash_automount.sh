@@ -2,7 +2,7 @@
 # Одноразовая настройка флешки: монтируется БЕЗ пароля и переживает аварийные
 # выключения. Запускать один раз с правами root:
 #
-#     sudo ~/Desktop/projects/restore-next/scripts/install_flash_automount.sh
+#     sudo ~/Desktop/projects/music-restoration/scripts/install_flash_automount.sh
 #
 # Что делает:
 #   1) добавляет в /etc/fstab строку для раздела «Data» с драйвером ntfs-3g
@@ -86,5 +86,5 @@ cat <<'MSG'
   * раздел монтируется автоматически при загрузке (nofail: если не смог — система всё равно стартует)
   * после аварийного выключения ntfs-3g сам проигрывает журнал; ntfsfix нужен только
     если Windows оставил том в режиме гибернации (тогда: sudo mount -t ntfs-3g -o remove_hiberfile ...)
-  * возобновление работы:  ~/Desktop/projects/restore-next/scripts/resume.sh
+  * возобновление работы:  ~/Desktop/projects/music-restoration/scripts/resume.sh
 MSG

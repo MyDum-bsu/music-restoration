@@ -9,7 +9,7 @@ description: Полный цикл релиза — от исходников д
 оформить (теги/обложка/тексты) → положить в коллекцию → отчитаться.
 
 ```bash
-S=~/Desktop/projects/restore-next/scripts
+S=~/Desktop/projects/music-restoration/scripts
 R=/media/mydum/Data/Music/restore
 
 # 0. что за источник (DR, битность, настоящий ли lossless)

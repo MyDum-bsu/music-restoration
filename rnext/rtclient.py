@@ -31,7 +31,7 @@ class RTClient:
         if not cookies:
             raise NotLoggedError(
                 "нет cookies: положи rutracker_cookies.txt и rutracker_ua.txt в "
-                "~/.config/restore-next/secrets/"
+                "~/.config/music-restoration/secrets/"
             )
         self.s = requests.Session()
         self.s.headers.update({"User-Agent": ua or UA})

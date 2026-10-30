@@ -20,7 +20,7 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, "/home/mydum/Desktop/projects/restore-next")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rnext import features as F  # noqa: E402
 from rnext import workspace  # noqa: E402

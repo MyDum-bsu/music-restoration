@@ -17,10 +17,11 @@ import sys
 
 import numpy as np
 
-sys.path.insert(0, "/home/mydum/Desktop/projects/restore-next")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rnext import features as F  # noqa: E402
 from rnext.dsp.contour import true_peak_dbfs  # noqa: E402
+from pathlib import Path
 
 
 def gain_smoothness(x: np.ndarray, sr: int, frame: int = 2048) -> dict:

@@ -24,7 +24,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-LYRICS_SCRIPT = Path.home() / ".agents/skills/add-lyrics/scripts/genius_lyrics.py"
+LYRICS_SCRIPT = (Path(__file__).resolve().parents[1]
+                 / "skills" / "add-lyrics" / "scripts" / "genius_lyrics.py")
 COVER_HINTS = ("cover.jpg", "folder.jpg", "front.jpg", "Cover.jpg", "Folder.jpg",
                "Front.jpg", "cover.png", "folder.png", "front.png")
 COVER_BAD = ("back", "cd.", "disc", "inlay", "matrix", "booklet", "1 0", "scan")

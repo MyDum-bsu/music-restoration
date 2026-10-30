@@ -5,10 +5,11 @@ import json
 
 import requests
 
-sys.path.insert(0, "/home/mydum/Desktop/projects/restore-next")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rnext import workspace  # noqa: E402
 from rnext import secrets  # noqa: E402
+from pathlib import Path
 
 
 def human(n: int) -> str:
@@ -45,7 +46,7 @@ def main() -> int:
     print(f"transmission rpc: ok {rpc['version']}")
     # Проверяем, что тюнинг качки на месте (иначе скорость упадёт в разы)
     try:
-        sys.path.insert(0, "/home/mydum/Desktop/projects/restore-next")
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
         from scripts.transmission_tune import WATCH, TUNE  # type: ignore
     except Exception:                                      # noqa: BLE001
         WATCH, TUNE = ["download-queue-size", "dht-enabled"], {}

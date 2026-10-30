@@ -1,8 +1,14 @@
-"""Секреты из ~/.config/restore-next/secrets — никогда не хранятся в репо."""
+"""Секреты из ~/.config/music-restoration/secrets — никогда не хранятся в репо.
+
+Старый каталог ~/.config/restore-next/secrets читается как запасной, чтобы
+после переименования проекта не пришлось переносить cookies руками.
+"""
 import json
 from pathlib import Path
 
-SECRETS = Path.home() / ".config" / "restore-next" / "secrets"
+_NEW = Path.home() / ".config" / "music-restoration" / "secrets"
+_OLD = Path.home() / ".config" / "restore-next" / "secrets"
+SECRETS = _NEW if _NEW.exists() or not _OLD.exists() else _OLD
 
 
 def rutracker_cookies() -> dict[str, str]:

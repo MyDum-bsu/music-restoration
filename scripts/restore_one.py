@@ -27,11 +27,12 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rnext import features as F  # noqa: E402
-from rnext import workspace  # noqa: E402
 from rnext.dsp.contour import true_peak_dbfs  # noqa: E402
 from rnext.dsp.pipeline import Policy, restore_track  # noqa: E402
+from rnext.phone.config import ensure_dirs, state_dir  # noqa: E402
 
-LOCK = workspace.data_root() / ".restore.lock"
+ensure_dirs()
+LOCK = state_dir() / "restore.lock"
 
 
 class RestoreBusy(RuntimeError):

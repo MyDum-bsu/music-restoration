@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "music-restoration"
+version = "2.0.0"
+description = "DR-реставрация музыкальных альбомов: собственное DSP-ядро, калибровка по парам «оригинал → мастер-реставрация», ML-оценка цели"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "MyDum-bsu" }]
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+    "mutagen>=1.46",
+    "pillow>=9.0",
+    "beautifulsoup4>=4.11",
+    "requests>=2.28",
+    "scikit-learn>=1.2",
+    "joblib>=1.2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[tool.setuptools]
+packages = ["rnext", "rnext.dsp", "rnext.ml", "rnext.phone"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

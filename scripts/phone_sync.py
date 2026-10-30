@@ -21,9 +21,8 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-sys.path.insert(0, str(Path("/home/mydum/Desktop/projects/music-restoration/restore-dr/scripts")))
 
-from drlib import mtp  # noqa: E402
+from rnext.phone import mtp  # noqa: E402
 
 AUDIO = {".flac", ".mp3", ".m4a", ".ogg", ".opus", ".wav", ".ape"}
 

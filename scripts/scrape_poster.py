@@ -3,10 +3,11 @@
 import argparse
 import sys
 
-sys.path.insert(0, "/home/mydum/Desktop/projects/restore-next")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rnext import workspace  # noqa: E402
 from rnext.rtscrape import poster_topics  # noqa: E402
+from pathlib import Path
 
 
 def main() -> int:
