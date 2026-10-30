@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Residual-тест без слуха: наше минус оригинал после снятия общего гейна.
+"""Residual test without ears: ours minus original after removing the common gain.
 
-Идея: наш выход = g·(оригинал + нелинейный остаток) + дизер. Если снять
-общий гейн g = rms(ориг)/rms(наше) и вычесть, остаётся:
-  - линейный остаток обработки (фильтр HPF, контур);
-  - продукты нелинейности (если есть) — узкие пики/гармоники.
+Idea: our output = g·(original + nonlinear residual) + dither. If we remove the
+common gain g = rms(orig)/rms(ours) and subtract, what remains is:
+  - linear processing residue (HPF filter, contour);
+  - nonlinearity products (if any) — narrow peaks/harmonics.
 
-Метрика:
-  * уровень остатка относительно сигнала (дБ);
-  * спектр остатка (Welch): ищем УЗКИЕ пики — бины, чья мощность выше локальной
-    медианы (в окне ±W бинов) на > P дБ, с оценкой «узости» (Q);
-  * отдельно проверяем совпадение значимых пиков с гармониками частот
-    50/60 Гц (сетевые наводки — признак, а не дефект) и с гармониками
-    доминирующего тона сигнала.
+Metrics:
+  * residual level relative to the signal (dB);
+  * residual spectrum (Welch): looking for NARROW peaks — bins whose power
+    exceeds the local median (in a ±W-bin window) by > P dB, with a "narrowness" (Q) estimate;
+  * separately check whether the significant peaks coincide with harmonics of
+    50/60 Hz (mains hum — a symptom, not a defect) and with harmonics of the
+    signal's dominant tone.
 
   python3 scripts/residual_test.py --ours <dir> --orig <image> --cue <cue> --tracks 1,7
 """
@@ -28,8 +28,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from rnext import features as F  # noqa: E402
 
 NFFT = 16384
-PROM_DB = 10.0     # пик выше локальной медианы на столько дБ = «узкий пик»
-WIN_BINS = 16      # окно локальной медианы
+PROM_DB = 10.0     # a peak this many dB above the local median = "narrow peak"
+WIN_BINS = 16      # local-median window
 
 
 def narrow_peaks(e: np.ndarray, sr: int) -> dict:
@@ -40,7 +40,7 @@ def narrow_peaks(e: np.ndarray, sr: int) -> dict:
     pad = np.pad(Pdb, (k, k), mode="edge")
     med = np.array([np.median(pad[i:i + 2 * k + 1]) for i in range(len(Pdb))])
     prom = Pdb - med
-    # исключаем самый низ (<30 Гц: DC/HPF-хвост) и самый верх
+    # exclude the very bottom (<30 Hz: DC/HPF tail) and the very top
     band = (f > 30) & (f < sr / 2 - 500)
     idx = np.where(band)[0]
     order = idx[np.argsort(prom[idx])[::-1]]

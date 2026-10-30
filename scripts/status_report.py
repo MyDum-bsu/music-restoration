@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Полный отчёт о состоянии проекта music-restoration одной командой.
+"""Full project status report for music-restoration in a single command.
 
-Секции: флешка и бюджет · датасет · план и журнал · качка · процессы ·
-модели · (в --deep: целостность данных, тесты, сквозной прогон пайплайна).
+Sections: flash drive and budget · dataset · plan and journal · downloads ·
+processes · models · (with --deep: data integrity, tests, end-to-end pipeline run).
 
-Каждая секция в своём try/except — сбой одной не ломает отчёт.
+Each section has its own try/except — one failing does not break the report.
 
-  python3 scripts/status_report.py            # быстрый отчёт
-  python3 scripts/status_report.py --deep     # + целостность, тесты, прогон
+  python3 scripts/status_report.py            # quick report
+  python3 scripts/status_report.py --deep     # + integrity, tests, e2e run
 """
 import argparse
 import json
@@ -43,12 +43,12 @@ def human_gb(n: float) -> str:
     return f"{n:.1f} GB"
 
 
-# --- секции -----------------------------------------------------------------
+# --- sections ---------------------------------------------------------------
 def sec_disk() -> None:
-    h("1. Флешка и бюджет")
+    h("1. Flash drive and budget")
     try:
         root = workspace.data_root()
-        # точка монтирования может быть выше data_root (у нас /media/mydum/Data)
+        # the mount point may sit above data_root (here /media/mydum/Data)
         mp = root
         while mp != mp.parent and not mp.is_mount():
             mp = mp.parent
@@ -56,23 +56,23 @@ def sec_disk() -> None:
         if mounted:
             line = subprocess.run(["df", "-h", str(root)], capture_output=True,
                                   text=True).stdout
-            ok(f"смонтирована в {mp}: {line.strip().splitlines()[-1]}")
+            ok(f"mounted at {mp}: {line.strip().splitlines()[-1]}")
         else:
-            bad(f"{root} НЕ смонтирована — scripts/repair_flash.sh")
+            bad(f"{root} NOT mounted — scripts/repair_flash.sh")
         used = workspace.usage_bytes()
         budget = workspace.budget_bytes()
         pct = used / budget * 100
-        msg = f"бюджет датасета: {used / 2**30:.1f} / {budget / 2**30:.0f} ГиБ ({pct:.0f}%)"
+        msg = f"dataset budget: {used / 2**30:.1f} / {budget / 2**30:.0f} GiB ({pct:.0f}%)"
         (ok if pct < 85 else warn)(msg)
         free = subprocess.run(["df", "-BG", "--output=avail", str(root)],
                               capture_output=True, text=True).stdout.strip().splitlines()[-1]
-        (ok if int(free.rstrip("G")) > 12 else warn)(f"свободно на разделе: {free}")
+        (ok if int(free.rstrip("G")) > 12 else warn)(f"free on the partition: {free}")
     except Exception as e:                                # noqa: BLE001
-        bad(f"ошибка: {type(e).__name__}: {e}")
+        bad(f"error: {type(e).__name__}: {e}")
 
 
 def sec_dataset() -> None:
-    h("2. Датасет")
+    h("2. Dataset")
     try:
         D = workspace.data_root() / "dataset"
         pairs = sorted(D.glob("pairs/*/features.json"))
@@ -84,21 +84,21 @@ def sec_dataset() -> None:
                       ("mid" if r["original"]["dr"] >= 9 else "crushed") for r in rows)
         man = D / "manifest.json"
         ver = json.loads(man.read_text(encoding="utf-8")).get("version") if man.is_file() else "?"
-        ok(f"пар {len(pairs)}, треков {len(rows)}, вырезок {len(ex)} | версия {ver}")
-        print(f"    классы исходника: {dict(cls)}")
-        for target, name in ((300, "M1 ridge/knn"), (760, "M2 hgb"), (1500, "M3 кросс-автор")):
+        ok(f"pairs {len(pairs)}, tracks {len(rows)}, excerpts {len(ex)} | version {ver}")
+        print(f"    source classes: {dict(cls)}")
+        for target, name in ((300, "M1 ridge/knn"), (760, "M2 hgb"), (1500, "M3 cross-author")):
             left = target - len(rows)
-            (ok if left <= 0 else warn)(f"{name}: {'достигнут' if left <= 0 else f'ещё {left} треков'}")
+            (ok if left <= 0 else warn)(f"{name}: {'reached' if left <= 0 else f'{left} to go'}")
         sz = {k: sum(f.stat().st_size for f in (D / k).rglob("*") if f.is_file())
               for k in ("pairs", "features", "raw")}
-        print(f"    фичи {sz['features'] / 1e6:.1f} MB | пары+вырезки {sz['pairs'] / 1e6:.0f} MB | "
-              f"сырьё (транзит) {human_gb(sz['raw'] / 1e9)}")
+        print(f"    features {sz['features'] / 1e6:.1f} MB | "
+              f"pairs+excerpts {sz['pairs'] / 1e6:.0f} MB | raw (transit) {human_gb(sz['raw'] / 1e9)}")
     except Exception as e:                                # noqa: BLE001
-        bad(f"ошибка: {type(e).__name__}: {e}")
+        bad(f"error: {type(e).__name__}: {e}")
 
 
 def sec_plan() -> None:
-    h("3. План и журнал")
+    h("3. Plan and journal")
     try:
         from rnext import sides as S
         C = workspace.dir_of("corpus")
@@ -106,26 +106,26 @@ def sec_plan() -> None:
         plan = [json.loads(l) for l in (C / "dataset_plan.jsonl").read_text(
             encoding="utf-8").splitlines() if l.strip()]
         st = Counter(r["status"] for r in plan)
-        ok(f"план: matched {st.get('matched', 0) + st.get('matched_graphy', 0)} "
-           f"(альбомных {st.get('matched', 0)}, дискографий {st.get('matched_graphy', 0)}), "
-           f"weak {st.get('weak', 0)}, без оригинала {st.get('no_original', 0)}")
+        ok(f"plan: matched {st.get('matched', 0) + st.get('matched_graphy', 0)} "
+           f"({st.get('matched', 0)} albums, {st.get('matched_graphy', 0)} discographies), "
+           f"weak {st.get('weak', 0)}, no original {st.get('no_original', 0)}")
         mt = [json.loads(l) for l in (C / "master_targets.jsonl").read_text(
             encoding="utf-8").splitlines() if l.strip()] if (C / "master_targets.jsonl").is_file() else []
         if mt:
-            ok(f"цели мастера без аудио: релизов {len(mt)}, треков {sum(r['n_tracks'] for r in mt)}")
+            ok(f"master targets (no audio): {len(mt)} releases, {sum(r['n_tracks'] for r in mt)} tracks")
         state = S.merged_state(D / "state.jsonl")
         have = {p.parent.name.replace("__", "/") for p in (D / "pairs").glob("*/features.json")}
-        c = Counter("в датасете" if k in have else r.get("state", "?") for k, r in state.items())
-        ok(f"журнал: заведено {len(state)} пар — {dict(c)}")
+        c = Counter("in dataset" if k in have else r.get("state", "?") for k, r in state.items())
+        ok(f"journal: {len(state)} pairs logged — {dict(c)}")
         paused = c.get("paused_space", 0)
         if paused:
-            warn(f"{paused} пар отложены по месту/мёртвым сидам — вернутся в работу сами")
+            warn(f"{paused} pairs paused for space/dead seeds — they will resume on their own")
     except Exception as e:                                # noqa: BLE001
-        bad(f"ошибка: {type(e).__name__}: {e}")
+        bad(f"error: {type(e).__name__}: {e}")
 
 
 def sec_downloads() -> None:
-    h("4. Качка")
+    h("4. Downloads")
     try:
         from rnext.transm import Transm
         t = Transm()
@@ -137,88 +137,89 @@ def sec_downloads() -> None:
         live = sum(x["leftUntilDone"] for x in ours if (x.get("peersConnected") or 0) > 0)
         rate = sum(x["rateDownload"] for x in ours)
         dead = [x for x in ours if x["leftUntilDone"] > 0 and not (x.get("peersConnected") or 0)]
-        ok(f"раздач {len(ours)}, активных {len(active)}, скорость {rate / 1e6:.1f} MB/s")
-        ok(f"в работе {human_gb(left / 1e9)}, из них с пирами {human_gb(live / 1e9)} "
-           f"(кап — по живым)")
+        ok(f"torrents {len(ours)}, active {len(active)}, rate {rate / 1e6:.1f} MB/s")
+        ok(f"in progress {human_gb(left / 1e9)}, of it with peers {human_gb(live / 1e9)} "
+           f"(cap counted over live ones)")
         if dead:
-            warn(f"без пиров {len(dead)} раздач — их снимет чистка мёртвых сидов")
+            warn(f"{len(dead)} torrents without peers — dead-seed cleanup will remove them")
     except Exception as e:                                # noqa: BLE001
-        bad(f"ошибка (Transmission RPC): {type(e).__name__}: {str(e)[:80]}")
+        bad(f"error (Transmission RPC): {type(e).__name__}: {str(e)[:80]}")
 
 
 def sec_processes() -> None:
-    h("5. Процессы")
+    h("5. Processes")
     try:
-        for pat, name in (("[d]ataset_loop.py", "цикл обогащения"),
-                          ("[w]atchdog.sh", "сторож"),
+        for pat, name in (("[d]ataset_loop.py", "enrichment loop"),
+                          ("[w]atchdog.sh", "watchdog"),
                           ("[t]ransmission-gtk", "Transmission"),
-                          ("music-restoration/app/node_modules/[e]lectron/dist", "плеер")):
+                          ("music-restoration/app/node_modules/[e]lectron/dist", "player")):
             n = subprocess.run(["pgrep", "-cf", pat], capture_output=True, text=True).stdout.strip()
-            (ok if int(n or 0) > 0 else warn)(f"{name}: {'работает' if int(n or 0) > 0 else 'не запущен'}")
+            (ok if int(n or 0) > 0 else warn)(
+                f"{name}: {'running' if int(n or 0) > 0 else 'not running'}")
         log = workspace.data_root() / "dataset" / "loop.log"
         if log.is_file():
             tail = [l for l in log.read_text(encoding="utf-8", errors="replace").splitlines()
                     if l.strip()][-3:]
-            print("    последние строки цикла:")
+            print("    last loop lines:")
             for l in tail:
                 print(f"      {l[:150]}")
     except Exception as e:                                # noqa: BLE001
-        bad(f"ошибка: {type(e).__name__}: {e}")
+        bad(f"error: {type(e).__name__}: {e}")
 
 
 def sec_models() -> None:
-    h("6. Модели")
+    h("6. Models")
     try:
         from rnext.ml import registry as reg
         rows = reg.list_snapshots()
         prom = [r for r in rows if r.get("promote")]
-        ok(f"снапшотов {len(rows)}, прошедших гейт {len(prom)}")
-        # свежие сверху: важно видеть, на какой версии датасета обучено
+        ok(f"{len(rows)} snapshots, {len(prom)} passed the gate")
+        # newest last: it matters which dataset version each model was trained on
         prom.sort(key=lambda r: (r.get("dataset_version") or "", r.get("saved") or 0))
         for r in prom[-4:]:
             m = r["metrics"]["all"]
             gain, ci = r.get("gate_vs_best"), r.get("gate_ci_low")
-            tail = (f"выигрыш {gain:+.2f}, CI низ {ci:+.2f}" if isinstance(gain, (int, float))
-                    and isinstance(ci, (int, float)) else "вердикт гейта не записан")
+            tail = (f"gain {gain:+.2f}, CI low {ci:+.2f}" if isinstance(gain, (int, float))
+                    and isinstance(ci, (int, float)) else "gate verdict not recorded")
             ok(f"PROMOTE {r['model']}/{r['holdout_mode']} ds={r['dataset_version']} "
-               f"n={r['n_train']} медиана {m['median_abs']} дБ ({tail})")
+               f"n={r['n_train']} median {m['median_abs']} dB ({tail})")
         mid = reg.latest_snapshot()
         if mid:
             _, meta = reg.load_snapshot(mid)
-            ok(f"рантайм выберет: {meta['model']} ({mid})")
+            ok(f"runtime will pick: {meta['model']} ({mid})")
         else:
-            warn("нет продвинутой модели — в проде работает классовая таблица "
-                 "(это норма, пока гейт не пройден)")
+            warn("no advanced model — the class table serves in production "
+                 "(this is normal until the gate is passed)")
         lb = ROOT / "models" / "leaderboard.jsonl"
         if lb.is_file():
             last = [json.loads(l) for l in lb.read_text(encoding="utf-8").splitlines() if l.strip()]
             if last:
-                print("    последний прогон обучения:")
+                print("    last training run:")
                 for r in last[-4:]:
                     print(f"      {r['holdout_mode']:<9} {r['model']:<6} n={r['n_train']:<4} "
-                          f"медиана {r['median_abs']} | базы const46 {r['baseline_const46']}, "
+                          f"median {r['median_abs']} | const46 baseline {r['baseline_const46']}, "
                           f"v0 {r['baseline_v0table']} | promote={r.get('promote')}")
     except Exception as e:                                # noqa: BLE001
-        bad(f"ошибка: {type(e).__name__}: {e}")
+        bad(f"error: {type(e).__name__}: {e}")
 
 
 def sec_deep() -> None:
-    h("7. Глубокая проверка (--deep)")
+    h("7. Deep checks (--deep)")
     try:
         r = subprocess.run([sys.executable, str(ROOT / "scripts/dataset_audit.py"), "--integrity"],
                            capture_output=True, text=True, cwd=str(ROOT), timeout=900)
         for line in (r.stdout or "").strip().splitlines()[-2:]:
-            (ok if "проблем нет" in line else warn)(line.strip())
+            (ok if "no problems" in line else warn)(line.strip())
     except Exception as e:                                # noqa: BLE001
-        bad(f"целостность: {type(e).__name__}")
+        bad(f"integrity: {type(e).__name__}")
     try:
         r = subprocess.run([sys.executable, "-m", "pytest", "tests/", "-q"],
                            capture_output=True, text=True, cwd=str(ROOT), timeout=600)
         line = (r.stdout or "").strip().splitlines()[-1]
-        (ok if "passed" in line else bad)(f"тесты DSP: {line}")
+        (ok if "passed" in line else bad)(f"DSP tests: {line}")
     except Exception as e:                                # noqa: BLE001
-        bad(f"тесты: {type(e).__name__}")
-    # сквозной прогон пайплайна с моделью на синтетическом раздавленном треке
+        bad(f"tests: {type(e).__name__}")
+    # end-to-end pipeline run with the model on a synthetic crushed track
     try:
         import numpy as np
         import wave
@@ -231,7 +232,7 @@ def sec_deep() -> None:
         x = base.copy()
         for i in range(0, sr * 20 - 500, sr // 2):
             x[i:i + 400] += hit
-        x = (np.clip(x * 1.0, -1, 1) * 0.98)    # раздавленный, как в корпусе (DR ~5)
+        x = (np.clip(x * 1.0, -1, 1) * 0.98)    # crushed, like in the corpus (DR ~5)
         w = wave.open(str(tmp / "tmp.wav"), "wb")
         w.setnchannels(2)
         w.setsampwidth(2)
@@ -250,22 +251,22 @@ def sec_deep() -> None:
             tp_ok = rec["tp_actual"] <= -0.45
             dr_ok = rec["rest"]["dr"] - rec["orig"]["dr"] >= 2
             ml = rec.get("ml_target")
-            line = (f"сквозной прогон: класс {rec['class']}, цель {rec['target_dcrest']:.2f}"
-                    + (f" ({ml:.2f}, источник: {rec.get('ml_source')})" if ml else "")
+            line = (f"end-to-end run: class {rec['class']}, target {rec['target_dcrest']:.2f}"
+                    + (f" ({ml:.2f}, source: {rec.get('ml_source')})" if ml else "")
                     + f", r_fit {round(rec.get('r_fit') or 0, 2)}, TP {rec['tp_actual']}, "
                       f"DR {rec['orig']['dr']}→{rec['rest']['dr']}")
-            (ok if (tp_ok and dr_ok) else bad)(line + ("" if tp_ok and dr_ok else "  ← ПРОВЕРИТЬ"))
+            (ok if (tp_ok and dr_ok) else bad)(line + ("" if tp_ok and dr_ok else "  ← CHECK"))
         else:
-            warn("сквозной прогон не дал отчёта")
+            warn("end-to-end run produced no report")
     except Exception as e:                                # noqa: BLE001
-        bad(f"сквозной прогон: {type(e).__name__}: {str(e)[:80]}")
+        bad(f"end-to-end run: {type(e).__name__}: {str(e)[:80]}")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--deep", action="store_true")
     args = ap.parse_args()
-    print(f"\033[1mmusic-restoration — состояние на {time.strftime('%d.%m %H:%M')}\033[0m")
+    print(f"\033[1mmusic-restoration — status as of {time.strftime('%d.%m %H:%M')}\033[0m")
     sec_disk()
     sec_dataset()
     sec_plan()

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Синхронизация альбомов с телефоном (MTP) — замена, копирование, проверка.
+"""Sync albums to the phone (MTP) — replace, copy, verify.
 
-Запись на MTP идёт только через `gio copy` (fuse-монтирование фактически
-read-only: cp/touch/mutagen-save падают с «Operation not supported»).
+Writing to MTP only works via `gio copy` (the fuse mount is effectively
+read-only: cp/touch/mutagen-save fail with "Operation not supported").
 
-  python3 scripts/phone_sync.py --album "<локальный каталог>" --rel "Jelusick/Apocalyptic (2025)"
-  python3 scripts/phone_sync.py --file "<локальный файл>" --rel "Telegram/03 - Denied By The Cross.flac"
+  python3 scripts/phone_sync.py --album "<local directory>" --rel "Jelusick/Apocalyptic (2025)"
+  python3 scripts/phone_sync.py --file "<local file>" --rel "Telegram/03 - Denied By The Cross.flac"
   python3 scripts/phone_sync.py --list "Jelusick"
   python3 scripts/phone_sync.py --rm "Music/Jelusick/Old"
 
-Проверка обязательна: после копирования читаем файл обратно (`gio cat`) и
-сверяем md5 — fuse-метаданные сразу после записи врут.
+Verification is mandatory: after copying we read the file back (`gio cat`) and
+compare md5 — fuse metadata lies right after a write.
 """
 import argparse
 import hashlib
@@ -40,7 +40,7 @@ def run(*args, **kw):
 
 
 def rm_phone(root: Path, rel: Path) -> bool:
-    """Удалить файл или каталог на телефоне (gio remove/rm)."""
+    """Delete a file or directory on the phone (gio remove/rm)."""
     uri = mtp.uri_for(root, rel)
     for tool in (("gio", "remove", "-f", uri), ("gio", "rm", "-f", uri)):
         if run(*tool).returncode == 0:
@@ -53,26 +53,26 @@ def album_replace(root: Path, local: Path, rel: Path, verify: bool = True) -> in
     extra = sorted(f for f in local.iterdir()
                    if f.is_file() and f.suffix.lower() in (".jpg", ".jpeg", ".png"))
     if not files:
-        print(f"в {local} нет аудио")
+        print(f"no audio in {local}")
         return 1
     target = root / rel
-    # 1. снести старое содержимое: игроки кэшируют теги, поэтому заменяем файлы
-    #    целиком (свежее событие файла заставляет переиндексировать)
+    # 1. wipe the old contents: players cache tags, so we replace files wholesale
+    #    (a fresh file event forces a re-index)
     if target.is_dir():
         for old in target.iterdir():
             if old.is_file() and old.suffix.lower() in (AUDIO | {".jpg", ".jpeg", ".png", ".txt"}):
                 rm_phone(root, rel / old.name)
     mtp.mkdir_phone(root, rel)
-    # 2. скопировать
+    # 2. copy
     ok = 0
     for f in files + extra:
         good, err = mtp.copy_to_phone(root, f, rel / f.name)
         if good:
             ok += 1
         else:
-            print(f"  [ошибка] {f.name}: {err}")
-    print(f"скопировано {ok}/{len(files) + len(extra)} файлов → {rel}")
-    # 3. проверить чтением обратно
+            print(f"  [error] {f.name}: {err}")
+    print(f"copied {ok}/{len(files) + len(extra)} files → {rel}")
+    # 3. verify by reading back
     if verify:
         bad = []
         for f in files[:3] + files[-1:]:
@@ -82,37 +82,37 @@ def album_replace(root: Path, local: Path, rel: Path, verify: bool = True) -> in
             if got != md5f(f):
                 bad.append(f.name)
             tmp.unlink(missing_ok=True)
-        # список файлов на телефоне
+        # list of files on the phone
         present = {p.name for p in (root / rel).iterdir()} if (root / rel).is_dir() else set()
         missing = [f.name for f in files if f.name not in present]
         if bad or missing:
-            print(f"  [ПРОВЕРКА НЕ ПРОШЛА] md5 не сошёлся: {bad}; нет в списке: {missing}")
+            print(f"  [VERIFICATION FAILED] md5 mismatch: {bad}; missing from listing: {missing}")
             return 1
-        print(f"  проверка ок: {len(files)} треков на месте, md5 совпал "
-              f"({len(files[:3] + files[-1:])} сверено)")
+        print(f"  verification ok: {len(files)} tracks in place, md5 matched "
+              f"({len(files[:3] + files[-1:])} checked)")
     return 0
 
 
 def file_replace(root: Path, local: Path, rel: Path) -> int:
     good, err = mtp.copy_to_phone(root, local, rel)
     if not good:
-        print(f"[ошибка] {err}")
+        print(f"[error] {err}")
         return 1
     with tempfile.NamedTemporaryFile(suffix=local.suffix, delete=False) as t:
         tmp = Path(t.name)
     got = mtp.cat_md5(root, rel, tmp)
     same = got == md5f(local)
     tmp.unlink(missing_ok=True)
-    print(f"{'ок' if same else 'ПРОВЕРКА НЕ ПРОШЛА'}: {rel} "
-          f"({local.stat().st_size / 1e6:.1f} MB, md5 {'совпал' if same else 'разошёлся'})")
+    print(f"{'ok' if same else 'VERIFICATION FAILED'}: {rel} "
+          f"({local.stat().st_size / 1e6:.1f} MB, md5 {'matched' if same else 'mismatched'})")
     return 0 if same else 1
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--album", help="локальный каталог альбома")
-    ap.add_argument("--file", help="локальный файл")
-    ap.add_argument("--rel", help="путь на телефоне (относительно Music)")
+    ap.add_argument("--album", help="local album directory")
+    ap.add_argument("--file", help="local file")
+    ap.add_argument("--rel", help="path on the phone (relative to Music)")
     ap.add_argument("--list", metavar="SUBPATH")
     ap.add_argument("--rm", metavar="SUBPATH")
     ap.add_argument("--no-verify", action="store_true")
@@ -120,31 +120,31 @@ def main() -> int:
 
     root = mtp.phone_dir()
     if root is None:
-        print("телефон не найден: подключите в режиме MTP (или проверьте gio mount -l)")
+        print("phone not found: connect it in MTP mode (or check gio mount -l)")
         return 1
     if not mtp.phone_alive(root):
-        print(f"корень музыки недоступен: {root}")
+        print(f"music root unavailable: {root}")
         return 1
-    print(f"телефон: {root}")
+    print(f"phone: {root}")
 
     if args.list:
         d = root / args.list
         if not d.is_dir():
-            print(f"нет каталога {args.list}")
+            print(f"no directory {args.list}")
             return 1
         for p in sorted(d.iterdir()):
             kind = "dir " if p.is_dir() else f"{p.stat().st_size / 1e6:7.1f}M"
             print(f"  {kind} {p.name}")
         return 0
     if args.rm:
-        print("удалено" if rm_phone(root, Path(args.rm)) else "не удалось удалить")
+        print("deleted" if rm_phone(root, Path(args.rm)) else "failed to delete")
         return 0
     if args.file and args.rel:
         return file_replace(root, Path(args.file).expanduser(), Path(args.rel))
     if args.album and args.rel:
         return album_replace(root, Path(args.album).expanduser(), Path(args.rel),
                              verify=not args.no_verify)
-    ap.error("нужен --album/--file с --rel, либо --list/--rm")
+    ap.error("--album/--file with --rel required, or --list/--rm")
 
 
 if __name__ == "__main__":

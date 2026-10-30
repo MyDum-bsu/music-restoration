@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Сборка набора для прослушивания (слепое A/B/C сравнение вариантов).
+"""Assemble a listening pack (blind A/B/C comparison of variants).
 
-Что делает:
-  * берёт вырезки пары (или режет из сырья), выравнивает ВСЕ варианты по
-    громкости в LUFS (ebur128), а не по RMS — иначе разница уровней выдаёт
-    ответ, и сравнивать руками приходится каждый раз;
-  * перемешивает варианты и раскладывает их в A/B(/C) со слепой маркировкой;
-  * пишет `pack.json` (что играть, где оригинал/мастер/наше) — карту ответов
-    плеер показывает только по кнопке «показать».
+What it does:
+  * takes the pair's excerpts (or cuts them from raw material), loudness-matches
+    ALL variants in LUFS (ebur128), not RMS — otherwise a level difference gives
+    the answer away and manual comparison has to correct for it every time;
+  * shuffles the variants and lays them out into A/B(/C) with blind labeling;
+  * writes `pack.json` (what to play, where the original/master/ours is) — the
+    player only reveals the answer map via the "show" button.
 
-Структура пака:
+Pack layout:
     <pack>/audio/<item>_<label>.flac
     <pack>/pack.json
 
@@ -41,19 +41,19 @@ def dataset_dir() -> Path:
 
 
 def gain_to_lufs(src: Path, dst: Path, target_lufs: float) -> dict:
-    """Привести файл к целевой громкости по LUFS (одна коррекция + запас по пику)."""
+    """Bring the file to the target loudness in LUFS (one correction + peak headroom)."""
     dst.parent.mkdir(parents=True, exist_ok=True)
     info = F.lufs(str(src))
     i = info.get("lufs")
     if i is None:
-        # громкость не измеряется (тишина) — просто копируем
+        # loudness not measurable (silence) — just copy
         subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-c:a", "flac", str(dst)],
                        check=True)
         return {"lufs": None, "gain_db": 0.0}
     peak = info.get("tp_peak_dbfs")
     gain = target_lufs - float(i)
     if peak is not None and peak + gain > -1.0:
-        gain = -1.0 - float(peak)          # не загонять в клип
+        gain = -1.0 - float(peak)          # don't push into clipping
     cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(src),
            "-af", f"volume={gain:.2f}dB", "-c:a", "flac", "-compression_level", "5", str(dst)]
     subprocess.run(cmd, check=True)
@@ -62,7 +62,7 @@ def gain_to_lufs(src: Path, dst: Path, target_lufs: float) -> dict:
 
 
 def pair_excerpts(key: str) -> list[tuple[str, str, Path, Path]]:
-    """[(item_id, tag, orig_file, master_file)] из уже извлечённых вырезок."""
+    """[(item_id, tag, orig_file, master_file)] from already-extracted excerpts."""
     d = dataset_dir() / "pairs" / key.replace("/", "__") / "excerpts"
     if not d.is_dir():
         return []
@@ -82,7 +82,7 @@ def pair_excerpts(key: str) -> list[tuple[str, str, Path, Path]]:
 
 
 def ours_file(ours_dir: Path | None, key: str, track: int, title: str = "") -> Path | None:
-    """Файл нашего прогона для трека (по номеру или по названию)."""
+    """Our run's file for a track (by number or by title)."""
     if not ours_dir:
         return None
     cands = sorted(ours_dir.glob("*.flac"))
@@ -96,7 +96,7 @@ def ours_file(ours_dir: Path | None, key: str, track: int, title: str = "") -> P
 def build_item(item_id: str, variants: dict[str, Path], out_dir: Path, target_lufs: float,
                rng: random.Random, note: str = "") -> dict:
     order = list(variants.keys())
-    rng.shuffle(order)                      # слепая раскладка
+    rng.shuffle(order)                      # blind layout
     labels = {}
     files = {}
     for label, name in zip(LABELS, order):
@@ -112,9 +112,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--key", default=None)
     ap.add_argument("--all", action="store_true")
-    ap.add_argument("--limit", type=int, default=6, help="пар в пакет")
+    ap.add_argument("--limit", type=int, default=6, help="pairs per pack")
     ap.add_argument("--items-per-pair", type=int, default=2)
-    ap.add_argument("--ours-dir", default=None, help="каталог нашего прогона (restore_one)")
+    ap.add_argument("--ours-dir", default=None, help="directory of our run (restore_one)")
     ap.add_argument("--target-lufs", type=float, default=-20.0)
     ap.add_argument("--out", required=True)
     ap.add_argument("--seed", type=int, default=0xAB5)
@@ -125,7 +125,7 @@ def main() -> int:
     if args.key:
         keys = [k for k in keys if k == args.key]
     elif not args.all:
-        ap.error("нужен --key или --all")
+        ap.error("--key or --all is required")
     keys = keys[:args.limit]
 
     out = Path(args.out)
@@ -135,7 +135,7 @@ def main() -> int:
     for key in keys:
         ex = pair_excerpts(key)
         if not ex:
-            print(f"  [skip] {key}: нет вырезок (сделайте dataset_extract --excerpts 1)")
+            print(f"  [skip] {key}: no excerpts (run dataset_extract --excerpts 1)")
             continue
         meta_file = pairs_root / key.replace("/", "__") / "meta.json"
         meta = json.loads(meta_file.read_text(encoding="utf-8")) if meta_file.is_file() else {}
@@ -151,7 +151,7 @@ def main() -> int:
             it["artist"] = meta.get("artist")
             it["album"] = meta.get("album")
             items.append(it)
-            print(f"  {key} {item_id}: варианты {it['labels']}")
+            print(f"  {key} {item_id}: variants {it['labels']}")
 
     pack = {
         "name": out.name,
@@ -165,8 +165,8 @@ def main() -> int:
                                    encoding="utf-8")
     (out / "ratings.json").write_text(json.dumps({"ratings": {}}, ensure_ascii=False, indent=1),
                                       encoding="utf-8")
-    print(f"\nпак: {len(items)} элементов → {out}")
-    print(f"  плеер: открыть в приложении (см. app/) или {out / 'index.html'}")
+    print(f"\npack: {len(items)} items → {out}")
+    print(f"  player: open in the app (see app/) or {out / 'index.html'}")
     return 0
 
 

@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Целевой слой v0: какую цель Δcrest ставить по классу исходника.
+"""Target layer v0: what Δcrest target to set per source class.
 
-Источники:
-  * `dataset/pairs/*/features.json` — измеренные Δcrest мастера по классам
-    (только trusted-пары из reference_audit);
-  * `corpus/master_targets.jsonl` — абсолютные цели мастера (8104 трека), нужны
-    для проверки, что полосы классов не противоречат корпусу.
+Sources:
+  * `dataset/pairs/*/features.json` — measured master Δcrest by class
+    (trusted pairs from reference_audit only);
+  * `corpus/master_targets.jsonl` — absolute master targets (8104 tracks), used
+    to check that the class bands don't contradict the corpus.
 
-Выход: `corpus/targets_v0.json` — таблица по классам, физические скобки и
-рекомендация `target_dcrest` для пайплайна (с поправкой на недобор фиттера).
+Output: `corpus/targets_v0.json` — a per-class table, physical brackets and a
+`target_dcrest` recommendation for the pipeline (adjusted for fitter undershoot).
 
-  python3 scripts/target_model.py            # построить
+  python3 scripts/target_model.py            # build
   python3 scripts/target_model.py --report
 """
 import argparse
@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from rnext import workspace  # noqa: E402
 
 CLASS_EDGES = ((0, 9, "crushed"), (9, 12, "mid"), (12, 99, "healthy"))
-FITTER_UNDERSHOOT = 0.4      # измеренный недобор адаптива на DR 5–6 (README)
+FITTER_UNDERSHOOT = 0.4      # measured adaptive undershoot at DR 5–6 (README)
 
 
 def corpus() -> Path:
@@ -66,7 +66,7 @@ def build() -> int:
         key = d.parent.name.replace("__", "/")
         qrec = quality.get(key)
         if qrec and qrec["label"] not in ("trusted", "weak_base"):
-            continue                     # сомнительные референсы в цель не идут
+            continue                     # dubious references don't go into the target
         rows = json.loads(d.read_text(encoding="utf-8"))
         if not rows:
             continue
@@ -90,7 +90,7 @@ def build() -> int:
             "ddr_median": q(v["ddr"], 0.5),
         }
 
-    # абсолютные цели мастера (без исходников) — контроль непротиворечивости
+    # absolute master targets (without sources) — consistency check
     mt = read_jsonl(corpus() / "master_targets.jsonl")
     abs_by_dr: dict[str, list[float]] = defaultdict(list)
     for r in mt:
@@ -101,7 +101,7 @@ def build() -> int:
 
     rec = {}
     for c, t in table.items():
-        # просим у адаптива чуть больше медианы мастера: фиттер недобирает
+        # ask the adaptive for a bit more than the master median: the fitter undershoots
         rec[f"target_dcrest_{c}"] = (round(t["dcrest_median"] + FITTER_UNDERSHOOT, 2)
                                      if c != "healthy" else 0.0)
     out = {
@@ -115,17 +115,17 @@ def build() -> int:
     }
     p = corpus() / "targets_v0.json"
     p.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"цели v0 → {p}")
+    print(f"targets v0 → {p}")
     print(json.dumps(out["by_class"], ensure_ascii=False, indent=1))
-    print("рекомендация:", rec)
-    print("базис:", out["basis"])
+    print("recommendation:", rec)
+    print("basis:", out["basis"])
     return 0
 
 
 def report() -> int:
     p = corpus() / "targets_v0.json"
     if not p.is_file():
-        print("нет targets_v0.json — запустите без --report")
+        print("no targets_v0.json — run without --report")
         return 1
     print(p.read_text(encoding="utf-8"))
     return 0

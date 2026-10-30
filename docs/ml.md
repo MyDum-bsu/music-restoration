@@ -1,90 +1,92 @@
-# ML-слой: версии датасета, обучение цели, снапшоты
+# ML layer: dataset versions, target training, snapshots
 
-Датасет — не «данные вообще», а версионируемый артефакт: у каждой модели в
-метаданных записано, на какой версии она обучена и с какими метриками.
+The dataset is not "data in general" but a versioned artifact: every model's
+metadata records which version it was trained on and with which metrics.
 
-## Что предсказываем
+## What we predict
 
-Пайплайн (DSP) фиксирован, обучаем **оценщика цели**: `Δcrest` мастера по
-признакам трека. Цель подставляется в физику (`fit_r` инвертирует `crest(r)`)
-и всегда проходит через инварианты (TP-потолок, отсутствие внесённого клипа,
-скобки `Δcrest ≤ 8`). Модель — надстройка над физикой, а не её замена.
+The pipeline (DSP) is fixed; we train the **target estimator**: the master's
+`Δcrest` from track features. The target is fed into the physics (`fit_r`
+inverts `crest(r)`) and always passes through the invariants (TP ceiling, no
+introduced clipping, `Δcrest ≤ 8` brackets). The model is an add-on to the
+physics, not a replacement for it.
 
-Цели: `dcrest` (основная), `ddr`, далее — 30 band-дельт (тилт).
+Targets: `dcrest` (primary), `ddr`, and later the 30 band deltas (tilt).
 
-## Версионирование
+## Versioning
 
-* `dataset/manifest.json` — состав: `version = ds-<хэш>` по (ключи пар +
-  содержимое фич + метки) плюс счётчики: пары, треки, trusted-треки, по авторам,
-  распределение меток. Хэш по **содержимому**, не по времени.
-* `dataset/versions.jsonl` — история версий.
-* `dataset/models/<model_id>/` — снапшот: `model.joblib` + `meta.json`
-  (версия датасета, признаки, сплит, метрики, гиперпараметры, git-коммит).
-* `models/registry.jsonl` — текстовый реестр (в репозитории): модель, цель,
-  версия датасета, метрики, коммит. По нему сравниваются снапшоты.
-* `models/leaderboard.jsonl` — строки прогонов авто-цикла (для сводки).
+* `dataset/manifest.json` — composition: `version = ds-<hash>` over (pair keys +
+  feature contents + labels) plus counters: pairs, tracks, trusted tracks, by
+  author, label distribution. The hash is over **content**, not time.
+* `dataset/versions.jsonl` — version history.
+* `dataset/models/<model_id>/` — snapshot: `model.joblib` + `meta.json`
+  (dataset version, features, split, metrics, hyperparameters, git commit).
+* `models/registry.jsonl` — plain-text registry (in the repository): model,
+  target, dataset version, metrics, commit. Snapshots are compared against it.
+* `models/leaderboard.jsonl` — rows of auto-cycle runs (for the summary).
 
-## Зоопарк моделей и правило выбора
+## The model zoo and the selection rule
 
-| модель | минимум треков | зачем |
+| model | minimum tracks | purpose |
 |---|---|---|
-| `table` | 1 | медианы по классу исходника; интерпретируемая база |
-| `ridge` | 150 | линейная на стандартизованных признаках |
-| `knn` | 150 | диагностика «похожий материал → похожая цель» |
-| `hgb` | 400 + 2 автора | HistGradientBoosting (нелинейность, NaN из коробки) |
-| `conformal` | 150 | конформная полоса вокруг точечного прогноза, покрытие 80 % |
-| `hgbq` | 400 | квантильные модели для полосы доверия |
+| `table` | 1 | medians by source class; an interpretable baseline |
+| `ridge` | 150 | linear on standardized features |
+| `knn` | 150 | diagnostics for "similar material → similar target" |
+| `hgb` | 400 + 2 authors | HistGradientBoosting (nonlinearity, NaN support out of the box) |
+| `conformal` | 150 | conformal band around the point prediction, 80% coverage |
+| `hgbq` | 400 | quantile models for the confidence band |
 
-Правило: `suggest_models(n_train, n_authors)` — сложность растёт только по
-достижении объёма, и каждый уровень должен доказать пользу на holdout, иначе
-остаётся предыдущий. `lightgbm/xgboost/statsmodels` не используются осознанно:
-их нет в системе, а HistGradientBoosting закрывает задачу.
+The rule: `suggest_models(n_train, n_authors)` — complexity grows only once the
+volume is reached, and each level must prove its benefit on holdout, otherwise
+the previous level stays. `lightgbm/xgboost/statsmodels` are deliberately not
+used: they are not installed, and HistGradientBoosting covers the task.
 
-## Метрики и базы сравнения
+## Metrics and baselines
 
-`rnext/ml/metrics.py`: медиана `|err|`, доля в ±0.5 и ±1.0 дБ, p90, bias —
-по всем трекам и по классам исходника; покрытие конформной полосы.
+`rnext/ml/metrics.py`: median of `|err|`, share within ±0.5 and ±1.0 dB, p90,
+bias — over all tracks and by source class; coverage of the conformal band.
 
-Базы сравнения обязательны, иначе число ошибки бессмысленно:
-`noop` (не обрабатывать), `const46` (текущий дефолт), `v0table`
-(`corpus/targets_v0.json`). **Важно:** `v0table` построена по всем текущим
-парам, поэтому в отчёте она слегка «в выборке» — трактовать как ориентир, не
-как честного конкурента.
+Baselines are mandatory, otherwise the error number is meaningless:
+`noop` (no processing), `const46` (the current default), `v0table`
+(`corpus/targets_v0.json`). **Important:** `v0table` is built over all current
+pairs, so in reports it is slightly "in sample" — treat it as a reference
+point, not as an honest competitor.
 
-## Авто-цикл
-
-```bash
-python3 scripts/ml_auto.py                 # один проход: версия → обучение → эвалы → сводка
-python3 scripts/ml_auto.py --interval 1800 # то же в цикле
-python3 scripts/ml_auto.py --with-audio    # плюс end-to-end аудио-эвал пар с сырьём
-python3 scripts/ml_train.py --model ridge --by-author   # ручной прогон/эксперимент
-```
-
-Уровни объёма (`trusted`-треки): **M1 = 600** (регрессия цели), **M2 = 1500**
-(полосы + тилт + контент-гейт), **M3 = 3000** (универсальность). Пока объём не
-достигнут, авто-цикл печатает, сколько осталось, и обучение не запускает.
-
-Сплиты: `by-album` (30 % альбомов) — основной; `by-author` — проверка переноса
-между мастерами, включается автоматически при ≥2 авторах.
-
-## Непрерывное обогащение
+## Auto-cycle
 
 ```bash
-python3 scripts/dataset_loop.py --once              # один проход
-python3 scripts/dataset_loop.py --interval 900      # держать в фоне
+python3 scripts/ml_auto.py                 # one pass: version → training → evals → summary
+python3 scripts/ml_auto.py --interval 1800 # the same in a loop
+python3 scripts/ml_auto.py --with-audio    # plus end-to-end audio evals of pairs with raw data
+python3 scripts/ml_train.py --model ridge --by-author   # manual run/experiment
 ```
 
-Проход: ждёт окончания закачек → выбирает новую партию → качает → извлекает
-(сырьё держится окном `--keep-window` пар, чтобы было что оценивать) → аудит
-референсов → целевой слой → `ml_auto --with-audio`. Лог: `dataset/loop.log`.
+Volume levels (`trusted` tracks): **M1 = 600** (target regression), **M2 = 1500**
+(bands + tilt + content gate), **M3 = 3000** (universality). Until the volume is
+reached, the auto-cycle prints how much is left and does not start training.
 
-## Рантайм: цель из модели в пайплайне
+Splits: `by-album` (30% of albums) — primary; `by-author` — checks transfer
+between masters, enabled automatically at ≥2 authors.
+
+## Continuous enrichment
+
+```bash
+python3 scripts/dataset_loop.py --once              # one pass
+python3 scripts/dataset_loop.py --interval 900      # keep running in the background
+```
+
+A pass: wait for downloads to finish → pick a new batch → download → extract
+(raw data is kept for a `--keep-window` of pairs so there is something to
+evaluate) → reference audit → target layer → `ml_auto --with-audio`. Log:
+`dataset/loop.log`.
+
+## Runtime: the target from the model in the pipeline
 
 ```bash
 python3 scripts/restore_one.py --src <img.flac> --cue <cue> --out out/ \
-        --ml-snapshot auto          # или конкретный id
+        --ml-snapshot auto          # or a specific id
 ```
 
-В отчёте появляются `ml_snapshot` и `ml_target` по каждому треку. При
-использовании модели порог `healthy` согласуется с обучающим (`≥ 12`), иначе
-DR 11 оставался бы прозрачным, хотя модель для него цель предсказывает.
+The report gains `ml_snapshot` and `ml_target` per track. When a model is used,
+the `healthy` threshold is aligned with the training one (`≥ 12`); otherwise a
+DR of 11 would stay transparent even though the model predicts a target for it.

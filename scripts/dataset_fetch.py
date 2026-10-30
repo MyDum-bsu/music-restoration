@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Селективное скачивание пар датасета: качаем ТОЛЬКО нужные треки.
+"""Selective downloading of dataset pairs: download ONLY the needed tracks.
 
-Для каждой строки `corpus/dataset_plan.jsonl` со статусом `matched`:
-  1. .torrent выбранного оригинала → torrents/{topic}.torrent (кеш);
-  2. добавление в Transmission в паузе → список файлов раздачи;
-  3. сопоставление файлов с трек-листом мастера (номер + название + куски);
-  4. files-unwanted на всё лишнее (лайвы/бонусы/сканы, остальные альбомы
-     дискографии) → старт;
-  5. журнал в dataset/state.jsonl.
+For each row of `corpus/dataset_plan.jsonl` with status `matched`:
+  1. .torrent of the chosen original → torrents/{topic}.torrent (cache);
+  2. add to Transmission paused → the torrent's file list;
+  3. match files against the master's track list (number + title + pieces);
+  4. files-unwanted on everything extra (lives/bonuses/scans, other albums of
+     the discography) → start;
+  5. journal entry in dataset/state.jsonl.
 
-Режимы:
-  --dry-run   ничего не качать: показать, что было бы выбрано (файлы/объём)
-  --go        реально стартовать загрузки (лимит --max-gb соблюдается)
-  --status    сводка по state.jsonl
+Modes:
+  --dry-run   download nothing: show what would be picked (files/size)
+  --go        actually start the downloads (the --max-gb limit is respected)
+  --status    summary over state.jsonl
 
-Примеры:
+Examples:
   python3 scripts/dataset_fetch.py --dry-run --limit 5
   python3 scripts/dataset_fetch.py --go --max-gb 20
 """
@@ -36,7 +36,7 @@ _NUM = re.compile(r"(?:^|[/_\-\s])(\d{1,3})\s*[-._)\s]\s*(?=\D)", re.UNICODE)
 _DISC = re.compile(r"(?:\bcd|\bdisc|\bdisk)[\s_-]?(\d)", re.IGNORECASE)
 
 
-# --- пути -------------------------------------------------------------------
+# --- paths -------------------------------------------------------------------
 def corpus() -> Path:
     return workspace.dir_of("corpus")
 
@@ -79,7 +79,7 @@ def state_map() -> dict[str, dict]:
     return S.merged_state(state_file())
 
 
-# --- сопоставление треков ---------------------------------------------------
+# --- track matching ---------------------------------------------------
 def file_track_no(name: str) -> int | None:
     base = name.rsplit("/", 1)[-1]
     m = re.match(r"^(\d{1,3})[\s._\-)]", base)
@@ -98,11 +98,11 @@ def disc_no(name: str) -> int | None:
 
 
 def album_dir_filter(files: list[dict], album: str | None) -> tuple[list[dict], str | None]:
-    """Для раздачи-дискографии оставляем только файлы нужного альбома (по папке).
+    """For a discography torrent keep only the files of the needed album (by folder).
 
-    Сравниваем только ПОСЛЕДНЮЮ компоненту пути (имя папки альбома): иначе
-    подпапка «Covers» внутри «…/Silver Side Up/» выигрывала бы по родителю.
-    Папки без аудио (сканы) не кандидаты.
+    Compare only the LAST path component (the album folder name): otherwise a
+    "Covers" subfolder inside "…/Silver Side Up/" would win via its parent.
+    Folders without audio (scans) are not candidates.
     """
     if not album:
         return files, None
@@ -123,9 +123,10 @@ def album_dir_filter(files: list[dict], album: str | None) -> tuple[list[dict], 
             best = (cont, d, fs)
     if best and best[0] >= 0.5:
         return best[2], best[1]
-    # Многокаталожная раздача (сборник/дискография), но альбома в ней нет:
-    # отдаём ПУСТО, иначе скачали бы всю коллекцию (у JP-сборника это 3.2 ГБ
-    # вместо нужных 0.5 ГБ), а пара честно уйдёт в no_match.
+    # Multi-folder torrent (compilation/discography) without the album in it:
+    # return EMPTY, otherwise the whole collection would be downloaded (for a
+    # JP compilation that is 3.2 GB instead of the needed 0.5 GB) and the pair
+    # would honestly end up as no_match.
     if len(dirs) > 1:
         return [], None
     return files, None
@@ -133,14 +134,14 @@ def album_dir_filter(files: list[dict], album: str | None) -> tuple[list[dict], 
 
 def match_tracks(master_tracks: list[dict], files: list[dict],
                  album: str | None = None) -> dict:
-    """Жадный матч «трек мастера → файл раздачи». Возвращает wanted/пропуски."""
-    all_files = files                      # индексы файлов нумеруются по ПОЛНОМУ списку
+    """Greedy match "master track → torrent file". Returns wanted/skipped."""
+    all_files = files                      # file indexes are numbered over the FULL list
     sel, album_dir = album_dir_filter(all_files, album)
     audio = [f for f in sel if f["name"].lower().endswith(AUDIO_EXT)]
     cues = [f for f in sel if f["name"].lower().endswith(".cue")]
     images = [f for f in audio if (f.get("length") or 0) > 120_000_000]
     if images and len(audio) <= max(2, len(cues) + 1):
-        # образ + cue: берём целиком, треки режем по cue после скачивания
+        # image + cue: take it whole, cut tracks by cue after the download
         wanted = [f["index"] for f in audio] + [f["index"] for f in cues]
         return {"mode": "image", "wanted": wanted, "matched": len(master_tracks),
                 "skipped": [], "album_dir": album_dir,
@@ -217,7 +218,7 @@ def start(t: Transm, tid: int) -> None:
     t._call("torrent-start", {"ids": [tid]})
 
 
-# --- основной проход --------------------------------------------------------
+# --- main pass --------------------------------------------------------
 def plan_rows(args=None) -> list[dict]:
     p = getattr(args, "plan", None)
     p = Path(p) if p else (corpus() / "dataset_plan.jsonl")
@@ -225,7 +226,7 @@ def plan_rows(args=None) -> list[dict]:
 
 
 def sort_key(r: dict) -> tuple:
-    """Приоритет: низкий master DR (сильнее раздавлен) → маленький размер → сиды."""
+    """Priority: low master DR (more crushed) → smaller size → seeders."""
     md = ((r["release"].get("master_dr") or {}).get("official_dr") or 99)
     size = r["chosen"]["size_bytes"] or 0
     return (md, size, -(r["chosen"]["seeders"] or 0))
@@ -234,9 +235,9 @@ def sort_key(r: dict) -> tuple:
 def side_setup(t: Transm, client: RTClient, topic_id: int, dl_dir: str,
                master_tracks: list[dict], album: str | None,
                min_matched: float) -> dict:
-    """Добавить раздачу на паузе, отобрать нужные файлы, стартовать.
+    """Add the torrent paused, pick the needed files, start it.
 
-    Возвращает {ok, torrent_tid, mode, wanted_bytes, matched, of, album_dir, error}.
+    Returns {ok, torrent_tid, mode, wanted_bytes, matched, of, album_dir, error}.
     """
     tp = ensure_torrent(client, topic_id)
     rec = add_paused(t, tp, dl_dir)
@@ -259,7 +260,7 @@ def side_setup(t: Transm, client: RTClient, topic_id: int, dl_dir: str,
                 "album_dir": mt.get("album_dir"), "error": "files_mismatch"}
     want = set(mt["wanted"])
     if duplicate:
-        # та же тема уже запущена другой парой — нужные файлы объединяем
+        # the same topic is already running for another pair — union the wanted files
         prev = det.get("wanted") or []
         want |= {i for i, w in enumerate(prev) if w and i < len(files)}
     unwanted = [f["index"] for f in files if f["index"] not in want]
@@ -283,7 +284,7 @@ def side_setup(t: Transm, client: RTClient, topic_id: int, dl_dir: str,
 
 
 def backfill_masters(args) -> int:
-    """Докачать мастер-стороны для пар, где она не встала с первого раза."""
+    """Backfill master sides for pairs where it did not stick the first time."""
     t = Transm()
     client = RTClient()
     st = read_jsonl(state_file())
@@ -295,12 +296,12 @@ def backfill_masters(args) -> int:
     plan = {r["key"]: r for r in plan_rows(args)}
     if args.limit:
         todo = todo[:args.limit]
-    print(f"пар без мастер-стороны: {len(todo)}")
+    print(f"pairs without a master side: {len(todo)}")
     added = 0
     for r in todo:
         src = plan.get(r["key"])
         if not src:
-            print(f"  [skip] {r['key']}: нет в плане")
+            print(f"  [skip] {r['key']}: not in the plan")
             continue
         tracks = (src["release"].get("tracks") or [])
         if not tracks:
@@ -313,11 +314,11 @@ def backfill_masters(args) -> int:
             m = {"ok": False, "error": f"{type(e).__name__}: {e}"[:120]}
         if m.get("ok"):
             added += 1
-            print(f"  [ok] {r['key']}: мастер {m['wanted_bytes'] / 1e6:.0f}MB "
+            print(f"  [ok] {r['key']}: master {m['wanted_bytes'] / 1e6:.0f}MB "
                   f"({m['matched']}/{m['of']})")
         else:
             print(f"  [fail] {r['key']}: {m.get('error')}")
-        # обновляем журнал (последняя строка по ключу побеждает)
+        # update the journal (the last line per key wins)
         append_state({"key": r["key"], "state": "downloading", "dir": r.get("dir"),
                       "orig_topic_id": r.get("orig_topic_id"),
                       "master_topic_id": r.get("master_topic_id"),
@@ -325,26 +326,26 @@ def backfill_masters(args) -> int:
                       "year": r.get("year"), "master_dr": r.get("master_dr"),
                       "artist": r.get("artist"), "album": r.get("album"),
                       "orig": r.get("orig"), "master": m})
-    print(f"добавлено мастер-сторон: {added}")
+    print(f"master sides added: {added}")
     return 0
 
 
 
 
 def repair_masters(args) -> int:
-    """Пересчитать wanted-наборы раздач: ОБЪЕДИНЕНИЕ по живым парам + снятие «зомби».
+    """Recompute torrent wanted-sets: UNION over live pairs + removal of "zombies".
 
-    Одна тема-дискография обслуживает несколько пар, а wanted-набор у раздачи
-    один — поэтому считаем объединение по всем ЖИВЫМ (downloading) парам.
-    Раздачи, на которые не ссылается ни одна живая пара (пары отложены по месту
-    или сняты), убираем из сессии: иначе они молча качают в удалённые каталоги,
-    сырьё возвращается и место утекает.
+    One discography topic serves several pairs while a torrent has a single
+    wanted-set — so we compute the union over all LIVE (downloading) pairs.
+    Torrents referenced by no live pair (pairs postponed for space or dropped)
+    are removed from the session: otherwise they silently download into deleted
+    directories, raw comes back and disk space leaks.
     """
     t = Transm()
     plan = {r["key"]: r for r in plan_rows(args)}
     st = state_map()
-    # downloadDir обязателен: по нему отличаем НАШИ раздачи от чужих (у пользователя
-    # в Transmission есть свои торренты, их трогать нельзя)
+    # downloadDir is required: it tells OUR torrents from the user's (the user
+    # has their own torrents in Transmission, which must not be touched)
     cur = {tor["id"]: tor for tor in t.torrents(
         ["id", "name", "files", "wanted", "totalSize", "status", "downloadDir",
          "peersConnected", "leftUntilDone"])}
@@ -380,30 +381,30 @@ def repair_masters(args) -> int:
         start(t, tid)
         size = sum(files[i].get("length") or 0 for i in want)
         fixed += 1
-        print(f"  [fix] t={tid}: wanted {len(want)} из {len(files)} ({size / 1e6:.0f} MB) "
+        print(f"  [fix] t={tid}: wanted {len(want)} of {len(files)} ({size / 1e6:.0f} MB) "
               f"— {label.get(tid, '')}")
 
-    # «зомби»: наши раздачи, на которые не ссылается ни одна живая пара
+    # "zombies": our torrents referenced by no live pair
     zombies = [tid for tid, x in cur.items()
                if "/dataset/raw/" in (x.get("downloadDir") or "")
                and tid not in want_by_torrent and any(x.get("wanted") or [])]
     for tid in zombies:
         name = (cur[tid].get("name") or "")[:40]
         nw = sum(cur[tid].get("wanted") or [])
-        # данных нет (сырьё снято), живых пар нет — держать в сессии смысла нет:
-        # .torrent остаётся в кэше и добавится заново, если пара вернётся
+        # no data (raw dropped), no live pairs — no point keeping it in the session:
+        # the .torrent stays cached and is re-added if the pair comes back
         t._call("torrent-remove", {"ids": [tid], "delete-local-data": False})
-        print(f"  [zombie] t={tid} {name}: убрана из сессии ({nw} файлов wanted)")
-    print(f"починено раздач: {fixed}, убрано зомби: {len(zombies)}")
+        print(f"  [zombie] t={tid} {name}: removed from the session ({nw} files wanted)")
+    print(f"torrents fixed: {fixed}, zombies removed: {len(zombies)}")
     return 0
 
 
 def resolve_dirs(args) -> int:
-    """Записать в журнал ФАКТИЧЕСКИЕ каталоги сторон.
+    """Write the ACTUAL side directories into the journal.
 
-    Общая тема-дискография качается в каталог той пары, что добавила её первой,
-    поэтому «base/orig» другой пары может не существовать. Здесь мы спрашиваем
-    у Transmission downloadDir каждой раздачи и сохраняем его в записи пары.
+    A shared discography topic downloads into the directory of the pair that
+    added it first, so another pair's "base/orig" may not exist. Here we ask
+    Transmission for each torrent's downloadDir and store it in the pair record.
     """
     t = Transm()
     dirs = {tor["id"]: tor.get("downloadDir") for tor in t.torrents(["id", "downloadDir"])}
@@ -425,12 +426,12 @@ def resolve_dirs(args) -> int:
         if changed:
             append_state(upd)
             fixed += 1
-    print(f"каталоги уточнены у {fixed} пар")
+    print(f"directories updated for {fixed} pairs")
     return 0
 
 
 def files_present(srec: dict | None, root: Path | None) -> bool:
-    """Есть ли на диске все нужные файлы стороны (само-восстановление каталога)."""
+    """Whether all needed files of the side are on disk (directory self-heal)."""
     from rnext import sides as S
     if not isinstance(srec, dict):
         return False
@@ -440,7 +441,7 @@ def files_present(srec: dict | None, root: Path | None) -> bool:
 
 
 def refetch_missing(args) -> int:
-    """Докачать стороны, чьё сырьё было удалено после извлечения (для переоценки)."""
+    """Re-download sides whose raw was deleted after extraction (for re-evaluation)."""
     t = Transm()
     client = RTClient()
     st = state_map()
@@ -448,7 +449,7 @@ def refetch_missing(args) -> int:
     todo = [r for r in st.values() if r.get("state") == "downloading" and r["key"] in plan]
     if args.limit:
         todo = todo[:args.limit]
-    print(f"пар к проверке сырья: {len(todo)}")
+    print(f"pairs to check raw for: {len(todo)}")
     n = 0
     for r in todo:
         src = plan[r["key"]]
@@ -468,8 +469,8 @@ def refetch_missing(args) -> int:
             except Exception as e:                     # noqa: BLE001
                 m = {"ok": False, "error": f"{type(e).__name__}: {e}"[:100]}
             print(f"  {r['key']}/{side}: "
-                  + (f"перекачка {m['wanted_bytes'] / 1e6:.0f}MB" if m.get("ok")
-                     else f"ошибка {m.get('error')}"))
+                  + (f"re-downloading {m['wanted_bytes'] / 1e6:.0f}MB" if m.get("ok")
+                     else f"error {m.get('error')}"))
             if m.get("ok"):
                 srec = {**(srec or {}), **{k: m[k] for k in
                                            ("torrent_tid", "mode", "wanted", "wanted_names",
@@ -478,7 +479,7 @@ def refetch_missing(args) -> int:
                 r = {**r, side: srec}
                 append_state(r)
                 n += 1
-    print(f"докачано сторон: {n}")
+    print(f"sides re-downloaded: {n}")
     return 0
 
 
@@ -490,32 +491,32 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=10)
     ap.add_argument("--max-gb", type=float, default=15.0)
     ap.add_argument("--min-matched", type=float, default=0.6,
-                    help="доля сматченных треков, ниже — пару не качаем")
-    ap.add_argument("--plan", default=None, help="альтернативный файл плана")
+                    help="fraction of matched tracks below which the pair is skipped")
+    ap.add_argument("--plan", default=None, help="alternative plan file")
     ap.add_argument("--no-master", action="store_true",
-                    help="не качать мастер-реставрацию (только оригинал)")
+                    help="do not download the master restoration (original only)")
     ap.add_argument("--masters-only", action="store_true",
-                    help="докачать мастер-стороны для уже начатых пар")
+                    help="backfill master sides for already started pairs")
     ap.add_argument("--repair", action="store_true",
-                    help="пересчитать wanted-наборы у всех наших раздач")
+                    help="recompute wanted-sets for all our torrents")
     ap.add_argument("--resolve-dirs", action="store_true",
-                    help="записать в журнал фактические каталоги сторон")
+                    help="write the actual side directories into the journal")
     ap.add_argument("--refetch", action="store_true",
-                    help="докачать стороны, чьё сырьё удалено после извлечения")
+                    help="re-download sides whose raw was deleted after extraction")
     args = ap.parse_args()
 
     if args.status:
         st = read_jsonl(state_file())
         from collections import Counter
-        print("пар в журнале:", len(st), dict(Counter(r.get("state") for r in st)))
+        print("pairs in journal:", len(st), dict(Counter(r.get("state") for r in st)))
         got = sum((r.get("wanted_bytes") or 0) + (r.get("master", {}).get("wanted_bytes") or 0)
                   for r in st)
-        print(f"суммарно отобрано к скачиванию: {got / 1e9:.2f} GB")
+        print(f"total selected for download: {got / 1e9:.2f} GB")
         return 0
 
     if not (args.dry_run or args.go or args.repair or args.status or args.masters_only
             or args.resolve_dirs or args.refetch):
-        ap.error("нужен --dry-run, --go, --repair, --masters-only, --resolve-dirs или --status")
+        ap.error("need --dry-run, --go, --repair, --masters-only, --resolve-dirs or --status")
 
     if args.repair:
         return repair_masters(args)
@@ -533,12 +534,12 @@ def main() -> int:
     done = state_map()
     rows = [r for r in rows if done.get(r["key"], {}).get("state") not in
             ("downloading", "done", "extracting")]
-    print(f"кандидатов к загрузке: {len(rows)}")
+    print(f"download candidates: {len(rows)}")
 
     t = None if args.dry_run else Transm()
     client = RTClient()
     budget_left = workspace.remaining_bytes() if not args.dry_run else int(args.max_gb * 1e9)
-    reserve = 2 * 1024 ** 3          # не выедать флешку под ноль
+    reserve = 2 * 1024 ** 3          # do not eat the flash drive down to zero
     spent = 0
     processed = 0
     for r in rows:
@@ -563,7 +564,7 @@ def main() -> int:
             processed += 1
             continue
 
-        # 1) оригинал
+        # 1) original
         base = str(dataset_dir() / "raw" / key.replace("/", "__"))
         try:
             o = side_setup(t, client, tid, base + "/orig", rel["tracks"], rel["album"],
@@ -575,19 +576,19 @@ def main() -> int:
         if not o["ok"]:
             append_state({"key": key, "state": "no_match", **{k: o[k] for k in
                           ("torrent_tid", "matched", "of", "error") if k in o}})
-            print(f"[skip] {key}: оригинал не совпал ({o.get('matched')}/{o.get('of')}) "
+            print(f"[skip] {key}: original did not match ({o.get('matched')}/{o.get('of')}) "
                   f"{rel['album'][:40]}")
             processed += 1
             continue
         need_new = o.get("new_bytes", o["wanted_bytes"])
         if need_new + spent > int(args.max_gb * 1e9) or \
                 need_new + reserve > budget_left:
-            print(f"[budget] {key}: нового {need_new / 1e6:.0f}MB "
-                  f"(всего в теме {o['wanted_bytes'] / 1e6:.0f}MB) — стоп по бюджету")
+            print(f"[budget] {key}: new {need_new / 1e6:.0f}MB "
+                  f"(whole topic {o['wanted_bytes'] / 1e6:.0f}MB) — stopping on budget")
             t._call("torrent-remove", {"ids": [o["torrent_tid"]], "delete-local-data": True})
             break
 
-        # 2) мастер-реставрация (нужна для фич/band-дельт и слуховой сверки)
+        # 2) master restoration (needed for features/band deltas and listening checks)
         mrec = None
         if not args.no_master:
             try:
@@ -596,8 +597,8 @@ def main() -> int:
             except Exception as e:                    # noqa: BLE001
                 mrec = {"ok": False, "error": f"{type(e).__name__}: {e}"[:120]}
             if mrec and not mrec["ok"]:
-                print(f"[warn] {key}: мастер-сторона не встала ({mrec.get('error')}) — "
-                      f"оставляем одну сторону")
+                print(f"[warn] {key}: master side did not stick ({mrec.get('error')}) — "
+                      f"keeping a single side")
 
         spent += o.get("new_bytes", o["wanted_bytes"]) + \
             ((mrec or {}).get("new_bytes", (mrec or {}).get("wanted_bytes")) or 0)
@@ -615,11 +616,11 @@ def main() -> int:
                          "name")}, "dir": base + "/master"}
                        if mrec and mrec.get("ok") else mrec),
         })
-        mtxt = (f"+ мастер {mrec['wanted_bytes'] / 1e6:.0f}MB"
-                if mrec and mrec.get("ok") else "(без мастера)")
+        mtxt = (f"+ master {mrec['wanted_bytes'] / 1e6:.0f}MB"
+                if mrec and mrec.get("ok") else "(no master)")
         print(f"[start] {key} '{o.get('name', '')[:38]}' {o['mode']} "
-              f"{o['matched']}/{o['of']} треков, {o['wanted_bytes'] / 1e6:.0f}MB {mtxt}")
-    print(f"итого: обработано {processed}, отобрано {spent / 1e9:.2f} GB")
+              f"{o['matched']}/{o['of']} tracks, {o['wanted_bytes'] / 1e6:.0f}MB {mtxt}")
+    print(f"total: processed {processed}, selected {spent / 1e9:.2f} GB")
     return 0
 
 

@@ -1,7 +1,7 @@
 {
   "name": "restore-listen",
   "version": "0.1.0",
-  "description": "Плеер для слепого сравнения реставраций (выровненная громкость, A/B/C)",
+  "description": "Player for blind comparison of restorations (level-matched, A/B/C)",
   "main": "main.js",
   "scripts": {
     "start": "electron --no-sandbox .",

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Оформление готовой реставрации: теги → обложка → тексты → копия в коллекцию.
+"""Finalize a finished restoration: tags → cover → lyrics → copy into the collection.
 
-`restore_one.py` отдаёт чистые FLAC без тегов и картинок (он про DSP, не про
-метаданные). Этот шаг закрывает разрыв и делает релиз готовым к прослушиванию.
+`restore_one.py` outputs clean FLACs without tags or pictures (it is about DSP,
+not metadata). This step closes the gap and makes the release ready for listening.
 
   python3 scripts/finish_release.py \
       --restored "release/Album [restored]" \
@@ -10,9 +10,9 @@
       --dest     ~/Music/restorations/"Album [restored]" \
       --lyrics
 
-Порядок: теги из источника → обложка → тексты (add-lyrics) → копия в --dest.
-Теги переносятся по номеру трека; если в источнике нет тегов (image+cue),
-берём их из cue.
+Order: tags from the source → cover → lyrics (add-lyrics) → copy into --dest.
+Tags are carried over by track number; if the source has no tags (image+cue),
+they are taken from the cue.
 """
 import argparse
 import json
@@ -55,7 +55,7 @@ def find_cover(*dirs: Path, explicit: Path | None = None) -> Path | None:
     extra = []
     for d in dirs:
         if d and d.is_dir() and d.parent not in dirs:
-            extra.append(d.parent)      # корень торрента (обложка бывает там)
+            extra.append(d.parent)      # torrent root (the cover is sometimes there)
     for d in list(dirs) + extra:
         if not d or not d.is_dir():
             continue
@@ -71,10 +71,10 @@ def find_cover(*dirs: Path, explicit: Path | None = None) -> Path | None:
                               if p.suffix.lower() in (".jpg", ".jpeg", ".png")
                               and not any(b in p.name.lower() for b in COVER_BAD)]
     if not cands:
-        # Именованной обложки нет — берём любую картинку (у Papa Roach она
-        # называлась «The Paramour Sessions.jpg»), но не задник/инлей/буклет.
-        # Обложка почти квадратная: отсекаем «оби»-полоски и развороты
-        # (у Q5 первой попалась полоска оби и ушла на телефон как обложка).
+        # No named cover — take any image (Papa Roach's was called
+        # "The Paramour Sessions.jpg"), but not a back/inlay/booklet.
+        # A cover is nearly square: this cuts off obi strips and gatefolds
+        # (for Q5 an obi strip was picked first and shipped to the phone as the cover).
         pool = []
         for d in list(dirs) + extra:
             if not d or not d.is_dir():
@@ -93,23 +93,23 @@ def find_cover(*dirs: Path, explicit: Path | None = None) -> Path | None:
             if 0.8 <= min(w, h) / max(w, h):
                 square.append((w * h, p))
         if square:
-            square.sort(reverse=True)      # самая крупная квадратная
+            square.sort(reverse=True)      # the largest square one
             cands = [square[0][1]]
         else:
             cands = pool[:1]
     if not cands:
         return None
-    # предпочитаем маленькие: огромные сканы раздувают каждый трек
+    # prefer smaller ones: huge scans bloat every track
     cands.sort(key=lambda p: p.stat().st_size)
     return cands[0]
 
 
 def copy_tags(src: Path, dst: Path) -> int:
-    """Перенести теги источника в результат, СОХРАНИВ уже вшитые тексты.
+    """Carry the source tags into the result, PRESERVING already embedded lyrics.
 
-    Через metaflac не выходит: многострочное значение (LYRICS) он не принимает
-    обратно на импорте — «malformed vorbis comment field», и текст теряется.
-    mutagen переносит такие поля корректно.
+    metaflac can't do it: it refuses a multi-line value (LYRICS) on import —
+    "malformed vorbis comment field" — and the lyrics are lost.
+    mutagen carries such fields correctly.
     """
     from mutagen.flac import FLAC
     sf, df = FLAC(str(src)), FLAC(str(dst))
@@ -124,12 +124,12 @@ def copy_tags(src: Path, dst: Path) -> int:
 
 
 def unify_album(rest_files: list[Path]) -> str:
-    """Один ALBUM/ARTIST/ALBUMARTIST на весь альбом + нумерация 01..N.
+    """One ALBUM/ARTIST/ALBUMARTIST for the whole album + numbering 01..N.
 
-    Часть треков приходит с другим написанием альбома (Q5: 8 треков
-    «… [VDP-1141]», 2 — без каталожного номера), и плеер делит альбом на два:
-    «видно только 10 и 11, остальные живут отдельно». Нумерация чинится тоже:
-    если pregap из cue выпал, треки шли с 02.
+    Some tracks arrive with a different album spelling (Q5: 8 tracks
+    "… [VDP-1141]", 2 — without the catalog number), and the player splits the
+    album in two: "only 10 and 11 visible, the rest live separately". Numbering
+    is fixed too: if the pregap from the cue was dropped, tracks started at 02.
     """
     import re as _re
     from collections import Counter
@@ -152,7 +152,7 @@ def unify_album(rest_files: list[Path]) -> str:
                 c[v[0].strip()] += 1
         if not c:
             return ""
-        # большинство; при равенстве — более длинное (обычно с каталогом)
+        # majority; on a tie — the longer one (usually with the catalog number)
         return max(c.items(), key=lambda kv: (kv[1], len(kv[0])))[0]
     album, artist = vote("ALBUM"), vote("ARTIST")
     changed = []
@@ -166,7 +166,7 @@ def unify_album(rest_files: list[Path]) -> str:
             if (fl.get("ALBUMARTIST") or [""])[0] != artist:
                 fl["ALBUMARTIST"] = artist
         fl.save()
-    # нумерация подряд, если она не 1..N
+    # consecutive numbering if it isn't 1..N
     nums = []
     for f, fl in files:
         m = _re.match(r"^(\d{1,3})\b", (fl.get("TRACKNUMBER") or [""])[0])
@@ -178,19 +178,19 @@ def unify_album(rest_files: list[Path]) -> str:
             if nums[idx] != pos:
                 fl["TRACKNUMBER"] = f"{pos:02d}"; fl.save()
                 changed.append(f.name)
-        changed.append(f"перенумеровано 01..{len(files):02d}")
-    return f"album=[{album}], artist=[{artist}], правок {len(set(changed))}" if changed else ""
+        changed.append(f"renumbered 01..{len(files):02d}")
+    return f"album=[{album}], artist=[{artist}], {len(set(changed))} changes" if changed else ""
 
 
 def normalize_titles(rest_files: list[Path]) -> int:
-    """Выправить СДВИГ тегов: когда TITLE одного трека принадлежит другому.
+    """Fix SHIFTED tags: when one track's TITLE belongs to another.
 
-    Имя файла берётся из cue и потому верное, но не всегда пригодно как тег:
-    бывает урезано («Strong (Orchestral Version - B…»), санитизировано
-    («F_d My Way») или содержит «/», заменённый на « - » («Foreplay - Long
-    Time»). Поэтому имя правит тег ТОЛЬКО когда тег явно чужой — совпадает с
-    названием другого трека этого же альбома (признак сдвига на единицу),
-    либо тега нет вовсе.
+    The file name comes from the cue and is therefore correct, but not always
+    usable as a tag: it can be truncated ("Strong (Orchestral Version - B…"),
+    sanitized ("F_d My Way") or contain "/" replaced with " - " ("Foreplay -
+    Long Time"). So the name overrides the tag ONLY when the tag is clearly
+    someone else's — it matches another track's title of the same album
+    (a sign of a one-position shift), or the tag is missing entirely.
     """
     from mutagen.flac import FLAC
     derived: dict[Path, tuple[int, str]] = {}
@@ -200,7 +200,7 @@ def normalize_titles(rest_files: list[Path]) -> int:
             derived[f] = (int(m.group(1)), m.group(2).strip())
     if not derived:
         return 0
-    # сколько раз каждое «имя из файла» встречается — по нему ловим сдвиг
+    # how often each "name from file" occurs — used to catch the shift
     names = {f: n for f, (_num, n) in derived.items()}
     fixed = 0
     for f, (num, name) in derived.items():
@@ -211,7 +211,7 @@ def normalize_titles(rest_files: list[Path]) -> int:
         shifted = bool(title) and title in others
         if not title or shifted:
             if shifted:
-                print(f"  [сдвиг] {f.name[:30]}: было [{title[:30]}] → [{name[:30]}]")
+                print(f"  [shift] {f.name[:30]}: was [{title[:30]}] → [{name[:30]}]")
             fl["TITLE"] = name
             fixed += 1
         if (not trk) or (trk.isdigit() and int(trk) != num):
@@ -222,10 +222,10 @@ def normalize_titles(rest_files: list[Path]) -> int:
 
 def fill_from_cue(rest_files: list[Path], src: Path | None,
                   rest: Path | None = None) -> str:
-    """Если у треков нет ARTIST/ALBUM — взять их из cue рядом с источником.
+    """If the tracks have no ARTIST/ALBUM — take them from the cue next to the source.
 
-    cue задаёт исполнителя на уровне диска; cuetag его не переносит, и треки
-    уезжают на телефон как <unknown> (Perfect Plan, Place Vendome).
+    The cue sets the performer at the disk level; cuetag doesn't carry it over,
+    and the tracks end up on the phone as <unknown> (Perfect Plan, Place Vendome).
     """
     cue = None
     if src is not None:
@@ -234,8 +234,8 @@ def fill_from_cue(rest_files: list[Path], src: Path | None,
                 cue = next(iter(d.glob("*.cue")))
                 break
     if cue is None:
-        # Источник уже удалён (--clean-src) — берём из имени релиза
-        # «Artist - Album (Год) [restored]».
+        # The source is already gone (--clean-src) — parse the release name
+        # "Artist - Album (Year) [restored]".
         name = (rest or Path("")).name.replace(" [restored]", "")
         m = re.match(r"^(.*?)\s+-\s+(.*?)\s*\((\d{4})\)$", name)
         if not m:
@@ -246,15 +246,15 @@ def fill_from_cue(rest_files: list[Path], src: Path | None,
         for f in rest_files:
             fl = FLAC(str(f))
             changed = False
-            # Ключи ЗАГЛАВНЫМИ: в остальной библиотеке теги в верхнем регистре,
-            # и смешение регистров выглядит как разные теги у разных плееров.
+        # Keys in UPPER CASE: the rest of the library uses uppercase tags,
+        # and mixed case looks like different tags to different players.
             for k, v in (("ARTIST", artist), ("ALBUMARTIST", artist),
                          ("ALBUM", album), ("DATE", date)):
                 if k.lower() not in {x.lower() for x in fl}:
                     fl[k] = v; changed = True
             if changed:
                 fl.save(); fixed += 1
-        return f"из имени: album={album}, artist={artist}, date={date} → {fixed} треков" if fixed else ""
+        return f"from name: album={album}, artist={artist}, date={date} → {fixed} tracks" if fixed else ""
     txt = cue.read_text(encoding="utf-8", errors="ignore")
     top = txt.split("TRACK ", 1)[0]
     def grab(pat: str) -> str:
@@ -276,37 +276,39 @@ def fill_from_cue(rest_files: list[Path], src: Path | None,
                      ("DATE", date), ("GENRE", genre)):
             if v and k.lower() not in have:
                 fl[k] = v; changed = True
-        if changed:
-            fl.save(); fixed.append(f.name[:24])
+            if changed:
+                fl.save(); fixed.append(f.name[:24])
     if not fixed:
         return ""
     bits = [b for b in (f"album={album}" if album else "", f"artist={artist}" if artist else "",
                         f"date={date}" if date else "") if b]
-    return ", ".join(bits) + f" → {len(fixed)} треков"
+    return ", ".join(bits) + f" → {len(fixed)} tracks"
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--restored", required=True)
-    ap.add_argument("--source", default="", help="каталог источника (теги/обложка)")
-    ap.add_argument("--cover", default="", help="явная обложка")
-    ap.add_argument("--dest", default="", help="куда скопировать (коллекция)")
-    ap.add_argument("--lyrics", action="store_true", help="вшить тексты (genius/lrclib)")
+    ap.add_argument("--source", default="", help="source directory (tags/cover)")
+    ap.add_argument("--cover", default="", help="explicit cover")
+    ap.add_argument("--dest", default="", help="where to copy (collection)")
+    ap.add_argument("--lyrics", action="store_true", help="embed lyrics (genius/lrclib)")
     ap.add_argument("--lyrics-force", action="store_true")
     ap.add_argument("--no-tags", action="store_true")
+    ap.add_argument("--skip-spectra", action="store_true",
+                    help="do not render waveform/spectrogram comparison pages")
     args = ap.parse_args()
 
     rest = Path(args.restored).expanduser()
     src = Path(args.source).expanduser() if args.source else None
     if not rest.is_dir():
-        print(f"нет каталога {rest}")
+        print(f"no directory {rest}")
         return 1
     r_files = flacs(rest)
     if not r_files:
-        print(f"в {rest} нет FLAC")
+        print(f"no FLAC in {rest}")
         return 1
 
-    # --- теги ---------------------------------------------------------------
+    # --- tags ----------------------------------------------------------------
     tagged = 0
     if not args.no_tags and src and src.is_dir():
         s_files = flacs(src)
@@ -321,28 +323,28 @@ def main() -> int:
                 n = copy_tags(sp, rp)
                 tagged += 1 if n else 0
             except RuntimeError as e:
-                print(f"  [warn] теги {rp.name}: {e}")
-        print(f"теги перенесены в {tagged}/{len(r_files)} треков")
+                print(f"  [warn] tags {rp.name}: {e}")
+        print(f"tags carried into {tagged}/{len(r_files)} tracks")
 
-    # --- нормализация названий из имён файлов -------------------------------
+    # --- title normalization from file names ---------------------------------
     fixed_n = normalize_titles(r_files)
     if fixed_n:
-        print(f"названия/номера выправлены: {fixed_n} треков")
+        print(f"titles/numbers fixed: {fixed_n} tracks")
 
-    # --- добор недостающих тегов из cue -------------------------------------
+    # --- fill missing tags from the cue ---------------------------------------
     missing = fill_from_cue(r_files, src, rest)
     if missing:
-        print(f"теги из cue: {missing}")
+        print(f"tags from cue: {missing}")
 
-    # --- единство альбома ---------------------------------------------------
+    # --- album unity -----------------------------------------------------------
     uni = unify_album(r_files)
     if uni:
-        print(f"теги альбома выровнены: {uni}")
+        print(f"album tags aligned: {uni}")
 
-    # --- обложка ------------------------------------------------------------
+    # --- cover -----------------------------------------------------------------
     cover = find_cover(rest, src, explicit=Path(args.cover).expanduser() if args.cover else None)
     if cover:
-        # большие сканы (3–5 МБ) раздувают каждый трек: ужимаем до ~1200 px
+        # big scans (3–5 MB) bloat every track: downscale to ~1200 px
         small = cover
         if cover.stat().st_size > 400 * 1024:
             try:
@@ -352,23 +354,23 @@ def main() -> int:
                     im.thumbnail((1200, 1200))
                 small = rest / "cover.jpg"
                 im.save(small, quality=88, optimize=True)
-                print(f"обложка ужата: {cover.stat().st_size // 1024} KB → "
+                print(f"cover shrunk: {cover.stat().st_size // 1024} KB → "
                       f"{small.stat().st_size // 1024} KB, {im.size[0]}x{im.size[1]}")
             except Exception as e:  # noqa: BLE001
-                print(f"  [warn] не удалось ужать обложку ({type(e).__name__}) — вшиваю как есть")
+                print(f"  [warn] failed to shrink the cover ({type(e).__name__}) — embedding as is")
                 small = cover
         for rp in r_files:
-            # снять прежние картинки: import-picture ДОБАВЛЯЕТ блок, а не заменяет
-            # --dont-shuffle есть не во всех сборках metaflac (1.4.3 его не знает)
+            # drop previous pictures: import-picture ADDS a block, it does not replace
+            # --dont-shuffle is absent in some metaflac builds (1.4.3 doesn't know it)
             subprocess.run(["metaflac", "--remove", "--block-type=PICTURE", str(rp)],
                            capture_output=True)
             metaflac("--import-picture-from", str(small), str(rp))
-        print(f"обложка: {small.name} ({small.stat().st_size // 1024} KB) → {len(r_files)} треков")
+        print(f"cover: {small.name} ({small.stat().st_size // 1024} KB) → {len(r_files)} tracks")
         cover = small
     else:
-        # Запасной путь: у WEB-релизов обложки-файла часто нет вовсе (Subsignal
-        # «La Muerta»), и альбом уходил на телефон «голым». Тянем из MusicBrainz
-        # по тегам первого трека.
+        # Fallback path: WEB releases often have no cover file at all (Subsignal
+        # "La Muerta"), and the album went to the phone "naked". Pull one from
+        # MusicBrainz using the first track's tags.
         try:
             from mutagen.flac import FLAC as _FLAC
             t = _FLAC(str(r_files[0]))
@@ -386,18 +388,18 @@ def main() -> int:
                                        capture_output=True)
                         metaflac("--import-picture-from", str(cand), str(rp))
                     cover = cand
-                    print(f"обложка (из MusicBrainz) → {len(r_files)} треков")
+                    print(f"cover (from MusicBrainz) → {len(r_files)} tracks")
                 else:
-                    print("[warn] обложка не найдена ни в источнике, ни в MusicBrainz")
+                    print("[warn] cover not found in source or MusicBrainz")
             else:
-                print("[warn] обложка не найдена, теги пусты — нечем искать")
+                print("[warn] cover not found, tags empty — nothing to search with")
         except Exception as e:  # noqa: BLE001
-            print(f"[warn] обложка не найдена ({type(e).__name__})")
+            print(f"[warn] cover not found ({type(e).__name__})")
 
-    # --- тексты -------------------------------------------------------------
+    # --- lyrics ----------------------------------------------------------------
     if args.lyrics:
         if not LYRICS_SCRIPT.is_file():
-            print(f"[warn] нет {LYRICS_SCRIPT} — тексты пропущены")
+            print(f"[warn] {LYRICS_SCRIPT} missing — lyrics skipped")
         else:
             cmd = [sys.executable, str(LYRICS_SCRIPT), "tag", "--dir", str(rest)]
             if args.lyrics_force:
@@ -408,12 +410,12 @@ def main() -> int:
                 st = line.split("\t", 1)[0].strip()
                 if st:
                     stat[st] = stat.get(st, 0) + 1
-            print("тексты: " + ", ".join(f"{k}={v}" for k, v in sorted(stat.items())))
+            print("lyrics: " + ", ".join(f"{k}={v}" for k, v in sorted(stat.items())))
             for line in r.stdout.splitlines():
                 if line.startswith(("NOMATCH", "AMBIGUOUS", "ERROR")):
                     print("   " + line.replace("\t", " | ")[:150])
 
-    # --- копия в коллекцию ---------------------------------------------------
+    # --- copy into the collection ------------------------------------------------
     if args.dest:
         dst = Path(args.dest).expanduser()
         dst.mkdir(parents=True, exist_ok=True)
@@ -422,9 +424,32 @@ def main() -> int:
         if cover:
             shutil.copy2(cover, dst / ("cover" + cover.suffix.lower()))
         size = sum(p.stat().st_size for p in dst.iterdir() if p.is_file())
-        print(f"скопировано в {dst}: {len(r_files)} треков, {size / 1e6:.0f} MB")
+        print(f"copied to {dst}: {len(r_files)} tracks, {size / 1e6:.0f} MB")
 
-    # --- сводка --------------------------------------------------------------
+    # --- DR report in the meter format (as masters publish on the tracker) --------
+    print("DR report (meter):", flush=True)
+    r = subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "dr_report.py"),
+                        str(rest)], capture_output=True, text=True)
+    if r.returncode == 0 and r.stdout.strip():
+        print(r.stdout.strip())
+        if args.dest:
+            shutil.copy2(rest / "DR Report.txt", dst / "DR Report.txt")
+    else:
+        print(f"[warn] DR report not built: {(r.stderr or '')[-150:]}")
+
+    # --- spectra: waveform/spectrogram pages + animated orig/restored GIFs ------
+    if src and src.is_dir() and not args.skip_spectra:
+        print("spectra:", flush=True)
+        r = subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "spectrum_report.py"),
+                            "--orig", str(src), "--restored", str(rest),
+                            "--out", str((dst if args.dest else rest) / "spectra")],
+                           capture_output=True, text=True)
+        if r.returncode == 0:
+            print(r.stdout.strip())
+        else:
+            print(f"[warn] spectra not built: {(r.stderr or '')[-150:]}")
+
+    # --- summary ------------------------------------------------------------------
     report = rest / "restore_report.jsonl"
     if report.is_file():
         rows = [json.loads(l) for l in report.read_text(encoding="utf-8").splitlines() if l.strip()]
@@ -432,8 +457,8 @@ def main() -> int:
             import statistics as S
             d = [r["delta"]["dr"] for r in rows]
             c = [r["delta"]["crest"] for r in rows]
-            print(f"итог: DR +{min(d)}…+{max(d)} (медиана +{S.median(d):.0f}), "
-                  f"Δcrest медиана {S.median(c):+.2f} дБ, TP {rows[0].get('tp_actual')}")
+            print(f"result: DR +{min(d)}…+{max(d)} (median +{S.median(d):.0f}), "
+                  f"Δcrest median {S.median(c):+.2f} dB, TP {rows[0].get('tp_actual')}")
     return 0
 
 

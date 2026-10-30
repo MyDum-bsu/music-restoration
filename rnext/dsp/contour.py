@@ -1,14 +1,14 @@
-"""STFT-контур реставрации динамического диапазона — chunked WOLA (без SciPy-stft).
+"""STFT contour for dynamic-range restoration — chunked WOLA (no SciPy-stft).
 
-Двухпроходная схема:
-  проход 1 — уровни полос по кадрам (мелочная память);
+Two-pass scheme:
+  pass 1 — per-frame band levels (band-wise memory);
   computing gains per band/frame (flatten/expand);
-  проход 2 — умножение бинов на гейны + overlap-add.
+  pass 2 — multiply bins by the gains + overlap-add.
 
-Механика expand (главный режим, воспроизводит master-реставрации):
-  per-frame уровень полосы ABOVE сглаженного тела растягивается в r_expand раз;
-  TP-нормализация в конце ставит пики на потолок — crest растёт на Δ≈r-1 от
-  избыточной энергии транзиентов (см. corpus/calibration/*.jsonl).
+Expand mechanics (the main mode, reproduces master restorations):
+  the per-frame level of a band ABOVE the smoothed body is stretched by
+  r_expand; final TP normalization pins peaks at the ceiling — crest grows by
+  delta ~ r-1 from the excess transient energy (see corpus/calibration/*.jsonl).
 """
 import gc
 import math
@@ -17,7 +17,7 @@ from dataclasses import dataclass
 import numpy as np
 from scipy import signal  # get_window, resample_poly
 
-# ---------------------------------------------------------------- WOLA базис
+# ---------------------------------------------------------------- WOLA basis
 
 
 def _window(frame: int) -> np.ndarray:
@@ -29,7 +29,7 @@ def _frame_starts(n: int, frame: int, hop: int) -> np.ndarray:
 
 
 def _stft_batch(x: np.ndarray, starts: np.ndarray, w: np.ndarray) -> np.ndarray:
-    """x [n, ch] float64 → Z [nb, ch, freq] (rfft ось времени, окно применено)."""
+    """x [n, ch] float64 -> Z [nb, ch, freq] (rfft over time axis, window applied)."""
     frames = np.stack([x[s:s + w.size, :].T for s in starts])  # [nb, ch, frame]
     frames *= w[None, None, :]
     return np.fft.rfft(frames, axis=-1)
@@ -37,7 +37,7 @@ def _stft_batch(x: np.ndarray, starts: np.ndarray, w: np.ndarray) -> np.ndarray:
 
 def _build_gain_matrix(levels: np.ndarray, pol: "ContourPolicy", hop_s: float,
                        band_fcs: np.ndarray) -> np.ndarray:
-    """levels [nb_bands, ch, nf] → gains_db [nb_bands, ch, nf]."""
+    """levels [nb_bands, ch, nf] -> gains_db [nb_bands, ch, nf]."""
     nb, ch, nf = levels.shape
     gains = np.zeros_like(levels, dtype=np.float64)
     for bi in range(nb):
@@ -77,7 +77,7 @@ def _build_gain_matrix(levels: np.ndarray, pol: "ContourPolicy", hop_s: float,
 
 
 def _asym_smooth(g_db: np.ndarray, tau_up_s: float, tau_dn_s: float, hop_s: float) -> np.ndarray:
-    """Однополюсник с разными τ на подъём/спад; g_db: [ch, nf] или [nf]."""
+    """One-pole smoother with different tau for rise/fall; g_db: [ch, nf] or [nf]."""
     if g_db.ndim == 1:
         g_db = g_db[None, :]
         squeeze = True
@@ -97,40 +97,42 @@ def _asym_smooth(g_db: np.ndarray, tau_up_s: float, tau_dn_s: float, hop_s: floa
     return out[0] if squeeze else out
 
 
-# ---------------------------------------------------------------- политика
+# ---------------------------------------------------------------- policy
 
 
 @dataclass
 class ContourPolicy:
-    k: float = 0.75          # mode=flatten: доля сохранения разброса уровня полосы
-    bass_scale: float = 0.35 # доля эффекта на НЧ-полосах
-    tau_attack_s: float = 0.25   # τ кадра гейна
-    tau_release_s: float = 1.8   # τ подъёма гейна (flatten) / спада буста (expand)
+    k: float = 0.75          # mode=flatten: share of band-level spread kept
+    bass_scale: float = 0.35 # share of the effect on low-frequency bands
+    tau_attack_s: float = 0.25   # gain frame tau
+    tau_release_s: float = 1.8   # gain rise tau (flatten) / boost fall tau (expand)
     frame: int = 8192        # ~186 ms @44.1k
-    hop: int | None = None   # None → frame//4
+    hop: int | None = None   # None -> frame//4
     gain_min_db: float = -9.0
     gain_max_db: float = 12.0
     bass_hz: float = 160.0
     ramp_to_hz: float = 900.0
     mode: str = "expand"     # "expand" | "flatten"
-    r_expand: float = 1.5    # mode=expand: множитель над (level - body)
+    r_expand: float = 1.5    # mode=expand: multiplier over (level - body)
     tau_body_up_s: float = 1.5
     tau_body_dn_s: float = 2.0
-    batch_frames: int = 256  # кадров STFT за раз (память)
+    batch_frames: int = 256  # STFT frames per batch (memory)
 
 
-# ---------------------------------------------------------------- главный этап
+# ---------------------------------------------------------------- main stage
 
 
-def contour_expand(x: np.ndarray, sr: int, pol: ContourPolicy | None = None) -> np.ndarray:
-    """x [n, ch] float32/64 [-1,1) → реставрированный [n, ch]."""
+def contour_expand(x: np.ndarray, sr: int, pol: ContourPolicy | None = None,
+                   return_gains: bool = False):
+    """x [n, ch] float32/64 [-1,1) -> restored [n, ch]."""
     pol = pol or ContourPolicy()
     hop = pol.hop or pol.frame // 4
     w = _window(pol.frame)
     n0, ch = x.shape
-    # Паддинг краёв: без него WOLA-нормировка у границ близка к нулю и края
-    # «взрываются». Дополняем нулями на кадр слева и справа, считаем всё на
-    # дополненном сигнале, в конце отрезаем паддинг (идентичность r=1 точна).
+    # Edge padding: without it the WOLA normalization near the borders is close
+    # to zero and the edges "explode". Pad one frame of zeros left and right,
+    # compute everything on the padded signal, trim the padding at the end
+    # (the r=1 identity is exact).
     pad = pol.frame
     x = np.pad(x, ((pad, pad + pol.frame), (0, 0)))
     n = x.shape[0]
@@ -139,7 +141,7 @@ def contour_expand(x: np.ndarray, sr: int, pol: ContourPolicy | None = None) -> 
     freqs = np.fft.rfftfreq(pol.frame, 1.0 / sr)
     nbins = freqs.size
 
-    # полосы: 1/3-октава 20 Гц → Nyquist
+    # bands: 1/3-octave from 20 Hz up to Nyquist
     edges = [20.0]
     while edges[-1] < sr / 2 - 1:
         edges.append(edges[-1] * 2 ** (1 / 3))
@@ -152,7 +154,7 @@ def contour_expand(x: np.ndarray, sr: int, pol: ContourPolicy | None = None) -> 
             band_fcs.append(math.sqrt(edges[i] * edges[i + 1]))
     nb = len(band_bins)
 
-    # проход 1: уровни полос [nb, ch, nf]
+    # pass 1: band levels [nb, ch, nf]
     levels = np.zeros((nb, ch, nf), dtype=np.float64)
     for b0 in range(0, nf, pol.batch_frames):
         b1 = min(b0 + pol.batch_frames, nf)
@@ -161,7 +163,7 @@ def contour_expand(x: np.ndarray, sr: int, pol: ContourPolicy | None = None) -> 
         del Z
         gc.collect()
         for bi, idx in enumerate(band_bins):
-            # mean по бинам → power[batch, ch], потом в dB
+            # mean over bins -> power[batch, ch], then to dB
             pw = P[:, :, idx].mean(axis=2)  # [batch, ch]
             levels[bi, :, b0:b1] = 10.0 * np.log10(pw.T + 1e-16)
         del P
@@ -173,7 +175,7 @@ def contour_expand(x: np.ndarray, sr: int, pol: ContourPolicy | None = None) -> 
     for bi, idx in enumerate(band_bins):
         per_bin_gain_frames.append(gains_lin[bi][:, :, None])  # [ch, 1, nf]
 
-    # проход 2: применяем гейны, WOLA-сборка
+    # pass 2: apply the gains, WOLA assembly
     out = np.zeros((n, ch), dtype=np.float64)
     norm = np.zeros(n, dtype=np.float64)
     w_sq = w ** 2
@@ -182,7 +184,7 @@ def contour_expand(x: np.ndarray, sr: int, pol: ContourPolicy | None = None) -> 
         Zb = _stft_batch(x, starts[b0:b1], w)  # [batch, ch, freq]
         Gb = np.ones((b1 - b0, ch, nbins), dtype=np.float64)
         for bi, idx in enumerate(band_bins):
-            # одна и та же полосовая кривая на все бины полосы: [batch, ch] → [batch, ch, 1]
+            # the same band curve applied to every bin of the band: [batch, ch] -> [batch, ch, 1]
             Gb[:, :, idx] = gains_lin[bi, :, b0:b1].T[:, :, None]
         Yb = np.fft.irfft(Zb * Gb, n=pol.frame, axis=-1)
         Yb *= w[None, None, :]
@@ -195,10 +197,11 @@ def contour_expand(x: np.ndarray, sr: int, pol: ContourPolicy | None = None) -> 
 
     norm = np.maximum(norm, 1e-8)
     y = out / norm[:, None]
-    return y[pad:pad + n0].astype(x.dtype)
+    out = y[pad:pad + n0].astype(x.dtype)
+    return (out, gains_db) if return_gains else out
 
 
 def true_peak_dbfs(x: np.ndarray, sr: int, factor: int = 4) -> float:
-    """TP с 4х-полифазой (контроль интерсэмплинг-овершутов)."""
+    """TP with 4x polyphase (controls intersample overshoots)."""
     up = signal.resample_poly(x, factor, 1, axis=0)
     return float(20.0 * np.log10(max(float(np.max(np.abs(up))), 1e-12)))

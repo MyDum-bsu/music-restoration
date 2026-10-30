@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Снос сырья у НЕЗАВЕРШЁННЫХ пар с низкой готовностью (аварийный выпуск места).
+"""Wiping raw of UNFINISHED pairs with low progress (emergency space release).
 
-Нужен, когда диск забит: удаляем сырьё пар, которые скачаны меньше чем на
---max-progress, и помечаем их состоянием `paused_space`, чтобы селектор вернул
-их в работу позже. Готовые к извлечению пары и последние `--keep` извлечённых
-не трогаем.
+Needed when the disk is full: we delete raw of pairs downloaded less than
+--max-progress and mark them `paused_space`, so the selector puts them back to
+work later. Pairs ready for extraction and the last `--keep` extracted ones
+are left alone.
 """
 import argparse
 import json
@@ -23,14 +23,14 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--max-progress", type=float, default=0.5)
     ap.add_argument("--peerless", action="store_true",
-                    help="снимать пары, у которых НЕТ пиров (мёртвые сиды) — "
-                         "они держат кап «в работе», блокируя новые партии")
-    ap.add_argument("--keep", type=int, default=6, help="сколько свежих извлечённых пар не трогать")
+                    help="drop pairs with NO peers (dead seeds) — they hold the "
+                         "in-work cap, blocking new batches")
+    ap.add_argument("--keep", type=int, default=6, help="how many recently extracted pairs to leave alone")
     args = ap.parse_args()
 
     D = workspace.data_root() / "dataset"
     state = S.merged_state(D / "state.jsonl")
-    # сколько раз пара уже откладывалась (журнал append-only, считаем записи)
+    # how many times the pair was already postponed (append-only journal, count entries)
     pauses: dict[str, int] = {}
     for line in (D / "state.jsonl").read_text(encoding="utf-8").splitlines():
         if not line.strip():
@@ -43,7 +43,7 @@ def main() -> int:
             pauses[r["key"]] = pauses.get(r["key"], 0) + 1
     tmap = S.torrents_by_id()
     if args.peerless:
-        print("режим --peerless: снимаем пары без пиров")
+        print("--peerless mode: dropping pairs without peers")
     have = {p.parent.name.replace("__", "/") for p in (D / "pairs").glob("*/features.json")}
     freed = deleted = kept = 0
     for k, r in state.items():
@@ -60,8 +60,8 @@ def main() -> int:
         prog = (done / total) if total else 0.0
 
         if args.peerless:
-            # в режиме «мёртвых сидов» решает только наличие пиров: 0 пиров =
-            # пара не докачается никогда, даже если прогресс большой
+            # in "dead seeds" mode only peer presence matters: 0 peers = the pair
+            # will never finish, even with high progress
             peers = 0
             for side in ("orig", "master"):
                 srec = r.get(side) if isinstance(r.get(side), dict) else None
@@ -75,7 +75,7 @@ def main() -> int:
                 kept += 1
                 continue
         else:
-            # обычный режим (нехватка места): трогаем только слабо готовые
+            # normal mode (space shortage): touch only low-progress pairs
             if not base_exists or prog >= args.max_progress:
                 kept += 1
                 continue
@@ -92,11 +92,11 @@ def main() -> int:
             shutil.rmtree(base, ignore_errors=True)
         freed += sz
         deleted += 1
-        print(f"  снято {k}: пиров нет, готовность {prog:.0%}, {sz / 1e6:.0f} MB"
-              + ("" if base_exists else " (сырья уже не было)"))
+        print(f"  dropped {k}: no peers, progress {prog:.0%}, {sz / 1e6:.0f} MB"
+              + ("" if base_exists else " (raw was already gone)"))
 
-    print(f"удалено каталогов {deleted} (освобождено {freed / 1e9:.1f} GB), "
-          f"оставлено с прогрессом ≥{args.max_progress:.0%}: {kept}")
+    print(f"removed {deleted} directories (freed {freed / 1e9:.1f} GB), "
+          f"kept with progress ≥{args.max_progress:.0%}: {kept}")
     return 0
 
 

@@ -1,14 +1,15 @@
-"""Адаптивный подбор r контура под целевой Δcrest.
+"""Adaptive selection of the contour r for a target delta-crest.
 
-Проблема: фиксированный r даёт Δcrest, зависящий от материала
-(микроструктура плотности/транзиентов). Мастер на наших корпусных парах
-стабильно добавляет Δcrest ≈ +4.4..+4.7 дБ.
+Problem: a fixed r yields a delta-crest that depends on the material
+(microstructure of density/transients). The master consistently adds
+delta-crest of about +4.4..+4.7 dB on our corpus pairs.
 
-Метод: два пробных прохода ПОЛНОГО трека (r1, r2), оба через тот же
-пост-обработчик, что и финал (TP-лимитер), затем квадратичная инверсия
-    d(u) = A·u² + B·u,  u = r − 1,  d(0) = 0
-к целевой Δcrest. Δ считается от СЫРОГО исходника (crest_ref): HPF сам даёт
-+0.3…0.5 дБ к кресту, иначе систематический перелёт.
+Method: two trial passes over the FULL track (r1, r2), both through the same
+post-processor as the final pass (TP limiter), then quadratic inversion
+    d(u) = A*u^2 + B*u,  u = r - 1,  d(0) = 0
+to the target delta-crest. The delta is measured from the RAW source
+(crest_ref): the HPF itself adds +0.3..0.5 dB of crest, otherwise we
+systematically overshoot.
 """
 import math
 
@@ -29,9 +30,9 @@ def fit_r(x: np.ndarray, sr: int, target_dcrest: float = DEFAULT_TARGET_DCREST,
           base: ContourPolicy | None = None,
           post=None, r1: float = 1.5, r2: float = 2.1,
           crest_ref: float | None = None) -> tuple[float, float]:
-    """→ (r, predicted dcrest). Две пробы полного трека + нулевая точка.
+    """Returns (r, predicted dcrest). Two full-track trials + the zero point.
 
-    crest(r) суперлинейна (транзиенты насыщают гейны): d(u) = A·u² + B·u.
+    crest(r) is superlinear (transients saturate the gains): d(u) = A*u^2 + B*u.
     """
     base = base or ContourPolicy()
     c_raw = _crest(x, sr)
@@ -47,7 +48,7 @@ def fit_r(x: np.ndarray, sr: int, target_dcrest: float = DEFAULT_TARGET_DCREST,
     d1 = run(r1)
     d2 = run(r2)
     u1, u2 = r1 - 1.0, r2 - 1.0
-    # решаем A,B из двух точек (d(0)=0 уже учтено)
+    # solve for A,B from the two points (d(0)=0 already accounted for)
     det = (u1 * u1 * u2 - u2 * u2 * u1)
     if abs(det) < 1e-12:
         return float(min(r2, max(1.1, r2 if d2 > 1.0 else 1.1))), max(d2, d1)

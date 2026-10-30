@@ -1,6 +1,6 @@
 ---
 name: split-flac-album
-description: Split a single-FLAC album (one file per album) into individual tracks using an existing .cue sheet. Tags each track with number/title/artist/album/year/genre and embeds cover art (auto-detected in the album folder, or asked from the user if ambiguous). Use when user says "split album", "разделить альбом", "разделить на треки", or hands you an album folder with .flac + .cue + cover image.
+description: Split a single-FLAC album (one file per album) into individual tracks using an existing .cue sheet. Tags each track with number/title/artist/album/year/genre and embeds cover art (auto-detected in the album folder, or asked from the user if ambiguous). Use when the user says "split album", "split into tracks", or hands you an album folder with .flac + .cue + cover image. Do NOT use for albums already split into per-track files (plain re-tagging), for quality measurement (audio-measure), or for restoration (release-restore).
 ---
 
 # Split FLAC Album

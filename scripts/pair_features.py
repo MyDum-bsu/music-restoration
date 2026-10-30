@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Фичи пары «оригинал (image+cue) → реставрация (per-track FLAC)» — в corpus/feature_pairs/.
+"""Features for a pair "original (image+cue) → restoration (per-track FLAC)" — into corpus/feature_pairs/.
 
-Для каждой пары треков: TT DR, crest, clip-статистика, 1/3-octave band RMS,
-дельты рест-минус-ориг. Имена файлов: NN. *.flac в restored dir.
+For each pair of tracks: TT DR, crest, clip stats, 1/3-octave band RMS,
+rest-minus-orig deltas. File names: NN. *.flac in the restored dir.
 """
 import argparse
 import json
@@ -31,11 +31,11 @@ def list_flac(d: Path) -> list[Path]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--key", required=True, help="ключ пары, id каталога (для сохранения)")
+    ap.add_argument("--key", required=True, help="pair key, directory id (used for saving)")
     ap.add_argument("--restored", required=True)
-    ap.add_argument("--orig-image", required=True, help="FLAC image оригинала")
+    ap.add_argument("--orig-image", required=True, help="FLAC image of the original")
     ap.add_argument("--cue", required=True)
-    ap.add_argument("--album", default="", help="метка альбома")
+    ap.add_argument("--album", default="", help="album label")
     args = ap.parse_args()
 
     img = Path(args.orig_image)
@@ -50,9 +50,9 @@ def main() -> int:
 
     rfiles = restored_tracks(rdir)
     if len(rfiles) != len(bounds):
-        print(f"WARN: треков restored={len(rfiles)} vs cue={len(bounds)}", sys.stderr)
+        print(f"WARN: restored tracks={len(rfiles)} vs cue={len(bounds)}", sys.stderr)
 
-    # декод оригинала целиком в int16 (RAM ~0.7 GiB на CD)
+    # decode the whole original into int16 (~0.7 GiB RAM per CD)
     x16, sr = F.decode_s16(str(img))
     if sr != meta["sr"] or x16.shape[0] < total - 3:
         print(f"WARN: decode len {x16.shape[0]} vs probe {total}", sys.stderr)

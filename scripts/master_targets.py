@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Свод целей мастера: таблицы DR-метра из тем → corpus/master_targets.jsonl.
+"""Master target summary: DR-meter tables from topics → corpus/master_targets.jsonl.
 
-Мастер публикует в теме анализ своей реставрации (DR/Peak/RMS по трекам).
-Это цель по DR/crest **без скачивания** мастер-релиза: crest_tt = peak − rms.
+The master publishes an analysis of their restoration in the topic
+(DR/Peak/RMS per track). This is a DR/crest target **without downloading** the
+master release: crest_tt = peak − rms.
 
-  python3 scripts/master_targets.py            # собрать/обновить свод
-  python3 scripts/master_targets.py --report   # распределения по авторам/декадам
+  python3 scripts/master_targets.py            # build/update the summary
+  python3 scripts/master_targets.py --report   # distributions by author/decade
 """
 import argparse
 import json
@@ -65,9 +66,9 @@ def build() -> int:
     with open(out, "w", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    print(f"релизов с целью: {len(rows)} → {out}")
+    print(f"releases with a target: {len(rows)} → {out}")
     nt = sum(r["n_tracks"] for r in rows)
-    print(f"треков: {nt}; авторов: {dict(Counter(r['author_pid'] for r in rows))}")
+    print(f"tracks: {nt}; authors: {dict(Counter(r['author_pid'] for r in rows))}")
     return 0
 
 
@@ -75,33 +76,33 @@ def report() -> int:
     rows = [json.loads(l) for l in (corpus() / "master_targets.jsonl").read_text(
         encoding="utf-8").splitlines() if l.strip()]
     if not rows:
-        print("пусто — сначала соберите свод")
+        print("empty — build the summary first")
         return 1
     tr = [t for r in rows for t in r["tracks"]]
     crest = [t["crest_tt"] for t in tr]
-    print(f"релизов {len(rows)}, треков {len(tr)}")
-    print(f"crest_tt (цель мастера): медиана {S.median(crest):.2f}, "
-          f"среднее {S.mean(crest):.2f}, sd {S.pstdev(crest):.2f}, "
-          f"разброс {min(crest):.2f}..{max(crest):.2f}")
+    print(f"releases {len(rows)}, tracks {len(tr)}")
+    print(f"crest_tt (master target): median {S.median(crest):.2f}, "
+          f"mean {S.mean(crest):.2f}, sd {S.pstdev(crest):.2f}, "
+          f"range {min(crest):.2f}..{max(crest):.2f}")
     dr = [r["official_dr"] for r in rows if r.get("official_dr")]
-    print(f"official DR релиза: медиана {S.median(dr):.0f}, "
-          f"разброс {min(dr)}..{max(dr)} (n={len(dr)})")
-    # классы «раздавленности» мастера: DR ≤8 / 9–11 / ≥12
+    print(f"release official DR: median {S.median(dr):.0f}, "
+          f"range {min(dr)}..{max(dr)} (n={len(dr)})")
+    # master "loudness" classes: DR ≤8 / 9–11 / ≥12
     cls = Counter("loud" if d <= 8 else ("mid" if d <= 11 else "healthy") for d in dr)
-    print("классы:", dict(cls))
+    print("classes:", dict(cls))
     dec = Counter((r["year"] or 0) // 10 * 10 for r in rows if r.get("year"))
-    print("декады:", dict(sorted(dec.items())))
+    print("decades:", dict(sorted(dec.items())))
     by_author = defaultdict(list)
     for r in rows:
         by_author[r["author_pid"]].append(r["crest_tt_mean"])
     for a, v in by_author.items():
-        print(f"  автор {a}: релизов {len(v)}, медиана crest_tt {S.median(v):.2f}, "
+        print(f"  author {a}: releases {len(v)}, crest_tt median {S.median(v):.2f}, "
               f"sd {S.pstdev(v):.2f}")
-    # внутренний разброс (важно для выбора объёма выборки)
+    # within-release spread (matters for sample size choice)
     within = [r["crest_tt_sd"] for r in rows if r["n_tracks"] > 3]
     between = [r["crest_tt_mean"] for r in rows]
-    print(f"разброс целей: между альбомами sd {S.pstdev(between):.2f}, "
-          f"внутри альбомов медиана sd {S.median(within):.2f}")
+    print(f"target spread: between albums sd {S.pstdev(between):.2f}, "
+          f"within albums median sd {S.median(within):.2f}")
     return 0
 
 

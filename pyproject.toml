@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "music-restoration"
 version = "2.0.0"
-description = "DR-реставрация музыкальных альбомов: собственное DSP-ядро, калибровка по парам «оригинал → мастер-реставрация», ML-оценка цели"
+description = "DR restoration of music albums: a custom DSP core, calibration on original → master-restoration pairs, ML estimation of the target"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

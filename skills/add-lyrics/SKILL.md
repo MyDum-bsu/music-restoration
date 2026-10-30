@@ -1,6 +1,6 @@
 ---
 name: add-lyrics
-description: Fetch song lyrics from genius.com and embed them into the audio files' tags (not a separate .txt/.lrc file), so a phone player can display them. Works for one song, an album folder, or any selection of files. Supports FLAC, MP3, M4A, Ogg, Opus. Use when the user says "add lyrics", "добавь тексты песен", "вшить тексты в теги", "текст песни в метаданные", or asks to enrich album/song info with lyrics.
+description: Fetch song lyrics from genius.com and embed them into the audio files' tags (not a separate .txt/.lrc file), so a phone player can display them. Works for one song, an album folder, or any selection of files. Supports FLAC, MP3, M4A, Ogg, Opus. Use when the user says "add lyrics", "embed lyrics into the tags", "put the song text into the metadata", or asks to enrich album/song info with lyrics. Do NOT use for bulk phone-library operations (that's phone-music) or for splitting image+cue albums (that's split-flac-album).
 ---
 
 # Add Lyrics
@@ -23,7 +23,7 @@ Tags written (for maximum phone-player compatibility):
 
 ```bash
 S=<path-to-repo>/skills/add-lyrics/scripts/genius_lyrics.py
-# если скилл установлен через install.sh:
+# if the skill is installed via install.sh:
 # S=~/.agents/skills/add-lyrics/scripts/genius_lyrics.py
 
 # 1. Dry run: resolve matches for everything, write nothing

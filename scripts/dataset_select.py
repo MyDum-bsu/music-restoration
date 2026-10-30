@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Выбор первой партии загрузки из плана: стратификация автор × декада × раздавленность.
+"""Picking the first download batch from the plan: stratification by author × decade × crushedness.
 
-Правила:
-  * только matched / matched_graphy, сиды ≥ --min-seeders, размер ≤ --max-gb на пару;
-  * приоритет альбомным темам (matched) — верификация дешевле, чем у дискографии;
-  * покрываем оба автора и разные декады, внутри страты берём самый низкий master DR
-    (сильнее раздавленный материал = больше дельта = полезнее для настройки);
-  * дедуп по (артист, альбом): один альбом = одна пара.
+Rules:
+  * only matched / matched_graphy, seeders ≥ --min-seeders, size ≤ --max-gb per pair;
+  * album topics (matched) get priority — verification is cheaper than for a discography;
+  * cover both authors and different decades; within a stratum take the lowest master DR
+    (more crushed material = larger delta = more useful for tuning);
+  * dedup by (artist, album): one album = one pair.
 
   python3 scripts/dataset_select.py --limit 12 [--per-stratum 2] [--out batch-001]
 """
@@ -42,29 +42,29 @@ def main() -> int:
     ap.add_argument("--per-stratum", type=int, default=2)
     ap.add_argument("--min-seeders", type=int, default=2)
     ap.add_argument("--min-master-seeders", type=int, default=2,
-                    help="минимум сидов на теме мастера (иначе сторона не качается)")
-    ap.add_argument("--max-gb", type=float, default=2.5, help="макс. размер выбранной раздачи")
-    ap.add_argument("--min-tracks", type=int, default=8, help="минимум треков в релизе")
-    ap.add_argument("--min-mb", type=float, default=150.0, help="минимум размера раздачи, МБ")
+                    help="minimum seeders on the master topic (otherwise the side is not downloaded)")
+    ap.add_argument("--max-gb", type=float, default=2.5, help="max size of the chosen torrent")
+    ap.add_argument("--min-tracks", type=int, default=8, help="minimum tracks in a release")
+    ap.add_argument("--min-mb", type=float, default=150.0, help="minimum torrent size, MB")
     ap.add_argument("--out", default="batch-001")
     ap.add_argument("--balance-authors", action="store_true", default=True,
-                    help="добирать партии у отстающего автора (нужно для кросс-авторной проверки)")
+                    help="top up batches from the lagging author (needed for cross-author validation)")
     ap.add_argument("--no-balance-authors", dest="balance_authors", action="store_false")
     ap.add_argument("--min-per-stratum", type=int, default=200,
-                    help="цель по трекам в страте (автор × декада): пустые ячейки добираем первыми")
-    ap.add_argument("--only-author", default=None, help="качать только этого автора (pid)")
+                    help="track target per stratum (author × decade): empty cells are filled first")
+    ap.add_argument("--only-author", default=None, help="download only this author (pid)")
     ap.add_argument("--max-master-gb", type=float, default=0.0,
-                    help="не брать пары, у которых тема мастера больше N ГБ (0 = без лимита)")
+                    help="skip pairs whose master topic is larger than N GB (0 = no limit)")
     args = ap.parse_args()
 
     rows = [r for r in read_jsonl(corpus() / "dataset_plan.jsonl")
             if r["status"].startswith("matched")]
     plan_index = {r["key"]: r for r in rows}
-    print(f"matched в плане: {len(rows)}")
+    print(f"matched in plan: {len(rows)}")
 
-    # сиды и РАЗМЕР темы мастера — из разбора темы. Большие темы (дискографии
-    # на 10+ ГБ) опасны: wanted-набор там общий для многих пар, мастер-сторона
-    # легко застревает на 0/N и сырьё копится, забивая диск.
+    # seeders and SIZE of the master topic — from the topic parse. Large topics
+    # (10+ GB discographies) are dangerous: the wanted-set there is shared by
+    # many pairs, the master side easily stalls at 0/N and raw piles up, filling the disk.
     mseed: dict[int, int] = {}
     msize: dict[int, int] = {}
     for p in (corpus() / "restored").glob("*.json"):
@@ -75,7 +75,7 @@ def main() -> int:
         mseed[d.get("topic_id")] = d.get("topic_seeders") or 0
         msize[d.get("topic_id")] = d.get("topic_size_bytes") or 0
 
-    # сколько пар уже скачано/извлечено по авторам: отстающего добираем первым
+    # how many pairs are already downloaded/extracted per author: top up the lagging one first
     plan_author = {r["key"]: r.get("author_pid") for r in rows}
     done_by_author: dict[str, int] = {}
     st = workspace.data_root() / "dataset" / "state.jsonl"
@@ -88,10 +88,10 @@ def main() -> int:
                 a = str(r.get("author_pid") or plan_author.get(r["key"]))
                 done_by_author[a] = done_by_author.get(a, 0) + 1
     author_order = sorted(done_by_author, key=lambda a: done_by_author[a])
-    print(f"уже в датасете по авторам: {done_by_author or '—'}"
-          + (f" → добираем {author_order[0]}" if args.balance_authors and author_order else ""))
+    print(f"already in dataset by author: {done_by_author or 'none'}"
+          + (f" → topping up {author_order[0]}" if args.balance_authors and author_order else ""))
 
-    # ── что уже есть в датасете по стратам (автор × декада) ────────────────
+    # ── what is already in the dataset by strata (author × decade) ────────────────
     have: dict[tuple, int] = defaultdict(int)
     pairs_root = workspace.data_root() / "dataset" / "pairs"
     for d in sorted(pairs_root.glob("*/features.json")):
@@ -107,13 +107,12 @@ def main() -> int:
         yr = meta.get("year") or (plan_rec.get("release") or {}).get("year")
         have[(au, decade(yr))] += len(feat_rows)
     if have:
-        print("в датасете по стратам (автор, декада) → треков:")
+        print("in the dataset by strata (author, decade) → tracks:")
         for (a, dec), n in sorted(have.items()):
-            print(f"   {a} {dec}-е: {n}")
+            print(f"   {a} {dec}s: {n}")
 
-    # Что уже заведено. Пропускаем только ТЕРМИНАЛЬНЫЕ состояния: пары с
-    # ошибкой RPC/сети — временные, их надо пробовать снова (иначе они
-    # выпадают из работы навсегда).
+    # What is already registered. Skip only TERMINAL states: pairs with RPC/network
+    # errors are temporary and must be retried (otherwise they drop out of work forever).
     TERMINAL = {"no_match", "edition_mismatch", "corrupt", "done", "extracting",
                 "dead_swarm"}
     done_keys: set[str] = set()
@@ -131,15 +130,15 @@ def main() -> int:
         if (ch.get("seeders") or 0) < args.min_seeders or size > args.max_gb * 1e9:
             continue
         if (r["release"].get("n_tracks") or 0) < args.min_tracks:
-            continue                    # синглы/EP — мало материала для пары
+            continue                    # singles/EPs — too little material for a pair
         if size < args.min_mb * 1e6:
             continue
         if args.only_author and str(r["author_pid"]) != str(args.only_author):
             continue
-        # уже заведённые пары (включая отбракованные) не берём повторно
+        # already registered pairs (including rejected) are not taken again
         if r["key"] in done_keys:
             continue
-        # издания с другим содержимым (акапеллы/инструменталы) — не пары
+        # editions with different content (acapellas/instrumentals) — not pairs
         title = ch.get("title") or ""
         alt = planner.CONTENT_ALT.search(title)
         if alt and not planner.CONTENT_ALT.search(r["release"]["album"] or ""):
@@ -162,13 +161,13 @@ def main() -> int:
                      "_graphy": "graphy" in (ch.get("flags") or []),
                      "_dec": decade(r["release"].get("year"))})
     if skipped_seed:
-        print(f"отброшено из-за слабых сидов темы мастера: {skipped_seed}")
+        print(f"dropped due to weak master topic seeders: {skipped_seed}")
     if skipped_alt:
-        print(f"отброшено как другое издание (акапеллы/инструменталы): {skipped_alt}")
+        print(f"dropped as a different edition (acapellas/instrumentals): {skipped_alt}")
     if skipped_big:
-        print(f"отброшено из-за гигантской темы мастера (>{args.max_master_gb:.0f} ГБ): {skipped_big}")
+        print(f"dropped due to a giant master topic (>{args.max_master_gb:.0f} GB): {skipped_big}")
 
-    # страта: автор × декада × класс раздавленности мастера
+    # stratum: author × decade × master crushedness class
     def cls(md):
         return "loud" if md <= 10 else ("mid" if md <= 12 else "other")
 
@@ -177,18 +176,18 @@ def main() -> int:
         strata[(r["author_pid"], r["_dec"], cls(r["_md"]))].append(r)
 
     def deficit(r) -> int:
-        """Насколько страте не хватает треков (0 — уже набрано)."""
+        """How many tracks the stratum is short (0 — already filled)."""
         return max(0, args.min_per_stratum - have.get((str(r["author_pid"]), r["_dec"]), 0))
 
     def rank(r):
-        # 1) сначала закрываем пустые страты (автор × декада),
-        # 2) альбомные темы с известной целью, 3) низкий master DR (сильнее раздавлен),
-        # 4) больше сидов, 5) меньше размер
+        # 1) fill empty strata first (author × decade),
+        # 2) album topics with a known target, 3) low master DR (more crushed),
+        # 4) more seeders, 5) smaller size
         return (-deficit(r), r["_graphy"], r["_md"] == 99, r["_md"],
                 r.get("_msz", 0), -r["_mse"], r["_size"])
 
     picked = []
-    # круговой обход страт: по одному из каждой, пока не наберём лимит
+    # round-robin over strata: one from each until the limit is reached
     def author_rank(k):
         a = str(k[0])
         return (done_by_author.get(a, 0), -len(strata[k]), k) if args.balance_authors \
@@ -212,9 +211,9 @@ def main() -> int:
         for r in picked:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
     total = sum(r["_size"] for r in picked)
-    print(f"выбрано {len(picked)} пар → {out}  (раздачи ~{total / 1e9:.1f} GB, "
-          f"с обеими сторонами ~{2 * total / 1e9:.1f} GB верхняя оценка)")
-    print(f"{'автор':>9} {'год':>5} {'DRm':>3} {'мс':>3} {'GB':>5} {'se':>3} {'тип':<5} артист — альбом")
+    print(f"picked {len(picked)} pairs → {out}  (torrents ~{total / 1e9:.1f} GB, "
+          f"both sides ~{2 * total / 1e9:.1f} GB upper estimate)")
+    print(f"{'author':>9} {'year':>5} {'DRm':>3} {'ms':>3} {'GB':>5} {'se':>3} {'type':<5} artist — album")
     for r in picked:
         ch = r["chosen"]
         print(f"{r['author_pid']:>9} {str(r['release'].get('year')):>5} {r['_md']:>3} "

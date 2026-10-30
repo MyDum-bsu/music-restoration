@@ -1,14 +1,14 @@
-"""Конфигурация: переменная окружения > config-файл > автодетект/дефолт.
+"""Configuration: environment variable > config file > autodetect/default.
 
-Файл: ~/.config/music-restoration/config.env (или $MUSIC_RESTORATION_CONFIG),
-строки KEY=VALUE, комментарии с '#'. Образец — config.env.example в корне репо.
+File: ~/.config/music-restoration/config.env (or $MUSIC_RESTORATION_CONFIG),
+KEY=VALUE lines, '#' comments. Sample: config.env.example at the repo root.
 
-Правила, выученные на практике:
-- Рабочие каталоги по умолчанию под домашним каталогом, не в /tmp: корневая
-  файловая система часто маленькая, и полный /tmp посреди пакетного прогона
-  убивает процесс.
-- Телефон определяется автоматически по gvfs MTP-монтированию; серийник
-  устройства нигде не зашит.
+Rules learned the hard way:
+- Default working directories live under the home directory, not in /tmp: the
+  root filesystem is often small, and a full /tmp in the middle of a batch run
+  kills the process.
+- The phone is detected automatically from the gvfs MTP mount; no device
+  serial is hardcoded anywhere.
 """
 import os
 import shlex
@@ -66,12 +66,12 @@ def work_dir() -> Path:
 
 
 def ensure_dirs() -> None:
-    """Создать state/work. Вызывать один раз в начале CLI."""
+    """Create state/work. Call once at CLI startup."""
     state_dir().mkdir(parents=True, exist_ok=True)
     work_dir().mkdir(parents=True, exist_ok=True)
 
 
 def work_tmpdir(prefix: str = "mr_") -> Path:
-    """mkdtemp под WORK_DIR, не в /tmp (корневая ФС бывает крошечной)."""
+    """mkdtemp under WORK_DIR, not in /tmp (the root FS can be tiny)."""
     ensure_dirs()
     return Path(tempfile.mkdtemp(prefix=prefix, dir=work_dir()))

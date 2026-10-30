@@ -1,7 +1,7 @@
-"""Формирование пар «реставрация → оригинал» из тем [RM] мастеров.
+"""Building "restoration -> original" pairs from [RM] master topics.
 
-Пара = (restored_topic_id, release, original_topic_id, качество подбора).
-Выход: corpus/pairs.jsonl (append-only, idempotent по ключу rt/release).
+A pair = (restored_topic_id, release, original_topic_id, match quality).
+Output: corpus/pairs.jsonl (append-only, idempotent by the rt/release key).
 """
 import json
 import re
@@ -15,11 +15,11 @@ PAIRS_FILE = "pairs.jsonl"
 
 
 def _catalog_bonuses(title: str, source_edition: str | None) -> float:
-    """Бонус, если в заголовке кандидата мелькают каталожные номера издания."""
+    """Bonus when the candidate title mentions catalog numbers of the edition."""
     if not source_edition:
         return 0.0
     bonus = 0.0
-    # «Victor ‎– VDP-1201», «Noise, N 0061», «IOMLTDCD 608» — Номер руками/*  — найдём паттерны кода.
+    # "Victor – VDP-1201", "Noise, N 0061", "IOMLTDCD 608" — catalog numbers; find code patterns with a regex.
     codes = re.findall(r"[A-Z0-9]{2,}[-\s]?[0-9]{3,6}(?:[~-][DC0-9]{1,6})?", source_edition)
     for code in codes:
         if code and code in title:
@@ -33,7 +33,7 @@ def key_of(rt_id: int, release_idx: int) -> str:
 
 def mine_topic(tid: str, artist_hint: str | None = None, pause: float = 1.5,
                limit_candidates: int = 5, client: RTClient | None = None) -> list[dict]:
-    """Все releases темы → строчки пар с кандидатами-оригиналами (без скачиваний)."""
+    """All releases of a topic -> pair rows with original candidates (no downloads)."""
     c = client or RTClient()
     d = fetch_topic(c, tid)
     if artist_hint:

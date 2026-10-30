@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Калибровка контура на корпусных парах.
+"""Calibrating the contour on corpus pairs.
 
-Наш pipeline (mode=expand / flatten) прогоняется на оригинале трека,
-сравнивается с master-restoration по full-track TT DR/crest/rms/peak и
-band-RMS-дельтам (с выравниванием общего RMS-оффсета, т.е. сравнение форм,
-не абсолютных уровней).
+Our pipeline (mode=expand / flatten) is run on the track's original and
+compared against master-restoration by full-track TT DR/crest/rms/peak and
+band-RMS deltas (with the common RMS offset aligned, i.e. comparing shapes,
+not absolute levels).
 
-Требует corpus/feature_pairs/{key}.jsonl (для матч-инфы) + те же тройки путей,
-что pair_features.py.
+Requires corpus/feature_pairs/{key}.jsonl (for match info) + the same path
+triples as pair_features.py.
 
-Вывод: corpus/calibration/{key}__{tag}.jsonl + сводка в stdout.
+Output: corpus/calibration/{key}__{tag}.jsonl + a summary on stdout.
 """
 import argparse
 import json
@@ -48,7 +48,7 @@ def crest(o: dict) -> float:
 
 
 def band_delta_norm(ours: np.ndarray, master: np.ndarray, sr: int) -> list[float]:
-    """Дельта полос ours-master после выравнивания общего RMS (форма, не уровень)."""
+    """Band delta ours-master after aligning the common RMS (shape, not level)."""
     n = min(ours.shape[0], master.shape[0])
     oy = ours[:n].astype(np.float64)
     om = master[:n].astype(np.float64)
@@ -69,7 +69,7 @@ def main() -> int:
     ap.add_argument("--r-list", default="1.8,2.0,2.2")
     ap.add_argument("--mode", default="expand")
     ap.add_argument("--k", type=float, default=0.75, help="mode=flatten")
-    ap.add_argument("--tracks", default="", help="номера треков через запятую; пусто — все")
+    ap.add_argument("--tracks", default="", help="comma-separated track numbers; empty = all")
     ap.add_argument("--out-tag", default="")
     args = ap.parse_args()
 

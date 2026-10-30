@@ -1,29 +1,30 @@
 #!/usr/bin/env python3
-"""Сквозная оценка пайплайна на вырезках пар: наш Δcrest против мастерского.
+"""End-to-end evaluation of the pipeline on pair excerpts: our Δcrest vs the master's.
 
-Считаем по каждому треку:
-    master.dcrest = Δcrest мастера (crest мастера − crest исходника)
-    ours.dcrest   = Δcrest нашего прогона (restore_track с политикой варианта)
+Computed per track:
+    master.dcrest = the master's Δcrest (master crest − source crest)
+    ours.dcrest   = the Δcrest of our run (restore_track with the variant's policy)
     err           = ours − master
-Базовая линия «ничего не делать» даёт err = −master.dcrest.
+The "do nothing" baseline gives err = −master.dcrest.
 
-Работаем на ВЫРЕЗКАХ (`pairs/<key>/excerpts/`), а не на сырье. Причины:
-  * вырезки постоянны — сырьё вытесняется окном хранения, и пары становятся
-    неоцениваемыми;
-  * обе стороны вырезаны по одному окну и выровнены по громкости (−20 dBFS RMS),
-    поэтому Δcrest считается «яблоко к яблоку»; нормировка громкости crest не
-    меняет (умножение на константу), так что сравнение корректно;
-  * раньше оценка брала сырьё и индексы треков: после перекачки файлы
-    переставлялись, окна разъезжались (DR 5 в фичах против DR 11 в прогоне) —
-    и «ошибка» в 3–5 дБ была артефактом сравнения разных окон, а не DSP.
+We work on EXCERPTS (`pairs/<key>/excerpts/`), not on raw data. Reasons:
+  * excerpts are permanent — raw is evicted by the storage window and pairs
+    become unevaluable;
+  * both sides are cut over the same window and loudness-matched (−20 dBFS RMS),
+    so Δcrest is apples-to-apples; loudness normalization does not change crest
+    (multiplication by a constant), so the comparison is valid;
+  * earlier the evaluation used raw data and track indices: after a re-download,
+    files got reordered, windows drifted apart (DR 5 in features vs DR 11 in the
+    run) — and the "error" of 3–5 dB was an artifact of comparing different
+    windows, not DSP.
 
-Варианты политики:
-    flat  — дефолт: цель 4.6 на всё, что не healthy/sparse
-    class — цель по классу исходника (corpus/targets_v0.json)
-    model — цель от ML-снапшота (то, что делает рантайм пайплайна)
+Policy variants:
+    flat  — default: target 4.6 for everything that is not healthy/sparse
+    class — target by source class (corpus/targets_v0.json)
+    model — target from the ML snapshot (what the pipeline runtime does)
 
   python3 scripts/dataset_eval.py --all --variants flat,class,model
-  python3 scripts/dataset_eval.py --all --holdout-only      # только не-в-выборке
+  python3 scripts/dataset_eval.py --all --holdout-only      # out-of-sample only
 """
 import argparse
 import json
@@ -85,7 +86,7 @@ def policy_for(variant: str, rec: dict, dr: int, rms: float,
 
 
 def excerpt_sets(pdir: Path) -> dict[tuple[int, str], dict[str, Path]]:
-    """{(track, tag): {'orig': path, 'master': path}} — только полные пары."""
+    """{(track, tag): {'orig': path, 'master': path}} — complete pairs only."""
     out: dict[tuple[int, str], dict[str, Path]] = {}
     for f in sorted((pdir / "excerpts").glob("*.flac")):
         m = EX_RE.match(f.name)
@@ -97,9 +98,9 @@ def excerpt_sets(pdir: Path) -> dict[tuple[int, str], dict[str, Path]]:
 
 
 def holdout_keys(seed: int = 17, frac: float = 0.3) -> set[str]:
-    """Ключи пар, чьи альбомы НЕ попали в обучение рантайм-снапшота.
+    """Keys of pairs whose albums did NOT make it into the runtime snapshot's training.
 
-    Иначе модель оценивается на своём же обучающем материале — это не оценка.
+    Otherwise the model is evaluated on its own training material — not an evaluation.
     """
     try:
         from rnext.ml import dataset as DS
@@ -118,9 +119,9 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--variants", default="flat,class,model")
     ap.add_argument("--holdout-only", action="store_true",
-                    help="только пары, не попавшие в обучение рантайм-модели")
+                    help="only pairs not used in training the runtime model")
     ap.add_argument("--out", default="eval_results.jsonl")
-    ap.add_argument("--summary-out", default="", help="куда записать сводку (json)")
+    ap.add_argument("--summary-out", default="", help="where to write the summary (json)")
     args = ap.parse_args()
 
     rec = targets()
@@ -130,14 +131,14 @@ def main() -> int:
     if args.key:
         keys = [k for k in keys if k == args.key]
     elif not args.all:
-        ap.error("нужен --all или --key")
+        ap.error("need --all or --key")
     hold = holdout_keys() if args.holdout_only else None
     if hold is not None:
         keys = [k for k in keys if k.replace("/", "__") in hold or k in hold]
     if args.limit:
         keys = keys[:args.limit]
 
-    # цели ML считаем на альбом сразу (модель видит все треки пары)
+    # ML targets are computed per album at once (the model sees all tracks of the pair)
     ml_by_pair: dict[str, dict[int, tuple[float, str]]] = {}
     if "model" in variants:
         try:
@@ -153,12 +154,12 @@ def main() -> int:
                     ml_by_pair[k] = {rows[i]["track"]: (float(tg[i]),
                                                        src[i] if i < len(src) else "")
                                      for i in range(len(rows))}
-            print(f"ML-снапшот: {mid}")
+            print(f"ML snapshot: {mid}")
         except Exception as e:  # noqa: BLE001
-            print(f"[warn] ML-цель недоступна: {e}")
+            print(f"[warn] ML target unavailable: {e}")
 
-    print(f"пар к оценке: {len(keys)}, варианты {variants}"
-          + (" (только не-в-выборке)" if hold is not None else ""))
+    print(f"pairs to evaluate: {len(keys)}, variants {variants}"
+          + (" (out-of-sample only)" if hold is not None else ""))
 
     out_path = dataset_dir() / args.out
     out_f = open(out_path, "a", encoding="utf-8")
@@ -168,7 +169,7 @@ def main() -> int:
         by_track = {r["track"]: r for r in rows}
         sets = excerpt_sets(pdir)
         if not sets:
-            print(f"  [skip] {key}: нет вырезок")
+            print(f"  [skip] {key}: no excerpts")
             continue
         for (track, tag), sides in sorted(sets.items()):
             r = by_track.get(track)
@@ -177,16 +178,17 @@ def main() -> int:
             xo, sr = F.decode_f32(sides["orig"], 0.0, None)
             xm, _ = F.decode_f32(sides["master"], 0.0, None)
             if xo.size == 0 or xm.size == 0:
-                print(f"  [skip] {key} t{track} {tag}: пустая вырезка")
+                print(f"  [skip] {key} t{track} {tag}: empty excerpt")
                 continue
             if len(xo) != len(xm):
                 n = min(len(xo), len(xm))
                 xo, xm = xo[:n], xm[:n]
-            # Вырезки нормированы на −20 dBFS RMS. Для сравнения Δcrest это не важно
-            # (умножение на константу crest не меняет), но политика смотрит на
-            # АБСОЛЮТНУЮ громкость: при −20 dBFS всё уходило в ветку «sparse»
-            # (цель 0.8) и все варианты давали одинаковый результат. Возвращаем
-            # исходный уровень трека — crest при этом сохраняется.
+            # Excerpts are normalized to −20 dBFS RMS. For the Δcrest comparison
+            # this does not matter (multiplying by a constant leaves crest
+            # unchanged), but the policy looks at ABSOLUTE loudness: at −20 dBFS
+            # everything went into the "sparse" branch (target 0.8) and all
+            # variants gave the same result. We restore the track's original
+            # level — crest is preserved.
             rms_now = float(np.sqrt(np.mean(xo.astype(np.float64) ** 2)) + 1e-12)
             want = 10 ** (float(r["original"]["rms_db"]) / 20.0)
             xo = (xo * (want / rms_now)).astype(np.float32)
@@ -217,15 +219,15 @@ def main() -> int:
             out_f.write(json.dumps(row, ensure_ascii=False) + "\n")
             out_f.flush()
             errs = " ".join(f"{v}:{row[f'{v}_err']:+.2f}" for v in variants)
-            print(f"  {key} t{track:<2}{tag:<5} DR{row['src_dr']:>2} маст {master_dcrest:+.2f} "
-                  f"наш {errs} (без обработки: {row['noop_err']:+.2f})")
+            print(f"  {key} t{track:<2}{tag:<5} DR{row['src_dr']:>2} master {master_dcrest:+.2f} "
+                  f"ours {errs} (no processing: {row['noop_err']:+.2f})")
     out_f.close()
 
     all_rows = [json.loads(l) for l in out_path.read_text(encoding="utf-8").splitlines()
                 if l.strip()]
     seen = set()
     rows = []
-    for r in reversed(all_rows):  # последняя запись по (key, track, tag) — свежая
+    for r in reversed(all_rows):  # the last record per (key, track, tag) is the freshest
         sig = (r["key"], r["track"], r["tag"])
         if sig in seen:
             continue
@@ -236,8 +238,8 @@ def main() -> int:
         return 0
     summary = {"tracks": len(rows), "pairs": len(set(r["key"] for r in rows)),
                "variants": {}, "holdout_only": bool(args.holdout_only)}
-    print(f"\nитог по {len(rows)} вырезкам из {summary['pairs']} пар (файл {out_path}):")
-    print(f"{'вариант':<8}{'медиана |err|':>14}{'доля ≤0.5':>11}{'доля ≤1.0':>11}{'смещение':>10}")
+    print(f"\ntotal over {len(rows)} excerpts from {summary['pairs']} pairs (file {out_path}):")
+    print(f"{'variant':<8}{'median |err|':>14}{'share ≤0.5':>11}{'share ≤1.0':>11}{'bias':>10}")
     for v in variants + ["noop"]:
         e = [abs(r["noop_err"] if v == "noop" else r[f"{v}_err"]) for r in rows]
         med = float(S.median(e))
@@ -253,7 +255,7 @@ def main() -> int:
     if args.summary_out:
         Path(args.summary_out).write_text(json.dumps(summary, ensure_ascii=False, indent=1),
                                           encoding="utf-8")
-        print(f"сводка → {args.summary_out}")
+        print(f"summary → {args.summary_out}")
     return 0
 
 

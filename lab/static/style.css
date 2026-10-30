@@ -40,9 +40,9 @@ body {
   position: relative;
 }
 
-/* ── фоновые ноты ─────────────────────────────────────────
-   fixed + z-index:-1 кладёт слой под содержимое, но над фоном body.
-   Слой стоит в своей полосе: шапка с логотипом всегда остаётся чистой. */
+/* ── background notes ─────────────────────────────────────
+   fixed + z-index:-1 places the layer under the content but above the body background.
+   The layer stays in its own strip: the header with the logo always remains clean. */
 #bg-notes {
   position: fixed; inset: 0; width: 100%; height: 100%;
   z-index: -1; pointer-events: none; overflow: hidden;
@@ -53,12 +53,12 @@ body {
 #bg-notes path {
   fill: none;
   stroke: currentColor;
-  vector-effect: non-scaling-stroke;   /* огромная нота остаётся тонкой */
+  vector-effect: non-scaling-stroke;   /* the huge note stays thin */
   stroke-linejoin: round;
   stroke-linecap: round;
 }
 #bg-notes .trace { opacity: .075; }
-/* вырез середины: чёрный = прозрачно, ширина задаётся атрибутом в JS */
+/* mid cut: black = transparent, width is set by an attribute in JS */
 #bg-notes .cut {
   fill: none; stroke: #000; stroke-linecap: butt; stroke-linejoin: round;
 }

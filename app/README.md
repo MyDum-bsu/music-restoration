@@ -1,48 +1,48 @@
-# restore-listen — плеер слепых сравнений
+# restore-listen — blind comparison player
 
-Electron-обёртка над набором вырезок: сравнивает варианты обработки одного и
-того же места трека при **автоматически выровненной громкости** (LUFS, не RMS),
-со слепой маркировкой A/B/C и записью оценок.
+An Electron wrapper over the excerpt sets: it compares variants of processing for
+the same spot in a track with **loudness automatically matched** (LUFS, not RMS),
+with blind A/B/C labeling and recorded ratings.
 
-## Запуск
+## Running
 
 ```bash
 cd app
-npm install            # один раз (electron)
-npm start              # откроет последний пак из dataset/listen/*
+npm install            # once (electron)
+npm start              # opens the latest pack from dataset/listen/*
 ```
 
-Пак задаётся папкой: `--pack=/path/to/pack` или кнопкой «Открыть пак…».
+A pack is specified by a folder: `--pack=/path/to/pack` or the "Open pack…" button.
 
-## Как готовится пак
+## How a pack is prepared
 
 ```bash
-# вырезки пары уже лежат в dataset/pairs/<key>/excerpts (dataset_extract --excerpts 1)
+# excerpts for the pair are already in dataset/pairs/<key>/excerpts (dataset_extract --excerpts 1)
 python3 scripts/listen_pack.py --all --limit 8 --out /media/.../dataset/listen/pack-002
 
-# если есть наш прогон (restore_one) — добавится третий вариант «ours»
+# if we have our own run (restore_one), a third variant "ours" is added
 python3 scripts/listen_pack.py --key 5220623/rel2 --ours-dir out/silver-side-up \
         --out /media/.../dataset/listen/pack-003
 ```
 
-Генератор приводит каждый файл к `--target-lufs` (по умолчанию −20 LUFS) через
-ebur128 и понижает гейн, если пик подходит к клипу. Раскладка вариантов по A/B/C
-случайная (seed фиксирован), карта ответов лежит в `pack.json`.
+The generator normalizes every file to `--target-lufs` (−20 LUFS by default) via
+ebur128 and lowers the gain if a peak approaches clipping. The assignment of
+variants to A/B/C is random (seed is fixed); the answer key is in `pack.json`.
 
-## Что умеет плеер
+## What the player can do
 
-* синхронное переключение вариантов **на той же позиции** (ключевое для A/B);
-* горячие клавиши: `Space` — играть/стоп, `1/2/3` — вариант, `←/→` — ±2 с,
-  `L` — цикл, `R` — показать ответ;
-* оценка «A лучше / B лучше / одинаково», пишется в `<pack>/ratings.json`,
-  экспорт в `ratings.csv`;
-* список элементов с прогрессом, счётчик «проголосовано N из M».
+* switch variants in sync **at the same playback position** (essential for A/B);
+* hotkeys: `Space` — play/stop, `1/2/3` — variant, `←/→` — ±2 s,
+  `L` — loop, `R` — show answer;
+* rating "A is better / B is better / equal", written to `<pack>/ratings.json`,
+  export to `ratings.csv`;
+* item list with progress, a "N of M rated" counter.
 
-## Замечания
+## Notes
 
-* На Linux без корректно настроенного `chrome-sandbox` Electron стартует с
-  `--no-sandbox` (так и прописано в `npm start`). Это локальное приложение без
-  сетевого доступа.
-* Аудио отдаётся странице через собственный протокол `pack://` — иначе Chromium
-  не даёт `file://`-странице читать файлы из другой папки.
-* Пак лежит на флешке (`dataset/listen/`), в репозиторий не попадает.
+* On Linux without a properly configured `chrome-sandbox`, Electron starts with
+  `--no-sandbox` (that is what `npm start` passes). This is a local app with no
+  network access.
+* Audio is served to the page over a custom `pack://` protocol — otherwise
+  Chromium will not let a `file://` page read files from another folder.
+* The pack lives on the flash drive (`dataset/listen/`) and never enters the repo.

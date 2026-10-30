@@ -1,14 +1,14 @@
-"""Разрешение каталогов сторон пары датасета (единый источник правды).
+"""Resolving the directory of each side of a dataset pair (single source of truth).
 
-Проблема, которую это лечит: в журнале у ранних пар не сохранялись ни `dir`,
-ни имена нужных файлов, а Transmission при повторных добавлениях выдаёт новые
-id. Из-за этого аудит показывал «0 байт на диске» там, где файлы лежали, и
-цикл мог заказать повторную загрузку уже скачанного.
+The problem this fixes: the journal of early pairs stored neither `dir` nor
+the names of the wanted files, and Transmission issues new ids on re-adds.
+Because of that the audit reported "0 bytes on disk" where files existed, and
+the loop could order a re-download of already downloaded material.
 
-Порядок разрешения каталога:
-  1) записанный в журнале `srec["dir"]`, если в нём реально есть нужные файлы;
-  2) текущий `downloadDir` раздачи в Transmission (по её id);
-  3) базовый каталог пары + `/orig|/master`.
+Directory resolution order:
+  1) the journaled `srec["dir"]`, if it actually contains the wanted files;
+  2) the current `downloadDir` of the torrent in Transmission (by its id);
+  3) the pair's base directory + `/orig|/master`.
 """
 from pathlib import Path
 
@@ -18,10 +18,11 @@ AUDIO_EXT = (".flac", ".ape", ".wv", ".wav", ".m4a", ".alac", ".aiff", ".aif")
 
 
 def merge_sides(older: dict | None, newer: dict | None) -> dict | None:
-    """Слить две записи стороны: непустые поля побеждают.
+    """Merge two side records: non-empty fields win.
 
-    Ранние писатели журнала теряли `dir`/`wanted_names`, и «последняя запись»
-    оказывалась беднее предыдущей. Поэтому журнал надо СЛИВАТЬ, а не замещать.
+    Early journal writers lost `dir`/`wanted_names`, so the "latest record"
+    could end up poorer than the previous one. Hence the journal must be
+    MERGED, not replaced.
     """
     if not isinstance(older, dict):
         return newer if isinstance(newer, dict) else None
@@ -35,7 +36,7 @@ def merge_sides(older: dict | None, newer: dict | None) -> dict | None:
 
 
 def merged_state(path) -> dict[str, dict]:
-    """Журнал загрузок с по-ключевым слиянием записей (не «последняя побеждает»)."""
+    """Download journal with per-key record merging (not "last one wins")."""
     import json
     from pathlib import Path as _P
     path = _P(path)
@@ -88,7 +89,7 @@ def resolve_side_dir(srec: dict | None, side: str, base: Path,
     tor = tmap.get(tid) if tid is not None else None
     if tor and tor.get("downloadDir"):
         return Path(tor["downloadDir"])
-    # id мог устареть (раздачу снимали и добавляли заново) — ищем по имени
+    # the id may be stale (the torrent was removed and re-added) — search by name
     nm = srec.get("name")
     if nm:
         for x in tmap.values():
@@ -101,11 +102,11 @@ def resolve_side_dir(srec: dict | None, side: str, base: Path,
 def wanted_names(srec: dict | None, t: Transm | None = None,
                  tmap: dict[int, dict] | None = None,
                  base: Path | None = None, side: str | None = None) -> list[str]:
-    """Имена нужных файлов стороны (журнал → раздача по id → раздача по каталогу).
+    """Names of the side's wanted files (journal -> torrent by id -> torrent by directory).
 
-    Последний шаг нужен потому, что при повторных добавлениях Transmission
-    выдаёт НОВЫЙ id: старый в журнале уже не находится, а содержимое раздачи
-    (и порядок файлов) то же самое.
+    The last step is needed because on re-adds Transmission issues a NEW id:
+    the old one is no longer found in the journal, while the torrent contents
+    (and file order) are the same.
     """
     if not isinstance(srec, dict):
         return []
@@ -132,7 +133,7 @@ def wanted_names(srec: dict | None, t: Transm | None = None,
 
 def side_presence(srec: dict | None, side: str, base: Path,
                   t: Transm | None = None, tmap: dict[int, dict] | None = None) -> dict:
-    """Сколько из нужных файлов реально на диске и сколько это байт."""
+    """How many of the wanted files are actually on disk, and their total size in bytes."""
     root = resolve_side_dir(srec, side, base, t, tmap)
     names = wanted_names(srec, t, tmap, base=base, side=side)
     present = []

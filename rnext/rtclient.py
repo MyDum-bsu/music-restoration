@@ -1,7 +1,7 @@
-"""HTTP-клиент rutracker: сессия по cookie-jar, детект Cloudflare challenge.
+"""rutracker HTTP client: cookie-jar session, Cloudflare challenge detection.
 
-Если challenge появляется — вызов падает со специфичной ошибкой; верхний слой
-решает, что делать (fallback: browser MCP, где CF passing хром).
+If a challenge appears, the call fails with a specific error; the upper layer
+decides what to do (fallback: browser MCP, where Chrome passes CF).
 """
 import re
 
@@ -15,11 +15,11 @@ FORUM = BASE + "/forum/"
 
 
 class ChallengeError(RuntimeError):
-    """Cloudflare «Just a moment...» — анонимный curl не проходит."""
+    """Cloudflare "Just a moment..." — anonymous curl does not pass."""
 
 
 class NotLoggedError(RuntimeError):
-    """Cookie bb_data отсутствует/просрочен — нет доступа к закрытым страницам."""
+    """bb_data cookie missing/expired — no access to closed pages."""
 
 
 class RTClient:
@@ -30,7 +30,7 @@ class RTClient:
             ua = ua or secrets.rutracker_ua()
         if not cookies:
             raise NotLoggedError(
-                "нет cookies: положи rutracker_cookies.txt и rutracker_ua.txt в "
+                "no cookies: put rutracker_cookies.txt and rutracker_ua.txt in "
                 "~/.config/music-restoration/secrets/"
             )
         self.s = requests.Session()
@@ -53,7 +53,7 @@ class RTClient:
         return r
 
     def download_torrent(self, dl_url: str, to_path: str) -> str:
-        """.torrent по dl.php-ссылке (нужна залогиненная сессия)."""
+        """.torrent via the dl.php link (requires a logged-in session)."""
         r = self.get(dl_url, referer=FORUM)
         ct = r.headers.get("content-type", "")
         if "bittorrent" not in ct and not r.content.startswith(b"d8:"):
@@ -79,6 +79,9 @@ class RTClient:
     def _guard(resp: requests.Response) -> None:
         body = resp.text[:4000]
         if resp.status_code == 403 and "Just a moment" in body:
-            raise ChallengeError("Cloudflare challenge; нужен браузерный fallback")
-        if resp.url.startswith(FORUM) and re.search(r"Вход|Вы должны войти|log in", body[:2000]):
-            raise NotLoggedError("нет логина rutracker (bb_data просрочен?)")
+            raise ChallengeError("Cloudflare challenge; browser fallback needed")
+        # ru markers: "Log in" / "You must log in" (login-page detection)
+        if resp.url.startswith(FORUM) and re.search(
+                r"\u0412\u0445\u043E\u0434|\u0412\u044B \u0434\u043E\u043B\u0436\u043D\u044B \u0432\u043E\u0439\u0442\u0438|log in",
+                body[:2000]):
+            raise NotLoggedError("no rutracker login (expired bb_data?)")

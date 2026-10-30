@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""restore-lab — местный веб-просмотр: датасет, метрики, спектрограммы, пайплайн.
+"""restore-lab — a local web view: dataset, metrics, spectrograms, pipeline.
 
-Запуск:  python3 lab/server.py [--port 8765]
-Читает датасет с флешки (read-only), все свои артефакты (кэш спектрограмм,
-прогоны «нашего» пайплайна) кладёт в ~/.cache/restore-lab/.
-Ничего не пишет на флешку и в репозиторий.
+Run:  python3 lab/server.py [--port 8765]
+Reads the dataset from the flash drive (read-only); all of its own artifacts
+(spectrogram cache, runs of "our" pipeline) go to ~/.cache/restore-lab/.
+Writes nothing to the flash drive or the repository.
 """
 import argparse
 import dataclasses
@@ -34,9 +34,9 @@ CACHE = Path.home() / ".cache" / "restore-lab"
 SPEC_DIR = CACHE / "spec"
 OURS_DIR = CACHE / "ours"
 STATIC = Path(__file__).resolve().parent / "static"
-BAND_HZ = F._BANDS_HZ  # 31 край → 30 полос (1/3 октавы)
+BAND_HZ = F._BANDS_HZ  # 31 edge → 30 bands (1/3 octave)
 
-_cache = {"ts": 0.0, "data": {}}  # загрузка jsonl с флешки (NTFS небыстрый)
+_cache = {"ts": 0.0, "data": {}}  # jsonl loading from the flash drive (NTFS is slow)
 _TTL = 30.0
 
 
@@ -56,7 +56,7 @@ def _read_jsonl(path: Path):
 
 
 def _dataset():
-    """Все тяжёлые файлы датасета — один раз, с TTL-кэшем."""
+    """All the heavy dataset files, loaded once, with a TTL cache."""
     now = time.time()
     if now - _cache["ts"] < _TTL:
         return _cache["data"]
@@ -70,7 +70,7 @@ def _dataset():
         "manifest": {},
         "pairs_dir": root / "dataset/pairs",
     }
-    # манифест последней версии — из репозитория
+    # manifest of the latest version comes from the repository
     mans = sorted((REPO / "dataset_manifests").glob("ds-*.json"), key=lambda p: p.stat().st_mtime)
     if mans:
         try:
@@ -91,7 +91,7 @@ def _fmt_ver(ts):
 
 
 def _agg_features(rows):
-    """Средние по трекам для одной пары."""
+    """Per-pair averages over tracks."""
     n = len(rows)
     if not n:
         return None
@@ -111,7 +111,7 @@ _ds_size = {"ts": 0.0, "gb": None}
 
 
 def _dir_size(root: Path) -> int:
-    """Размер дерева датасета; обход небыстрый на NTFS — кэш на 5 минут."""
+    """Size of the dataset tree; traversal is slow on NTFS — cached for 5 minutes."""
     now = time.time()
     if _ds_size["gb"] is not None and now - _ds_size["ts"] < 300:
         return _ds_size["gb"]
@@ -127,7 +127,7 @@ def _dir_size(root: Path) -> int:
 
 
 def _lb_latest_ds(lb):
-    """Версия датасета самого свежего прогона обучения (время зашито в model_id)."""
+    """Dataset version of the freshest training run (timestamp embedded in model_id)."""
     def ts(r):
         m = re.search(r"-(\d{8})-(\d{6})$", r.get("model_id", ""))
         return m.group(1) + m.group(2) if m else "0"
@@ -139,7 +139,7 @@ def api_overview(q):
     ds = _dataset()
     root = Path(ds["root"])
     man = ds["manifest"]
-    # бюджет
+    # budget
     budget = {}
     try:
         st = os.statvfs(root)
@@ -151,27 +151,27 @@ def api_overview(q):
                   "limit_gb": round(workspace.load_config()["budget_bytes"] / 2**30, 1)}
     except OSError:
         pass
-    # классы исходников и авторы
+    # source classes and authors
     classes, authors = {}, {}
     for r in ds["refq"]:
         classes[r.get("src_class", "?")] = classes.get(r.get("src_class", "?"), 0) + 1
         a = r.get("author_pid")
         if a:
             authors[str(a)] = authors.get(str(a), 0) + 1
-    # модели: лучший by-album на свежей версии датасета + лучший by-author
+    # models: best by-album on the freshest dataset version + best by-author
     lb = _leaderboard()
     cur_ds = _lb_latest_ds(lb)
     album_rows = [r for r in lb if r.get("dataset_version") == cur_ds and r.get("holdout_mode") == "by-album"]
     best_album = min((r for r in album_rows if r.get("promote")), key=lambda r: r["median_abs"], default=None)
     author_rows = [r for r in lb if r.get("promote") and r.get("holdout_mode") == "by-author"]
     best_author = min(author_rows, key=lambda r: r["median_abs"], default=None) if author_rows else None
-    # вехи
+    # milestones
     m1 = any(r.get("promote") and r["median_abs"] < 1.0 and r["model"] in ("ridge", "knn")
              and r["holdout_mode"] == "by-album" for r in lb)
     m2 = any(r.get("promote") and r["median_abs"] < 0.8 and r["model"] == "hgb"
              and r["holdout_mode"] == "by-album" for r in lb)
     m3 = any(r.get("promote") and r["median_abs"] < 1.0 and r["holdout_mode"] == "by-author" for r in lb)
-    # хвост журнала цикла
+    # tail of the loop journal
     loop_tail = []
     lf = root / "dataset/loop.log"
     if lf.is_file():
@@ -179,7 +179,7 @@ def api_overview(q):
             loop_tail = lf.read_text(encoding="utf-8", errors="replace").splitlines()[-6:]
         except OSError:
             pass
-    # слепые проверки остатка (abx)
+    # blind residual checks (abx)
     residual = []
     for rj in sorted((root / "abx").glob("*/residual_*.json")):
         try:
@@ -313,9 +313,9 @@ def api_models(q):
     if info is None and cur:
         r0 = next((r for r in cur if r.get("promote") and r.get("holdout_mode") == "by-album"), cur[0])
         info = {"id": r0["model_id"], "model": r0["model"], "median_abs": r0["median_abs"],
-                "note": "по лидерборду (вердикт гейта в реестр не записан)"}
+                "note": "from the leaderboard (gate verdict not recorded in the registry)"}
     elif info is not None:
-        # snapshot_info знает модель и версию датасета, но не id/метрику — добираем из лидерборда
+        # snapshot_info knows the model and dataset version but not the id/metric — pulled from the leaderboard
         cand = [r for r in cur if r.get("model") == info.get("model")
                 and r.get("dataset_version") == info.get("dataset_version")
                 and r.get("holdout_mode") == "by-album"]
@@ -333,10 +333,10 @@ def api_policy(q):
             "band_hz": BAND_HZ}
 
 
-# ------------------------------------------------------------ аудио-утилиты
+# ------------------------------------------------------------ audio utilities
 
 def _safe_path(rel: str) -> Path | None:
-    """Путь только внутри флешки или кэша — и ничего больше."""
+    """A path strictly inside the flash drive or the cache — nothing else."""
     rel = urllib.parse.unquote(rel)
     for base in (workspace.data_root(), CACHE):
         p = (base / rel).resolve()
@@ -444,22 +444,22 @@ def api_spectrum(q, path: Path):
 
 
 def api_restore(payload):
-    """Прогнать наш пайплайн на вырезке. path — относительно флешки."""
+    """Run our pipeline on an excerpt. path is relative to the flash drive."""
     rel = payload.get("path", "")
     use_ml = bool(payload.get("ml", True))
     src = _safe_path(rel)
     if src is None:
-        return {"error": "файл не найден"}
+        return {"error": "file not found"}
     x, sr = _decode(src)
     if x is None or x.shape[0] < sr * 5:
-        return {"error": "слишком короткий файл"}
+        return {"error": "file too short"}
     ml_target = ml_source = None
     if use_ml:
         try:
             from rnext.ml import runtime as mlrt
             ml_target, ml_source = mlrt.predict_from_audio_src(x, sr, model_id=None, n_tracks=10)
         except Exception as e:
-            ml_source = f"модель недоступна: {type(e).__name__}"
+            ml_source = f"model unavailable: {type(e).__name__}"
     pol = Policy(mode="expand", r_expand=1.5, k=0.55, target_tp_dbfs=-0.5,
                  adaptive=True, target_dcrest=4.6, auto_policy=True)
     if ml_target is not None:
@@ -468,7 +468,7 @@ def api_restore(payload):
     t0 = time.time()
     y, stages = restore_track(x, sr, pol, return_stages=True, keep_arrays=False)
     took = round(time.time() - t0, 1)
-    # метрики до/после
+    # before/after metrics
     o = F.tt_dr(x, sr)
     r = F.tt_dr(y, sr)
     tp_o = true_peak_dbfs(x, sr)
@@ -477,7 +477,7 @@ def api_restore(payload):
     y16 = np.clip(y * 32767.5, -32768, 32767).astype(np.int16)
     clip_o = F.clip_stats(x16)["L"]["clipped_samples"] + F.clip_stats(x16)["R"]["clipped_samples"]
     clip_y = F.clip_stats(y16)["L"]["clipped_samples"] + F.clip_stats(y16)["R"]["clipped_samples"]
-    # сохранить «наш» вариант в локальный кэш и отдать относительный путь
+    # save the "ours" variant to the local cache and return the relative path
     key_dir = CACHE_rel_for(src)
     out = OURS_DIR / key_dir / (src.stem + "__ours.flac")
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -512,7 +512,7 @@ def api_restore(payload):
 
 
 def CACHE_rel_for(src: Path) -> str:
-    """Подпапка кэша: <пара>/<имя вырезки>."""
+    """Cache subfolder: <pair>/<excerpt name>."""
     parts = src.parts
     pair = next((p for p in reversed(parts) if "__rel" in p), "misc")
     return f"{pair}/{src.stem}"
@@ -554,8 +554,8 @@ class Handler(BaseHTTPRequestHandler):
         route = u.path
         try:
             if route in ("/", "/index.html"):
-                # версия статики = самый свежий mtime среди ВСЕХ файлов, что грузит страница:
-                # иначе браузер держит старый JS/CSS из кэша
+                # static version = the freshest mtime among ALL files the page loads;
+                # otherwise the browser keeps stale JS/CSS from its cache
                 ver = str(int(max((p.stat().st_mtime for p in STATIC.iterdir()
                                    if p.suffix in (".js", ".css")), default=0)))
                 html = (STATIC / "index.html").read_text(encoding="utf-8").replace("__V__", ver)
@@ -669,12 +669,12 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="restore-lab — веб-просмотр датасета и алгоритма")
+    ap = argparse.ArgumentParser(description="restore-lab — web view of the dataset and the algorithm")
     ap.add_argument("--port", type=int, default=8765)
     a = ap.parse_args()
     SPEC_DIR.mkdir(parents=True, exist_ok=True)
     OURS_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"restore-lab: http://127.0.0.1:{a.port}  (данные: {workspace.data_root()})")
+    print(f"restore-lab: http://127.0.0.1:{a.port}  (data: {workspace.data_root()})")
     ThreadingHTTPServer(("127.0.0.1", a.port), Handler).serve_forever()
 
 

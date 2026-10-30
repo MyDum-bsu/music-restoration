@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>restore-listen</title>
@@ -8,9 +8,9 @@
 <body>
   <header>
     <div class="brand">restore<span>·</span>listen</div>
-    <div class="pack-info" id="packInfo">пак не выбран</div>
-    <button id="btnPick" class="ghost">Открыть пак…</button>
-    <button id="btnCsv" class="ghost">Экспорт CSV</button>
+    <div class="pack-info" id="packInfo">no pack selected</div>
+    <button id="btnPick" class="ghost">Open pack…</button>
+    <button id="btnCsv" class="ghost">Export CSV</button>
   </header>
 
   <main>
@@ -23,8 +23,8 @@
       <div class="variants" id="variants"></div>
 
       <div class="transport">
-        <button id="btnPlay" class="primary">▶ Играть</button>
-        <button id="btnLoop" class="ghost toggled">⟲ Цикл</button>
+        <button id="btnPlay" class="primary">▶ Play</button>
+        <button id="btnLoop" class="ghost toggled">⟲ Loop</button>
         <span class="time" id="time">0:00 / 0:12</span>
         <input type="range" id="seek" min="0" max="1000" value="0" />
       </div>
@@ -32,20 +32,20 @@
       <div class="level-note" id="levelNote"></div>
 
       <div class="rating">
-        <div class="rating-prompt">Что лучше по звуку? (уровни выровнены по LUFS)</div>
+        <div class="rating-prompt">Which one sounds better? (levels are LUFS-matched)</div>
         <div class="rating-buttons" id="ratingButtons"></div>
-        <button id="btnReveal" class="ghost">Показать ответ</button>
+        <button id="btnReveal" class="ghost">Show answer</button>
         <div class="reveal" id="reveal"></div>
       </div>
 
       <div class="hint">
-        Пробел — играть/стоп · 1/2/3 — вариант · ←/→ — ±2 с · L — цикл · R — показать ответ
+        Space — play/stop · 1/2/3 — variant · ←/→ — ±2 s · L — loop · R — show answer
       </div>
     </section>
 
     <aside class="list">
       <div class="list-head">
-        <span>Элементы</span>
+        <span>Items</span>
         <span id="progress">0 / 0</span>
       </div>
       <ol id="items"></ol>

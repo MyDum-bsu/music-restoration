@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Сравнение нашего прогона (restore_report.jsonl) с master-restoration.
+"""Comparing our run (restore_report.jsonl) against master-restoration.
 
-Читает restore_report.jsonl из out-каталога и corpus/feature_pairs/{key}.jsonl,
-матчит по track_n и печатает таблицу «наше vs мастер»:
-DR, crest, TP, интегральный RMS и дельты.
+Reads restore_report.jsonl from the out directory and
+corpus/feature_pairs/{key}.jsonl, matches by track_n and prints an
+"ours vs master" table: DR, crest, TP, integrated RMS and deltas.
 
-Критерии приёмки:
-  crest:  |Δcrest| ≤ 0.5 дБ  (попадание в мастера)
-  DR:     |ΔDR| ≤ 1         (TT-DR мастера обычно на ~1 ниже при том же crest)
-  RMS:    |ΔRMS| ≤ 1.0 дБ   при TP-потолке −0.5 на обоих (уровень под пиком)
-  band:   |Δband| ≤ 3 дБ    (средний по 1/3-окт полосам, амплитудно-независимо)
+Acceptance criteria:
+  crest:  |Δcrest| ≤ 0.5 dB  (matches the master)
+  DR:     |ΔDR| ≤ 1         (the master's TT-DR is usually ~1 lower at the same crest)
+  RMS:    |ΔRMS| ≤ 1.0 dB   with a TP ceiling of −0.5 on both (level under the peak)
+  band:   |Δband| ≤ 3 dB    (averaged over 1/3-octave bands, level-independent)
 
-`--bands` дополнительно декодирует наши треки и считает per-band дельты к
-мастеру; для мастера берутся готовые bands_db из корпусной пары, для исходника
-— тоже (передекодирование исходника не требуется).
+`--bands` additionally decodes our tracks and computes per-band deltas to the
+master; the master uses the ready bands_db from the corpus pair, and the source
+does too (no need to re-decode the source).
 """
 import argparse
 import json
@@ -33,7 +33,7 @@ def main() -> int:
     ap.add_argument("--report", required=True)
     ap.add_argument("--key", required=True)
     ap.add_argument("--bands", action="store_true",
-                    help="посчитать per-band дельты (декодирует наши FLAC'и)")
+                    help="compute per-band deltas (decodes our FLACs)")
     args = ap.parse_args()
 
     report_path = Path(args.report)
@@ -50,7 +50,7 @@ def main() -> int:
             rows[r["track_n"]] = r
 
     hdr = (f"{'t':>3} {'title':<24} | {'DR':>8} {'ΔDR':>4} | {'crest':>11} {'Δcr':>6} | "
-           f"{'RMS':>11} {'ΔRMS':>6} | {'TPour':>6} | вердикт")
+           f"{'RMS':>11} {'ΔRMS':>6} | {'TPour':>6} | verdict")
     print(hdr)
     print("-" * len(hdr))
 
@@ -96,7 +96,7 @@ def main() -> int:
                 if len(ob) == len(mb):
                     bd = [round(a - b, 2) for a, b in zip(ob, mb)]
                     band_deltas.append(bd)
-                    bands_str = f"  bandΔ ours−master ср {sum(bd)/len(bd):+.2f}"
+                    bands_str = f"  bandΔ ours−master avg {sum(bd)/len(bd):+.2f}"
 
         print(f"{ti:>3} {r['cue_title'][:24]:<24} | {o['rest']['dr']:>3}/{m['dr']:<3} {ddr:>+5} | "
               f"{crest_ours:>5.2f}/{crest_m:<5.2f} {dcr:>+6.2f} | "
@@ -104,7 +104,7 @@ def main() -> int:
 
     n = len(d_dr)
     if not n:
-        print("нет совпавших треков")
+        print("no matched tracks")
         return 1
 
     def med(a):
@@ -112,17 +112,17 @@ def main() -> int:
         return s[len(s) // 2] if len(s) % 2 else 0.5 * (s[len(s)//2 - 1] + s[len(s)//2])
 
     print("-" * len(hdr))
-    print(f"медианы: ΔDR {med(d_dr):+.2f}  Δcrest {med(d_crest):+.2f}  ΔRMS {med(d_rms):+.2f}")
-    print(f"средние: ΔDR {sum(d_dr)/n:+.2f}  Δcrest {sum(d_crest)/n:+.2f}  ΔRMS {sum(d_rms)/n:+.2f}")
-    print(f"размах:  ΔDR {min(d_dr):+}..{max(d_dr):+}  Δcrest {min(d_crest):+.2f}..{max(d_crest):+.2f}"
+    print(f"medians: ΔDR {med(d_dr):+.2f}  Δcrest {med(d_crest):+.2f}  ΔRMS {med(d_rms):+.2f}")
+    print(f"means: ΔDR {sum(d_dr)/n:+.2f}  Δcrest {sum(d_crest)/n:+.2f}  ΔRMS {sum(d_rms)/n:+.2f}")
+    print(f"range:  ΔDR {min(d_dr):+}..{max(d_dr):+}  Δcrest {min(d_crest):+.2f}..{max(d_crest):+.2f}"
           f"  ΔRMS {min(d_rms):+.2f}..{max(d_rms):+.2f}")
     if band_deltas:
         nb = len(band_deltas[0])
         prof = [sum(b[i] for b in band_deltas) / len(band_deltas) for i in range(nb)]
-        print("bandΔ ours−master (1/3-окт, среднее по трекам):")
+        print("bandΔ ours−master (1/3-oct, averaged over tracks):")
         print("  " + " ".join(f"{x:+.1f}" for x in prof))
-    print(f"вердикты: {n - len(verdict_bad)}/{n} OK" +
-          (f"; проблемы: {', '.join(f't{t}({v.split(':',1)[1]})' for t, v in verdict_bad)}" if verdict_bad else ""))
+    print(f"verdicts: {n - len(verdict_bad)}/{n} OK" +
+          (f"; problems: {', '.join(f't{t}({v.split(':',1)[1]})' for t, v in verdict_bad)}" if verdict_bad else ""))
     return 0 if not verdict_bad else 1
 
 

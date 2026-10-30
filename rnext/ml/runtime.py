@@ -1,8 +1,9 @@
-"""Применение снапшота в пайплайне: предсказание цели Δcrest по треку.
+"""Applying a snapshot in the pipeline: predicting the delta-crest target per track.
 
-Пайплайн получает цель из модели, если снапшот есть и он совместим по признакам;
-иначе — прежняя логика (классовая таблица / константа). Это оставляет
-возможность отката: модель — надстройка над физикой, а не её замена.
+The pipeline takes the target from the model if a snapshot exists and is
+feature-compatible; otherwise the previous logic applies (class table /
+constant). This keeps a rollback path: the model is an add-on over the
+physics, not a replacement for it.
 """
 from pathlib import Path
 
@@ -16,15 +17,15 @@ _cache: dict[str, tuple] = {}
 
 
 def _load(model_id: str):
-    """Загрузка снапшота с кэшем на процесс: без него каждый трек читал бы
-    model.joblib с диска (в параллельном прогоне это лишний I/O и память)."""
+    """Snapshot loading with a per-process cache: without it every track would
+    read model.joblib from disk (extra I/O and memory in a parallel run)."""
     if model_id not in _cache:
         _cache[model_id] = reg.load_snapshot(model_id)
     return _cache[model_id]
 
 
 def _class_target(dr: float) -> float:
-    """Цель по классу исходника (та же таблица, что в проде по умолчанию)."""
+    """Target by source class (the same table used by the production default)."""
     t = v0_targets()
     if dr >= 12:
         return float(t.get("healthy", 0.0))
@@ -42,23 +43,23 @@ def v0_targets() -> dict:
     return {}
 
 
-# Физические признаки «не тот материал»: работают даже без статистик обучения.
-# Валидация нашла: на моно-синтетике ridge уходил в +33 дБ — эти правила
-# отправляют такой вход на классовую таблицу.
+# Physical signs of "wrong material": they work even without training stats.
+# Validation found: on mono synthetic material ridge drifted to +33 dB — these
+# rules send such input to the class table.
 def physical_ood(r: dict) -> str | None:
     side = r.get("side_mid_db")
     if side is not None and np.isfinite(side) and side < -40:
-        return "mono (side/mid < -40 дБ)"
+        return "mono (side/mid < -40 dB)"
     tilt = r.get("tilt_low_high")
     if tilt is not None and np.isfinite(tilt) and (tilt > 35 or tilt < 5):
-        return f"экстремальный тилт ({tilt:.0f} дБ)"
+        return f"extreme tilt ({tilt:.0f} dB)"
     if (r.get("rms_spread") or 0) == 0 and (r.get("attacks_per_s") or 0) == 0:
-        return "нет динамики/транзиентов (синтетика или тишина)"
+        return "no dynamics/transients (synthetic or silence)"
     return None
 
 
 def ood_z(X: np.ndarray, names: list[str], meta: dict) -> tuple[float, str | None]:
-    """Насколько вход выбивается из обучающего распределения (макс |z|)."""
+    """How far the input falls outside the training distribution (max |z|)."""
     stats = meta.get("feature_stats") or {}
     worst, worst_name = 0.0, None
     for i, name in enumerate(names):
@@ -76,15 +77,15 @@ def predict_targets(feature_rows: list[dict], n_tracks: int,
                     ood_max_z: float = 6.0,
                     class_margin_db: float = 2.5,
                     sources: list | None = None) -> np.ndarray | None:
-    """Цель для треков альбома: общий вход — строки фич исходника.
+    """Target for the tracks of an album: the common input is source feature rows.
 
-    Защиты (найдено валидацией: на непохожем материале ridge уходил в +33 дБ):
-      * OOD-гейт: если признак выбивается из обучающего распределения (|z| > 6),
-        модель не используется — берётся классовая таблица;
-      * скобка вокруг классовой цели ±2.5 дБ: даже «своя» модель не имеет права
-        заказывать перелёт;
-      * физический кап Δcrest ≤ 8 дБ.
-    Возвращает Δcrest по треку либо None (тогда работает авто-политика).
+    Safeguards (found by validation: on dissimilar material ridge drifted to +33 dB):
+      * OOD gate: if a feature falls outside the training distribution (|z| > 6),
+        the model is not used — the class table is used instead;
+      * a bracket around the class target of +/-2.5 dB: even the model's "own"
+        prediction is not allowed to order an overshoot;
+      * a physical cap of delta-crest <= 8 dB.
+    Returns the per-track delta-crest or None (then the auto policy applies).
     """
     model_id = model_id or reg.latest_snapshot()
     if not model_id:
@@ -102,7 +103,7 @@ def predict_targets(feature_rows: list[dict], n_tracks: int,
         phys = physical_ood(r)
         z, zname = ood_z(X[i:i + 1], names, meta)
         if phys or z > ood_max_z:
-            # материал вне обучающего распределения (напр. моно, иной тилт)
+            # material outside the training distribution (e.g. mono, different tilt)
             out.append(base)
             if sources is not None:
                 sources.append(f"class_fallback ({phys or f'{zname} z={z:.1f}'})")
@@ -115,7 +116,7 @@ def predict_targets(feature_rows: list[dict], n_tracks: int,
 
 
 def predict_from_audio_src(x, sr, model_id: str | None = None, n_tracks: int = 10):
-    """Как predict_from_audio, но возвращает (цель, источник решения)."""
+    """Like predict_from_audio, but returns (target, decision source)."""
     model_id = model_id or reg.latest_snapshot()
     if not model_id:
         return None, None
@@ -132,7 +133,7 @@ def predict_from_audio_src(x, sr, model_id: str | None = None, n_tracks: int = 1
 
 
 def predict_from_audio(x, sr, model_id: str | None = None, n_tracks: int = 10) -> float | None:
-    """Цель Δcrest для одного трека по его аудио (для restore_one)."""
+    """Delta-crest target for one track from its audio (for restore_one)."""
     model_id = model_id or reg.latest_snapshot()
     if not model_id:
         return None

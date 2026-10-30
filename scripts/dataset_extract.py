@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Извлечение датасета: сырая пара → фичи + вырезки → трёхуровневое хранилище.
+"""Dataset extraction: raw pair → features + excerpts → three-level storage.
 
-Уровни (см. docs/dataset.md):
-  1) фичи   dataset/pairs/<key>/features.jsonl + dataset/features/all.jsonl (~1.5 КБ/трек)
-  2) вырезки dataset/pairs/<key>/excerpts/*.flac (громкое место + середина)
-  3) сырьё  dataset/raw/<key>/ — удаляется после извлечения (--keep-raw оставляет)
+Levels (see docs/dataset.md):
+  1) features dataset/pairs/<key>/features.jsonl + dataset/features/all.jsonl (~1.5 KB/track)
+  2) excerpts dataset/pairs/<key>/excerpts/*.flac (loudest spot + middle)
+  3) raw     dataset/raw/<key>/ — deleted after extraction (--keep-raw keeps it)
 
-Стороны читаются в любом виде: per-track FLAC, образ+cue (в т.ч. несколько
-дисков), APE/WV. Треки сопоставляются по названию и длительности.
+Sides are read in any form: per-track FLAC, image+cue (including several
+discs), APE/WV. Tracks are matched by title and duration.
 
   python3 scripts/dataset_extract.py --all [--limit N]
   python3 scripts/dataset_extract.py --key 5412248/rel0 [--keep-raw] [--excerpts 0]
-  python3 scripts/dataset_extract.py --prune          # снести сырьё у готовых пар
+  python3 scripts/dataset_extract.py --prune          # wipe raw of finished pairs
 """
 import argparse
 import json
@@ -33,10 +33,10 @@ from rnext import workspace  # noqa: E402
 from rnext.cue import parse_cue, track_bounds  # noqa: E402
 
 AUDIO_EXT = (".flac", ".ape", ".wv", ".wav", ".alac", ".m4a", ".aiff", ".aif")
-IMAGE_MIN = 60_000_000          # >60 МБ — скорее образ, чем трек
+IMAGE_MIN = 60_000_000          # >60 MB — likely an image, not a track
 
 
-# --- пути -------------------------------------------------------------------
+# --- paths -------------------------------------------------------------------
 def dataset_dir() -> Path:
     p = workspace.data_root() / "dataset"
     for sub in ("raw", "pairs", "features"):
@@ -76,9 +76,9 @@ def write_flac(x: np.ndarray, sr: int, path: Path) -> None:
                    input=x.astype(np.float32).tobytes(), check=True)
 
 
-# --- разбор стороны ---------------------------------------------------------
+# --- side parsing ---------------------------------------------------------
 class UnreadableAudio(RuntimeError):
-    """Файл не читается ffprobe (битый/недокачанный) — пару нельзя извлекать."""
+    """File is unreadable by ffprobe (corrupt/incomplete) — the pair cannot be extracted."""
 
     def __init__(self, msg: str, path: Path | None = None):
         super().__init__(msg)
@@ -91,16 +91,16 @@ def _ffdur(p: Path) -> float:
     except Exception as e:                                 # noqa: BLE001
         raise UnreadableAudio(f"{p.name}: {type(e).__name__} {str(e)[:80]}", p) from e
     if not d or d <= 0:
-        raise UnreadableAudio(f"{p.name}: нет длительности (битый файл)", p)
+        raise UnreadableAudio(f"{p.name}: no duration (corrupt file)", p)
     return float(d)
 
 
 def repair_corrupt(path: Path) -> dict:
-    """Удалить битый файл и заставить раздачу перекачать его.
+    """Delete a corrupt file and make the torrent re-download it.
 
-    `torrent-verify` на этом Transmission сам по себе не помогает (resume-данные
-    считают куски целыми), поэтому файл удаляем — тогда проверка видит пропажу
-    и докачивает именно его.
+    `torrent-verify` on this Transmission does not help by itself (resume data
+    considers the pieces intact), so we delete the file — then verification
+    sees the loss and re-downloads exactly that file.
     """
     from rnext import sides as S
     from rnext.transm import Transm
@@ -128,7 +128,7 @@ def repair_corrupt(path: Path) -> dict:
 
 
 def verify_torrent_for(root: Path) -> int | None:
-    """Перепроверить раздачу, в чьём каталоге лежит битый файл (докачает кусок)."""
+    """Re-verify the torrent whose directory holds the corrupt file (re-downloads the piece)."""
     from rnext import sides as S
     try:
         tmap = S.torrents_by_id()
@@ -160,11 +160,11 @@ def _clean_title(name: str) -> str:
     t = re.sub(r"^\s*(?:\d{1,3}\s*[-._)]\s*)", "", t)
     t = re.sub(r"^\s*(?:cd|disc|disk)\s*\d\s*[-._)]?\s*", "", t, flags=re.IGNORECASE)
     t = re.sub(r"[\[\(].*?[\]\)]", " ", t)
-    return re.sub(r"[^a-zа-яё0-9]+", " ", t.lower()).strip()
+    return re.sub(r"[^a-z\u0430-\u044f\u04510-9]+", " ", t.lower()).strip()
 
 
 def side_tracks(root: Path) -> list[dict]:
-    """Треки стороны: {n, title, file, start_s, dur_s} — файлы или срезы образа."""
+    """Side tracks: {n, title, file, start_s, dur_s} — files or image slices."""
     files = [p for p in sorted(root.rglob("*")) if p.is_file()
              and p.suffix.lower() in AUDIO_EXT]
     big = [p for p in files if p.stat().st_size > IMAGE_MIN]
@@ -175,8 +175,8 @@ def side_tracks(root: Path) -> list[dict]:
         cues = {p.stem.lower(): p for p in root.rglob("*.cue")}
         for img in sorted(big):
             cue = cues.get(img.stem.lower())
-            # Длинный трек (10+ мин) может весить >60 МБ. Образом считаем только
-            # файл с cue или единственный аудиофайл в своей папке.
+            # A long track (10+ min) can weigh >60 MB. Only a file with a cue or
+            # the only audio file in its own folder counts as an image.
             siblings = [q for q in img.parent.glob("*") if q.suffix.lower() in AUDIO_EXT]
             if cue is None and len(siblings) > 1:
                 small.append(img)
@@ -195,7 +195,7 @@ def side_tracks(root: Path) -> list[dict]:
             total = int(round(meta["dur"] * meta["sr"]))
             cue_tracks = parse_cue(str(cue), file_key=img.name)
             if not cue_tracks:
-                # FILE в cue может не совпадать с именем образа (CDImage.ape и т.п.)
+                # the cue's FILE may not match the image name (CDImage.ape etc.)
                 cue_tracks = parse_cue(str(cue))
             if not cue_tracks:
                 out.append({"n": None, "title": _clean_title(img.name), "file": str(img),
@@ -210,12 +210,12 @@ def side_tracks(root: Path) -> list[dict]:
     for p in small:
         out.append({"n": _track_no(p.name), "title": _clean_title(p.name),
                     "file": str(p), "start_s": 0.0, "dur_s": _ffdur(p)})
-    # нумерация дисков сквозная: cd2/01 → 101, если в имени есть диск
+    # disc numbering is continuous: cd2/01 → 101, if the name mentions a disc
     return out
 
 
 def match_sides(a: list[dict], b: list[dict]) -> list[tuple[int, int, float]]:
-    """Сопоставление треков двух сторон: (i, j, уверенность)."""
+    """Matching tracks of the two sides: (i, j, confidence)."""
     pairs = []
     for i, x in enumerate(a):
         best, best_s = None, 0.0
@@ -246,7 +246,7 @@ def match_sides(a: list[dict], b: list[dict]) -> list[tuple[int, int, float]]:
     return sorted(out)
 
 
-# --- фичи одного трека ------------------------------------------------------
+# --- per-track features ------------------------------------------------------
 def track_features(t: dict, sr: int | None = None) -> dict:
     x, sr = F.decode_f32(t["file"], t["start_s"], t["dur_s"])
     x16, _ = F.decode_s16(t["file"], t["start_s"], t["dur_s"])
@@ -254,7 +254,7 @@ def track_features(t: dict, sr: int | None = None) -> dict:
 
 
 def features_from_array(x: np.ndarray, sr: int, x16: np.ndarray | None = None) -> dict:
-    """Тот же набор фич, но из массива (для прогона пайплайна в памяти)."""
+    """Same feature set, but from an array (for running the pipeline in memory)."""
     return F.feature_dict(x, sr, x16)
 
 
@@ -279,10 +279,10 @@ def delta_of(o: dict, m: dict) -> dict:
     return d
 
 
-# --- вырезки ----------------------------------------------------------------
+# --- excerpts ----------------------------------------------------------------
 def make_excerpt(t_orig: dict, t_mast: dict, out_dir: Path, tag: str,
                  mark_fracs=(0.1, 0.5), win_s: float = 12.0) -> list[str]:
-    """Вырезки обеих сторон, выровненные по громкости (−20 dBFS RMS)."""
+    """Excerpts of both sides, loudness-matched (−20 dBFS RMS)."""
     made = []
     for frac in mark_fracs:
         for side, t in (("orig", t_orig), ("master", t_mast)):
@@ -302,9 +302,9 @@ def make_excerpt(t_orig: dict, t_mast: dict, out_dir: Path, tag: str,
     return made
 
 
-# --- обработка пары ---------------------------------------------------------
+# --- pair processing ---------------------------------------------------------
 def side_root(rec: dict, side: str, base: Path) -> Path | None:
-    """Каталог стороны: журнал → downloadDir в Transmission → base/<side>."""
+    """Side directory: journal → downloadDir in Transmission → base/<side>."""
     from rnext import sides as S
     srec = rec.get(side) if isinstance(rec.get(side), dict) else None
     p = S.resolve_side_dir(srec, side, base)
@@ -312,7 +312,7 @@ def side_root(rec: dict, side: str, base: Path) -> Path | None:
 
 
 def wanted_names(srec: dict | None) -> list[str] | None:
-    """Имена файлов, нужных этой паре (журнал → список файлов раздачи)."""
+    """Names of the files this pair needs (journal → the torrent's file list)."""
     from rnext import sides as S
     names = S.wanted_names(srec)
     return names or None
@@ -320,25 +320,26 @@ def wanted_names(srec: dict | None) -> list[str] | None:
 
 def side_ready(srec: dict | None, root: Path, base: Path | None = None,
                side: str | None = None) -> bool:
-    """Готовность стороны: все wanted-файлы на месте и без *.part.
+    """Side readiness: all wanted files in place and no *.part around.
 
-    Проверяем именно файлы ЭТОЙ пары, а не всю папку темы: у общей дискографии
-    в одном каталоге лежат альбомы разных пар, и чужие *.part нас не касаются.
+    We check exactly THIS pair's files, not the whole topic folder: a shared
+    discography keeps albums of different pairs in one directory, and other
+    pairs' *.part files are none of our business.
     """
     from rnext import sides as S
     names = S.wanted_names(srec, base=base, side=side)
     if names:
         return all((root / n).is_file() and (root / n).stat().st_size > 0 for n in names)
-    # если имён совсем нет — грубая проверка, но только по аудио и не по чужим файлам
+    # with no names at all — a crude check, audio-only and not other files'
     return not any(p.suffix.lower() == ".part" for p in root.rglob("*.part")
                    if p.with_suffix("").suffix.lower() in AUDIO_EXT)
 
 
 def dir_refcounts() -> dict[str, int]:
-    """Сколько пар ссылаются на каждый каталог стороны.
+    """How many pairs reference each side directory.
 
-    Каталог общей темы-дискографии один на несколько пар: удалять его после
-    извлечения первой пары нельзя — снесём данные остальных.
+    A shared discography topic has one directory for several pairs: deleting it
+    after extracting the first pair would wipe the others' data.
     """
     refs: dict[str, int] = {}
     from rnext import sides as S
@@ -353,7 +354,7 @@ def dir_refcounts() -> dict[str, int]:
 
 
 def cleanup_raw(rec: dict, refs: dict[str, int]) -> None:
-    """Удалить сырьё пары, кроме каталогов, нужных другим парам."""
+    """Delete the pair's raw data, except directories other pairs still need."""
     import shutil as _sh
     for side in ("orig", "master"):
         srec = rec.get(side) if isinstance(rec.get(side), dict) else None
@@ -382,7 +383,7 @@ def extract_pair(rec: dict, excerpts: int, keep_raw: bool, refs: dict[str, int] 
     msrec = rec.get("master") if isinstance(rec.get("master"), dict) else None
     if not side_ready(osrec, o_dir, base, "orig") or not side_ready(msrec, m_dir, base, "master"):
         return {"key": key, "state": "not_ready"}
-    # если альбом лежал внутри дискографии — берём только его папку
+    # if the album lived inside a discography — take only its folder
     for side, d in (("orig", o_dir), ("master", m_dir)):
         sub = ((rec.get(side) or {}).get("album_dir") if isinstance(rec.get(side), dict) else None)
         if sub:
@@ -406,8 +407,8 @@ def extract_pair(rec: dict, excerpts: int, keep_raw: bool, refs: dict[str, int] 
                 "orig_tracks": len(o_tr), "master_tracks": len(m_tr)}
     pairs = match_sides(o_tr, m_tr)
     frac = len(pairs) / max(1, min(len(o_tr), len(m_tr)))
-    # Проверка издания по длительностям: акапеллы/инструменталы/лайвы и другие
-    # альтернативные издания совпадают по названиям, но не по длительности.
+    # Edition check by durations: acapellas/instrumentals/lives and other
+    # alternative editions match by title but not by duration.
     durs = [abs(o_tr[i]["dur_s"] - m_tr[j]["dur_s"]) for i, j, _ in pairs]
     med_ddur = float(np.median(durs)) if durs else 0.0
     if med_ddur > 4.0:
@@ -456,12 +457,12 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--excerpts", type=int, default=1)
     ap.add_argument("--keep-raw", action="store_true")
-    ap.add_argument("--force", action="store_true", help="переизвлечь уже готовые пары")
+    ap.add_argument("--force", action="store_true", help="re-extract already finished pairs")
     ap.add_argument("--keep-raw-window", type=int, default=0,
-                    help="с --keep-raw: держать сырьё только у N последних пар")
-    ap.add_argument("--prune", action="store_true", help="снести сырьё у готовых пар")
+                    help="with --keep-raw: keep raw only for the N most recent pairs")
+    ap.add_argument("--prune", action="store_true", help="wipe raw of finished pairs")
     ap.add_argument("--prune-keep", type=int, default=0,
-                    help="при --prune оставить сырьё у N самых свежих пар (0 = у всех)")
+                    help="with --prune keep raw for the N most recent pairs (0 = all)")
     args = ap.parse_args()
 
     if args.prune:
@@ -483,10 +484,10 @@ def main() -> int:
                     continue
                 pp = Path(d)
                 if not pp.is_dir() or refs.get(d, 0) > 1:
-                    continue        # каталог ещё нужен другим парам
+                    continue        # the directory is still needed by other pairs
                 shutil.rmtree(pp, ignore_errors=True)
                 n += 1
-        print(f"prune: удалено каталогов сырья {n} (оставлено у {keep} свежих пар)")
+        print(f"prune: removed {n} raw directories (kept for {keep} recent pairs)")
         return 0
 
     from rnext import sides as S
@@ -495,14 +496,14 @@ def main() -> int:
     if args.key:
         rows = [r for r in rows if r["key"] == args.key]
     elif not args.all:
-        ap.error("нужен --all или --key")
+        ap.error("need --all or --key")
     done = {p.parent.name for p in (dataset_dir() / "pairs").glob("*/meta.json")}
     refs = dir_refcounts()
     if not args.force:
         rows = [r for r in rows if r["key"].replace("/", "__") not in done]
     if args.limit:
         rows = rows[:args.limit]
-    print(f"пар к извлечению: {len(rows)}")
+    print(f"pairs to extract: {len(rows)}")
     for r in rows:
         try:
             res = extract_pair(r, args.excerpts, args.keep_raw, refs)
@@ -521,10 +522,10 @@ def _merged_state() -> dict:
 
 
 def prune_raw_window(window: int) -> None:
-    """Оставляем сырьё только у `window` последних извлечённых пар.
+    """Keep raw only for the `window` most recently extracted pairs.
 
-    Сырьё нужно для end-to-end оценки (dataset_eval), но 40 GiB не резиновые:
-    старые пары очищаются, их место занимают новые.
+    Raw is needed for end-to-end evaluation (dataset_eval), but 40 GiB does not
+    stretch: old pairs are cleaned out and new ones take their place.
     """
     metas = sorted((dataset_dir() / "pairs").glob("*/meta.json"),
                    key=lambda p: p.stat().st_mtime, reverse=True)
@@ -540,7 +541,7 @@ def prune_raw_window(window: int) -> None:
         base = Path(rec.get("dir") or "")
         if not base.is_dir():
             continue
-        # не трогаем каталоги, которые ещё нужны другим парам
+        # do not touch directories still needed by other pairs
         shared = any(refs.get((rec.get(side) or {}).get("dir", ""), 0) > 1
                      for side in ("orig", "master"))
         if shared:
@@ -548,7 +549,7 @@ def prune_raw_window(window: int) -> None:
         cleanup_raw(rec, refs)
         dropped += 1
     if dropped:
-        print(f"  очищено сырьё у {dropped} старых пар (окно {window})")
+        print(f"  cleaned raw of {dropped} old pairs (window {window})")
 
 
 if __name__ == "__main__":

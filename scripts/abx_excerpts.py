@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""ABX-отрывки: оригинал | наша реставрация | мастер — тройки слепых файлов.
+"""ABX excerpts: original | our restoration | master — triples of blind files.
 
-Для каждого трека и каждого окна (10%, 50%, 85% длительности, по 20 с)
-пишутся два файла с СЛУЧАЙНОЙ маркировкой A/B (A=ours или master — монетка),
-соответствие прячется в abx_map.json. Плюс несжатая копия оригинала
-«REF_*» (не для угадывания, для прайминга слуха).
+For each track and each window (10%, 50%, 85% of duration, 20 s each) two
+files are written with RANDOM A/B labeling (A=ours or master — a coin toss);
+the mapping is hidden in abx_map.json. Plus an uncompressed copy of the
+original, "REF_*" (not for guessing, for priming the ears).
 
-Использование:
+Usage:
   python3 scripts/abx_excerpts.py --ours <dir> --master <dir> \
       --orig-image <img.flac> --cue <cue.cue> --tracks 2,5,11 [--marks 2]
 """
@@ -21,7 +21,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rnext import features as F  # noqa: E402
-from restore_one import encode_flac  # noqa: E402  (реиспользуем из scripts/)
+from restore_one import encode_flac  # noqa: E402  (reused from scripts/)
 
 
 def main() -> int:
@@ -54,7 +54,7 @@ def main() -> int:
         o_f = next(ours_dir.glob(f"{tn:02d}*.flac"), None)
         m_f = next(master_dir.glob(f"{tn:02d}*.flac"), None)
         if not o_f or not m_f:
-            print(f"t{tn}: файл не найден ({o_f}, {m_f})")
+            print(f"t{tn}: file not found ({o_f}, {m_f})")
             continue
         st, en = bounds[tn - 1]
         dur = (en - st) / sr
@@ -66,7 +66,7 @@ def main() -> int:
                 continue
             ref16 = np.clip(np.round(x * 32768.0), -32768, 32767).astype(np.int16)
             encode_flac(ref16, sr_, out_dir / f"REF_t{tn:02d}_s{seg_i}.flac", out_dir / "__tmp.wav")
-            # A/B: монетка решает, что сегодня «A»
+            # A/B: a coin toss decides what is "A" today
             ours_is_a = rand.random() < 0.5
             for tag, src in (("A", o_f if ours_is_a else m_f),
                              ("B", m_f if ours_is_a else o_f)):
@@ -82,7 +82,7 @@ def main() -> int:
 
     with open(out_dir / "abx_map.json", "w", encoding="utf-8") as f:
         json.dump(amap, f, ensure_ascii=False, indent=1)
-    print(f"\n-> {out_dir} (карта: abx_map.json — не подглядывать до вердикта)")
+    print(f"\n-> {out_dir} (map: abx_map.json — do not peek before the verdict)")
     return 0
 
 

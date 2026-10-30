@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Непрерывное обогащение датасета + авто-обучение по мере роста.
+"""Continuous dataset enrichment + auto-training as it grows.
 
-Один проход цикла:
-  1. если у пар ещё качается сырьё — ждём;
-  2. иначе: выбрать новую партию (dataset_select) → загрузить (dataset_fetch --go);
-  3. извлечь готовые пары (--keep-raw, окно хранения сырья под оценку);
-  4. обновить аудит референсов и целевой слой (reference_audit, target_model);
-  5. пересчитать версию датасета и прогнать авто-обучение с эвалами (ml_auto).
+One pass of the loop:
+  1. if pair raw data is still downloading — wait;
+  2. otherwise: pick a new batch (dataset_select) → download it (dataset_fetch --go);
+  3. extract finished pairs (--keep-raw, raw storage window for evaluation);
+  4. refresh the reference audit and the target layer (reference_audit, target_model);
+  5. recompute the dataset version and run auto-training with evals (ml_auto).
 
-Идемпотентно: повторный запуск продолжает с того же места. Логи — в `dataset/loop.log`.
+Idempotent: a re-run continues from the same place. Logs go to `dataset/loop.log`.
 
   python3 scripts/dataset_loop.py --interval 900 --batch-gb 12 --keep-window 12
 """
@@ -45,11 +45,10 @@ def run(cmd: list[str], timeout: int = 7200) -> int:
 
 
 def downloads_state() -> tuple[float, float, float]:
-    """(осталось всего GB, скорость MB/s, осталось у РАЗДАЧ С ПИРАМИ).
+    """(total GB left, speed MB/s, GB left on torrents WITH PEERS).
 
-    Третье число — то, что реально может докачаться: мёртвые сиды (0 пиров)
-    не должны блокировать кап «в работе», иначе одна застрявшая раздача
-    останавливает весь конвейер.
+    The third number is what can actually finish: dead seeds (0 peers) must not
+    hold the in-work cap, otherwise one stuck torrent stalls the whole pipeline.
     """
     try:
         t = Transm()
@@ -89,34 +88,34 @@ def free_gb() -> float:
 
 
 def one_pass(args) -> None:
-    """Один проход: чистка → извлечение/аудит/обучение (ВСЕГДА) → возможно новая партия.
+    """One pass: cleanup → extraction/audit/training (ALWAYS) → maybe a new batch.
 
-    Раньше проход выходил рано, пока шла качка, — из-за этого готовые пары
-    часами лежали неизвлечёнными, а партии копились, пока диск не кончился.
-    Теперь обработка идёт каждую проходку, а новая партия берётся только если
-    в работе меньше max_inflight_gb.
+    Previously the pass exited early while downloads ran — finished pairs sat
+    unextracted for hours and batches piled up until the disk filled. Now
+    processing runs on every pass, and a new batch is taken only while less
+    than max_inflight_gb is in flight.
     """
     global STALLS
     free = free_gb()
     if free < args.min_free_gb:
-        log(f"свободно {free:.1f} GB < {args.min_free_gb} GB — чистим сырьё")
+        log(f"free {free:.1f} GB < {args.min_free_gb} GB — pruning raw")
         subprocess.run([sys.executable, "scripts/dataset_extract.py", "--prune",
                         "--prune-keep", str(args.keep_window)], cwd=str(ROOT), check=False)
         if free_gb() < args.min_free_gb:
-            # критично: сносим и НЕЗАВЕРШЁННЫЕ пары с малой готовностью
-            log("места всё ещё мало — снимаю незавершённые пары с низкой готовностью")
+            # critical: drop UNFINISHED pairs with low progress too
+            log("still low on space — dropping unfinished pairs with low progress")
             subprocess.run([sys.executable, "scripts/dataset_prune_stalled.py",
                             "--max-progress", "0.5"], cwd=str(ROOT), check=False)
 
-    # 0) мёртвые сиды не должны держать кап: снимаем пары без пиров
+    # 0) dead seeds must not hold the cap: drop pairs without peers
     subprocess.run([sys.executable, "scripts/dataset_prune_stalled.py", "--peerless"],
                    cwd=str(ROOT), check=False, stdout=subprocess.DEVNULL)
-    # ...и сразу пересчитываем wanted-наборы: без этого раздачи снятых пар
-    # продолжают качать в удалённые каталоги (сырьё возвращается, место утекает)
+    # ...and immediately recompute wanted-sets: without this, torrents of dropped
+    # pairs keep downloading into deleted directories (raw comes back, space leaks)
     subprocess.run([sys.executable, "scripts/dataset_fetch.py", "--repair"],
                    cwd=str(ROOT), check=False, stdout=subprocess.DEVNULL)
 
-    # 1) обработка готового — каждую проходку, независимо от качки
+    # 1) process what is ready — every pass, regardless of downloads
     run([sys.executable, "scripts/dataset_extract.py", "--all", "--excerpts", "1",
          "--keep-raw", "--keep-raw-window", str(args.keep_window)])
     run([sys.executable, "scripts/reference_audit.py"])
@@ -125,24 +124,24 @@ def one_pass(args) -> None:
     man = dataset_dir() / "manifest.json"
     if man.is_file():
         m = json.loads(man.read_text(encoding="utf-8"))
-        log(f"датасет {m['version']}: пар {m['pairs']}, trusted-треков {m['trusted_tracks']}")
+        log(f"dataset {m['version']}: {m['pairs']} pairs, {m['trusted_tracks']} trusted tracks")
 
-    # 2) решаем, брать ли новую партию
+    # 2) decide whether to take a new batch
     left, rate, live = downloads_state()
     if live > args.max_inflight_gb:
-        log(f"в работе (с пирами) {live:.1f} GB > капа {args.max_inflight_gb} GB — "
-            f"новую партию не берём")
+        log(f"in flight (with peers) {live:.1f} GB > cap {args.max_inflight_gb} GB — "
+            f"not taking a new batch")
         return
     if left > 0.05 and rate >= args.min_rate_mbps:
-        log(f"качается {left:.2f} GB ({rate:.2f} MB/s) — ждём")
+        log(f"downloading {left:.2f} GB ({rate:.2f} MB/s) — waiting")
         return
     if left > 0.05:
         STALLS += 1
         if STALLS < args.stall_passes:
-            log(f"качается {left:.2f} GB, но медленно ({rate:.2f} MB/s; "
-                f"{STALLS}/{args.stall_passes}) — ждём")
+            log(f"downloading {left:.2f} GB but slowly ({rate:.2f} MB/s; "
+                f"{STALLS}/{args.stall_passes}) — waiting")
             return
-        log(f"медленный хвост подтверждён ({rate:.2f} MB/s) — берём новую партию")
+        log(f"slow tail confirmed ({rate:.2f} MB/s) — taking a new batch")
     STALLS = 0
 
     n = batch_counter() + 1
@@ -150,7 +149,7 @@ def one_pass(args) -> None:
     if run([sys.executable, "scripts/dataset_select.py", "--limit", str(args.batch_pairs),
             "--min-master-seeders", str(args.min_master_seeders),
             "--max-master-gb", str(args.max_master_gb), "--out", tag]) != 0:
-        log("select не сработал")
+        log("select failed")
         return
     plan = workspace.dir_of("corpus") / f"dataset_batch_{tag}.jsonl"
     run([sys.executable, "scripts/dataset_fetch.py", "--go", "--limit", str(args.batch_pairs),
@@ -166,31 +165,31 @@ def main() -> int:
     ap.add_argument("--min-master-seeders", type=int, default=2)
     ap.add_argument("--min-free-gb", type=float, default=10.0)
     ap.add_argument("--min-rate-mbps", type=float, default=2.0,
-                    help="ниже этой скорости качка считается медленным хвостом")
+                    help="below this rate a download counts as a slow tail")
     ap.add_argument("--max-inflight-gb", type=float, default=12.0,
-                    help="кап на объём незакрытых загрузок: больше — новую партию не берём")
+                    help="cap on outstanding downloads: above it no new batch is taken")
     ap.add_argument("--max-master-gb", type=float, default=6.0,
-                    help="не брать пары, у которых тема мастера больше этого (гигантские дискографии)")
+                    help="skip pairs whose master topic is larger than this (giant discographies)")
     ap.add_argument("--stall-passes", type=int, default=2,
-                    help="сколько проходов ждать, если качается, но скорость 0")
+                    help="how many passes to wait when downloading but at zero speed")
     ap.add_argument("--once", action="store_true")
     args = ap.parse_args()
-    log(f"цикл обогащения: интервал {args.interval}s, партия {args.batch_pairs} пар "
-        f"/ {args.batch_gb} GB, сырьё держим у {args.keep_window} последних пар")
-    # Настройки Transmission (очередь/DHT) живут только до перезапуска клиента —
-    # после ребута они возвращаются к дефолтам и скорость падает в ~20 раз.
-    # Применяем при каждом старте цикла: и в сессии, и в settings.json.
+    log(f"enrichment loop: interval {args.interval}s, batch {args.batch_pairs} pairs "
+        f"/ {args.batch_gb} GB, raw kept for the {args.keep_window} most recent pairs")
+    # Transmission settings (queue/DHT) only live until the client restarts —
+    # after a reboot they return to defaults and speed drops ~20x.
+    # Applied on every loop start: both in the session and in settings.json.
     try:
         subprocess.run([sys.executable, "scripts/transmission_tune.py", "--apply"],
                        cwd=str(ROOT), check=False, timeout=60)
-        log("настройки Transmission применены")
+        log("Transmission settings applied")
     except Exception as e:                                 # noqa: BLE001
-        log(f"не удалось применить настройки Transmission: {type(e).__name__}")
+        log(f"failed to apply Transmission settings: {type(e).__name__}")
     while True:
         try:
             one_pass(args)
         except Exception as e:                            # noqa: BLE001
-            log(f"ошибка прохода: {type(e).__name__}: {str(e)[:200]}")
+            log(f"pass error: {type(e).__name__}: {str(e)[:200]}")
         if args.once:
             return 0
         time.sleep(args.interval)

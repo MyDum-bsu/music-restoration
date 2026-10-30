@@ -1,7 +1,7 @@
-"""Мелкие общие помощники: subprocess с безопасным декодированием, md5.
+"""Small shared helpers: subprocess with safe decoding, md5.
 
-run() декодирует stdout/stderr с errors="replace": обычный subprocess.run(text=True)
-падает с UnicodeDecodeError на бинарном выводе (например, `gio cat` FLAC).
+run() decodes stdout/stderr with errors="replace": plain subprocess.run(text=True)
+crashes with UnicodeDecodeError on binary output (e.g. `gio cat` of a FLAC).
 """
 import hashlib
 import shutil
@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 def python_exe() -> str:
-    """sys.executable, если это похоже на python (AppImage-лаунчеры его подменяют)."""
+    """sys.executable if it looks like python (AppImage launchers override it)."""
     exe = Path(sys.executable or "")
     if exe.name.lower().startswith("python"):
         return str(exe)

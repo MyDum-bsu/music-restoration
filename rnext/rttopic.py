@@ -1,4 +1,4 @@
-"""Парсер темы руТрекера: мета + раскрывание per-release блоков ([RM] дискографии)."""
+"""rutracker topic parser: metadata + per-release blocks ([RM] discographies)."""
 import re
 
 from bs4 import BeautifulSoup
@@ -7,8 +7,14 @@ from rnext.rtclient import RTClient
 
 _WS = re.compile(r"\s+")
 
-META_KEYS = ["Жанр", "Год выпуска", "Аудио кодек", "Тип рипа", "Формат раздачи",
-             "Продолжительность", "Наличие сканов", "Битрейт"]
+# Exact site labels (ru: Genre, Release year, Audio codec, Rip type, Release
+# format, Duration, Scans present, Bitrate) — kept byte-identical via \u escapes.
+META_KEYS = ["\u0416\u0430\u043D\u0440", "\u0413\u043E\u0434 \u0432\u044B\u043F\u0443\u0441\u043A\u0430",
+             "\u0410\u0443\u0434\u0438\u043E \u043A\u043E\u0434\u0435\u043A", "\u0422\u0438\u043F \u0440\u0438\u043F\u0430",
+             "\u0424\u043E\u0440\u043C\u0430\u0442 \u0440\u0430\u0437\u0434\u0430\u0447\u0438",
+             "\u041F\u0440\u043E\u0434\u043E\u043B\u0436\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C",
+             "\u041D\u0430\u043B\u0438\u0447\u0438\u0435 \u0441\u043A\u0430\u043D\u043E\u0432",
+             "\u0411\u0438\u0442\u0440\u0435\u0439\u0442"]
 
 
 def _txt(el) -> str:
@@ -16,25 +22,28 @@ def _txt(el) -> str:
 
 
 def _txt_lines(el) -> str:
-    """Текст с сохранением переводов строк (для блоков «Код:» с таблицами)."""
+    """Text with line breaks preserved (for the "Code:" blocks with tables)."""
     raw = el.get_text("\n")
     raw = raw.replace("\xa0", " ")
     return "\n".join(line.strip() for line in raw.splitlines())
 
 
-# строка таблицы DR-метра: «DR11      -1.39 dB   -13.72 dB     2:08 01-Carpathia»
+# DR-meter table row: "DR11      -1.39 dB   -13.72 dB     2:08 01-Carpathia"
 _DR_ROW = re.compile(
     r"^DR\s*(\d+)\s+(-?\d+(?:[.,]\d+)?)\s*dB\s+(-?\d+(?:[.,]\d+)?)\s*dB\s+(\d+:\d+)\s+(.+)$"
 )
-_DR_HEAD = re.compile(r"Динамический диапазон|DR-?метр|АЧХ|Спектр", re.IGNORECASE)
+# head words (ru): "Dynamic range" / "DR-meter" / "Freq response" / "Spectrum"
+_DR_HEAD = re.compile(
+    r"\u0414\u0438\u043D\u0430\u043C\u0438\u0447\u0435\u0441\u043A\u0438\u0439 \u0434\u0438\u0430\u043F\u0430\u0437\u043E\u043D"
+    r"|DR-?\u043C\u0435\u0442\u0440|\u0410\u0427\u0425|\u0421\u043F\u0435\u043A\u0442\u0440", re.IGNORECASE)
 
 
 def parse_dr_table(text: str) -> dict | None:
-    """Разбор вставки DR-метра из темы мастера.
+    """Parse the DR-meter insert from a master topic.
 
-    Мастер публикует анализ СВОЕЙ (уже реставрированной) версии: DR/Peak/RMS
-    по каждому треку. Это даёт цель без скачивания мастер-релиза:
-    crest_tt = peak − rms.
+    The master publishes an analysis of THEIR OWN (already restored) version:
+    DR/Peak/RMS per track. This gives the target without downloading the
+    master release: crest_tt = peak - rms.
     """
     rows = []
     analyzed = None
@@ -81,19 +90,21 @@ def parse_topic_page(html: str) -> dict:
 
     raw_first = str(body)
 
-    # --- мета (до первого sp-wrap): span.post-b -> следующий текст
+    # --- metadata (before the first sp-wrap): span.post-b -> following text
     text = _txt(body)
     for key in META_KEYS:
-        m = re.search(rf"{re.escape(key)}\s*:\s*([^|​:]+?)(?=\s+(?:[А-ЯA-Z][a-zа-яё-]+\s*:|\Z)|\s+\Z)", text)
+        # the lookahead matches the next "Capitalized label:" (ru/en ranges) or EOL
+        m = re.search(rf"{re.escape(key)}\s*:\s*([^|​:]+?)(?=\s+(?:[\u0410-\u042FA-Z][a-z\u0430-\u044F\u0451-]+\s*:|\Z)|\s+\Z)", text)
         if m:
             out["meta"][key] = m.group(1).strip(" :")
 
-    # --- ссылки-исходники (вне спо́йлеров): 'Исходник для обработки : здесь'
+    # --- source links (outside spoilers): 'source for processing : here'
     for a in body.select("a.postLink"):
-        if a.get_text(strip=True).lower() in ("здесь", "here"):
+        # \u0437\u0434\u0435\u0441\u044C = ru "here" (exact link text on the site)
+        if a.get_text(strip=True).lower() in ("\u0437\u0434\u0435\u0441\u044C", "here"):
             out["source_search_urls"].append(a.get("href"))
 
-    # --- per-release: спо́йлеры sp-wrap
+    # --- per-release: sp-wrap spoilers
     out["info_blocks"] = []
     wraps = body.select(".sp-wrap")
     for w in wraps:
@@ -103,15 +114,16 @@ def parse_topic_page(html: str) -> dict:
             continue
         head_text = _txt(head)
         if _DR_HEAD.search(head_text):
-            # Блок анализа идёт сразу за своим релизом → цепляем таблицу к нему:
-            # это цель мастера по DR/Peak/RMS без скачивания мастер-релиза.
+            # The analysis block follows its release -> attach the table to it:
+            # the master's DR/Peak/RMS target without downloading the release.
             table = parse_dr_table(_txt_lines(b))
             if table and out["releases"]:
                 out["releases"][-1]["master_dr"] = table
             elif table:
                 out["info_blocks"].append({"head": head_text, "table": table})
             continue
-        if re.search(r"Дополнительная информация", head_text):
+        # ru: "Additional information"
+        if re.search(r"\u0414\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u0430\u044F \u0438\u043D\u0444\u043E\u0440\u043C\u0430\u0446\u0438\u044F", head_text):
             out["info_blocks"].append({"head": head_text, "text": _txt(b)[:800]})
             continue
         m = re.match(r"(\d{4})\s*-\s*(.+)", head_text)
@@ -124,21 +136,27 @@ def parse_topic_page(html: str) -> dict:
             "master_dr": None,
         }
         btxt = _txt(b)
-        m = re.search(r"Исходное издание\s*:\s*([^И]+?)(?=\s+Обработка|$)", btxt)
+        # field labels (ru): "Source edition" / "Processing" / "Spectrum"
+        m = re.search(
+            r"\u0418\u0441\u0445\u043E\u0434\u043D\u043E\u0435 \u0438\u0437\u0434\u0430\u043D\u0438\u0435\s*:\s*([^\u0418]+?)(?=\s+\u041E\u0431\u0440\u0430\u0431\u043E\u0442\u043A\u0430|$)",
+            btxt)
         if m:
             rel["source_edition"] = m.group(1).strip(" :")
-        m = re.search(r"Обработка\s*:\s*(.+?)(?=\s+Спектр|$)", btxt)
+        m = re.search(r"\u041E\u0431\u0440\u0430\u0431\u043E\u0442\u043A\u0430\s*:\s*(.+?)(?=\s+\u0421\u043F\u0435\u043A\u0442\u0440|$)", btxt)
         if m:
             rel["processing"] = m.group(1).strip(" :")
         for mm in re.finditer(r"\b(\d{1,2})\.\s*([^.|​:]*?)\s*\((\d{1,2}:\d{2})\)", btxt):
             rel["tracks"].append({"n": int(mm.group(1)), "s": mm.group(2).strip(), "dur": mm.group(3)})
         out["releases"].append(rel)
 
-    # --- без спо́йлеров: одиночный релиз из заголовка темы
+    # --- no spoilers: a single release taken from the topic title
     if not wraps:
         rel = {"year": None, "album": title, "source_edition": None, "processing": None,
                "tracks": [], "master_dr": None}
-        m = re.search(r"Исходное издание\s*([^И]+?)(?=\s+Обработка|$)", text)
+        # ru: "Source edition" / "Processing"
+        m = re.search(
+            r"\u0418\u0441\u0445\u043E\u0434\u043D\u043E\u0435 \u0438\u0437\u0434\u0430\u043D\u0438\u0435\s*([^\u0418]+?)(?=\s+\u041E\u0431\u0440\u0430\u0431\u043E\u0442\u043A\u0430|$)",
+            text)
         if m:
             rel["source_edition"] = m.group(1).strip(" -:").strip()
         out["releases"].append(rel)

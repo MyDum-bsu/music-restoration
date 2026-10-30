@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Аудит датасета: не потерялось ли скачанное по дороге.
+"""Dataset audit: whether anything downloaded was lost along the way.
 
-Сверяет три источника правды:
-  1. журнал загрузок `dataset/state.jsonl` — что заказывали и сколько хотели;
-  2. Transmission — сколько реально ушло трафика и что лежит на диске;
-  3. `dataset/pairs/*/meta.json` + `features.json` — что извлечено в датасет.
+Cross-checks three sources of truth:
+  1. the download journal `dataset/state.jsonl` — what was ordered and how much was wanted;
+  2. Transmission — how much traffic was actually spent and what sits on disk;
+  3. `dataset/pairs/*/meta.json` + `features.json` — what was extracted into the dataset.
 
-Печатает аномалии:
-  * `downloaded_not_extracted` — раздача стояла, а пары в датасете нет;
-  * `present_no_state`        — каталог с аудио, не связанный ни с одной парой;
-  * `partial`                 — не все нужные файлы на месте;
-  * `extracted_no_raw`        — норма (сырьё удалено после извлечения);
-  * `no_tracks`/`edition_mismatch`/`no_match` — отбракованные пары (ожидаемо).
+Prints anomalies:
+  * `downloaded_not_extracted` — the torrent ran, but the pair is not in the dataset;
+  * `present_no_state`        — a directory with audio not linked to any pair;
+  * `partial`                 — not all needed files are in place;
+  * `extracted_no_raw`        — normal (raw deleted after extraction);
+  * `no_tracks`/`edition_mismatch`/`no_match` — rejected pairs (expected).
 
   python3 scripts/dataset_audit.py
   python3 scripts/dataset_audit.py --json out.json
@@ -63,10 +63,10 @@ def dir_audio(root: Path) -> tuple[int, float]:
 
 
 def integrity() -> int:
-    """Целостность датасета: парсинг фич, наличие meta, читаемость вырезок.
+    """Dataset integrity: feature parsing, meta presence, excerpt readability.
 
-    Нужно после аварийного завершения: проверяем, что файлы не обрезаны и
-    структура строк не поехала.
+    Needed after an abrupt termination: checks that files are not truncated
+    and the row structure has not shifted.
     """
     import subprocess
     import numpy as np
@@ -77,31 +77,31 @@ def integrity() -> int:
         fp, mp = d / "features.json", d / "meta.json"
         if not fp.is_file():
             if not mp.is_file():
-                continue          # извлечение в процессе — не проблема
-            bad.append(f"{d.name}: есть meta, но нет features.json")
+                continue          # extraction in progress — not a problem
+            bad.append(f"{d.name}: meta present but features.json missing")
             continue
         try:
             rows = json.loads(fp.read_text(encoding="utf-8"))
         except Exception as e:                             # noqa: BLE001
-            bad.append(f"{d.name}: features.json не парсится ({e})")
+            bad.append(f"{d.name}: features.json does not parse ({e})")
             continue
         if not mp.is_file():
-            bad.append(f"{d.name}: нет meta.json")
+            bad.append(f"{d.name}: meta.json missing")
         n_pairs += 1
         n_tracks += len(rows)
         for r in rows:
             for side in ("original", "restored"):
                 if side not in r:
-                    bad.append(f"{d.name} t{r.get('track')}: нет блока {side}")
+                    bad.append(f"{d.name} t{r.get('track')}: missing {side} block")
                     break
             else:
                 for side in ("original", "restored"):
                     b = r[side].get("bands_db") or []
                     if len(b) != 30:
-                        bad.append(f"{d.name} t{r.get('track')}: bands {len(b)} (ждём 30)")
+                        bad.append(f"{d.name} t{r.get('track')}: bands {len(b)} (expected 30)")
                         break
                 if r.get("delta") is None or "crest" not in r["delta"]:
-                    bad.append(f"{d.name} t{r.get('track')}: нет delta.crest")
+                    bad.append(f"{d.name} t{r.get('track')}: delta.crest missing")
         ex = sorted((d / "excerpts").glob("*.flac")) if (d / "excerpts").is_dir() else []
         for f in ex:
             n_ex += 1
@@ -110,16 +110,16 @@ def integrity() -> int:
                                       "format=duration", "-of", "csv=p=0", str(f)],
                                      capture_output=True, text=True, timeout=30)
                 if out.returncode != 0 or not out.stdout.strip():
-                    bad.append(f"{d.name}: битая вырезка {f.name}")
+                    bad.append(f"{d.name}: corrupt excerpt {f.name}")
             except Exception as e:                          # noqa: BLE001
-                bad.append(f"{d.name}: вырезка {f.name} — {type(e).__name__}")
-    print(f"целостность: пар {n_pairs}, треков {n_tracks}, вырезок {n_ex}")
+                bad.append(f"{d.name}: excerpt {f.name} — {type(e).__name__}")
+    print(f"integrity: {n_pairs} pairs, {n_tracks} tracks, {n_ex} excerpts")
     if bad:
-        print(f"ПРОБЛЕМЫ ({len(bad)}):")
+        print(f"PROBLEMS ({len(bad)}):")
         for b in bad[:20]:
             print("  ", b)
     else:
-        print("проблем нет")
+        print("no problems")
     return 0 if not bad else 1
 
 
@@ -127,7 +127,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", default=None)
     ap.add_argument("--integrity", action="store_true",
-                    help="проверить целостность данных после сбоя (файлы/поля/вырезки)")
+                    help="check data integrity after a crash (files/fields/excerpts)")
     args = ap.parse_args()
 
     if args.integrity:
@@ -135,7 +135,7 @@ def main() -> int:
 
     uniq = S.merged_state(dataset_dir() / "state.jsonl")
 
-    # что реально пришло в Transmission
+    # what actually arrived in Transmission
     tors = S.torrents_by_id()
 
     ours = {tid: x for tid, x in tors.items()
@@ -153,7 +153,7 @@ def main() -> int:
         m = json.loads(meta.read_text(encoding="utf-8")) if meta.is_file() else {}
         extracted[d.name.replace("__", "/")] = {"tracks": len(rows), "meta": m}
 
-    # разбор по парам
+    # per-pair breakdown
     rows = []
     used_dirs: set[str] = set()
     for key, r in sorted(uniq.items()):
@@ -191,7 +191,7 @@ def main() -> int:
                      "extracted_tracks": ex["tracks"] if ex else 0,
                      "match_fraction": (ex["meta"].get("match_fraction") if ex else None)})
 
-    # каталоги с аудио, которых нет ни в одной записи журнала
+    # directories with audio not present in any journal entry
     present_dirs = defaultdict(lambda: [0, 0.0])
     raw = dataset_dir() / "raw"
     if raw.is_dir():
@@ -203,33 +203,33 @@ def main() -> int:
     orphans = {d: v for d, v in present_dirs.items()
                if not any(str(d).startswith(u) or u.startswith(str(d)) for u in used_dirs if u)}
 
-    # --- отчёт
+    # --- report
     by_status = Counter(r["status"] for r in rows)
     total_want = sum(r["bytes_wanted"] for r in rows)
     total_present = sum(r["bytes_present"] for r in rows)
     tracks = sum(v["tracks"] for v in extracted.values())
-    print(f"пар в журнале: {len(rows)}   состояние: {dict(by_status)}")
-    print(f"извлечено в датасет: {len(extracted)} пар / {tracks} треков")
-    print(f"заказано (wanted): {human(total_want)}   на диске сейчас: {human(total_present)}")
-    print(f"трафик по нашим раздачам (downloadedEver): {human(traffic)}")
-    print(f"раздач в Transmission по датасету: {len(ours)}; "
-          f"не завершены: {sum(1 for x in ours.values() if (x.get('leftUntilDone') or 0) > 0)}")
+    print(f"pairs in journal: {len(rows)}   states: {dict(by_status)}")
+    print(f"extracted into dataset: {len(extracted)} pairs / {tracks} tracks")
+    print(f"ordered (wanted): {human(total_want)}   on disk now: {human(total_present)}")
+    print(f"traffic on our torrents (downloadedEver): {human(traffic)}")
+    print(f"dataset torrents in Transmission: {len(ours)}; "
+          f"unfinished: {sum(1 for x in ours.values() if (x.get('leftUntilDone') or 0) > 0)}")
 
     anom = [r for r in rows if r["status"] in ("downloaded_not_extracted", "partial", "error")]
     if anom:
-        print("\nАНОМАЛИИ:")
+        print("\nANOMALIES:")
         for r in anom:
             print(f"  {r['status']:<26} {r['key']:<16} "
                   f"{str(r['artist'])[:20]:<20} {str(r['album'])[:30]:<30} "
-                  f"было {human(r['bytes_present'])} из {human(r['bytes_wanted'])}")
+                  f"got {human(r['bytes_present'])} of {human(r['bytes_wanted'])}")
     if orphans:
-        print("\nКАТАЛОГИ С АУДИО ВНЕ ЖУРНАЛА:")
+        print("\nDIRECTORIES WITH AUDIO OUTSIDE THE JOURNAL:")
         for d, (n, b) in orphans.items():
-            print(f"  {d} — {n} файлов, {human(b)}")
+            print(f"  {d} — {n} files, {human(b)}")
 
     rejected = [r for r in rows if r["status"] == "rejected"]
     if rejected:
-        print(f"\nОтбраковано при сверке файлов (ожидаемо, данные не нужны): {len(rejected)}")
+        print(f"\nRejected at file cross-check (expected, data not needed): {len(rejected)}")
         for r in rejected[:8]:
             print(f"  {r['key']:<16} {str(r['artist'])[:22]:<22} {str(r['album'])[:30]}")
 

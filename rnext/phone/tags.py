@@ -1,7 +1,7 @@
-"""Чтение тегов/обложек через mutagen.
+"""Reading tags/covers via mutagen.
 
-Полная копия тегов и ReplayGain осталась в v1; здесь только то, что нужно
-инвентарю телефонной библиотеки, — без numpy/ffmpeg-зависимостей.
+The full tag and ReplayGain copy stayed in v1; here is only what the phone
+library inventory needs — no numpy/ffmpeg dependencies.
 """
 from pathlib import Path
 
@@ -12,9 +12,9 @@ def has_cover(flac) -> bool:
 
 
 def audio_flags(path):
-    """Одно чтение mutagen на файл -> словарь флагов, или None если не читается.
+    """One mutagen read per file -> dict of flags, or None if unreadable.
 
-    lyrics/cover/tracknumber — bool; artist/title/album/date — значения.
+    lyrics/cover/tracknumber are bools; artist/title/album/date are values.
     """
     from mutagen import File as MF
     from mutagen.mp4 import MP4

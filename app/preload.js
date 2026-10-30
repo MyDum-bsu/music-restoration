@@ -1,4 +1,4 @@
-// Мост между рендерером и файловой системой (только то, что нужно плееру).
+// Bridge between the renderer and the filesystem (only what the player needs).
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {

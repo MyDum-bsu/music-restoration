@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Пакетный прогон релизов: реставрация → оформление → телефон, по очереди.
+"""Batch run of releases: restoration → finalization → phone, one by one.
 
   python3 scripts/release_batch.py \
       --job "release_src/City and Colour/2005 - Sometimes|City and Colour/2005 - Sometimes|City and Colour - Sometimes (2005)" \
       --job "..." \
       --log /tmp/batch.log --clean-src
 
-Каждый job: «каталог источника | путь на телефоне | имя релиза». Шаги:
-  1. если в источнике image+cue — разбить на треки (образ уводится в _image/);
-  2. restore_one.py с продовыми настройками (авто-политика, модель, TP −0.5);
-  3. finish_release.py — теги, обложка, тексты;
-  4. phone_sync.py — замена альбома на телефоне с проверкой md5;
-  5. --clean-src — удалить исходник (освободить место; на телефоне уже есть).
+Each job: "source directory | path on the phone | release name". Steps:
+  1. if the source is image+cue — split into tracks (the image moves to _image/);
+  2. restore_one.py with production settings (auto-policy, model, TP −0.5);
+  3. finish_release.py — tags, cover, lyrics;
+  4. phone_sync.py — replace the album on the phone with md5 verification;
+  5. --clean-src — delete the source (free up space; the phone already has it).
 
-Ничего не «догадывается»: если обложки нет — релиз уходит без неё и это
-попадает в отчёт; если тексты не нашлись — тоже в отчёт.
+Nothing "guesses": if there is no cover, the release ships without one and it
+lands in the report; if lyrics weren't found — also in the report.
 """
 import argparse
 import json
@@ -33,8 +33,8 @@ SCRIPTS = Path(__file__).resolve().parent
 
 
 def _data_root() -> Path:
-    """Каталог корпуса/релизов: config/workspace.json, иначе $RESTORE_DATA_ROOT,
-    иначе ~/Music/restorations. Без флешки базовый прогон не должен падать."""
+    """Corpus/release directory: config/workspace.json, else $RESTORE_DATA_ROOT,
+    else ~/Music/restorations. The basic run must not fail without the flash drive."""
     try:
         return workspace.data_root()
     except Exception:  # noqa: BLE001
@@ -61,34 +61,34 @@ def flacs(d: Path) -> list[Path]:
 
 
 def find_discs(src: Path) -> list[tuple[str, Path]]:
-    """Где лежат FLAC: сам каталог, вложенный релиз или диски (CD1/CD2).
+    """Where the FLACs live: the directory itself, a nested release, or discs (CD1/CD2).
 
-    Возвращает [(метка диска, каталог)]; метка пустая для однодискового.
+    Returns [(disc label, directory)]; the label is empty for a single-disc one.
     """
     if flacs(src):
         return [("", src)]
-    # ищем на уровень-два вниз каталоги с треками
+    # look two levels down for directories with tracks
     cands = []
     for d in sorted(src.rglob("*")):
         if d.is_dir() and flacs(d):
             cands.append(d)
     if not cands:
         return []
-    # оставляем только «листовые» (без вложенных каталогов с треками)
+    # keep only "leaf" ones (without nested directories with tracks)
     leaves = [d for d in cands if not any(o != d and d in o.parents for o in cands)]
     discs = [d for d in leaves if re.match(r"^(cd|disc|disk)\s*\d+$", d.name, re.I)]
     if discs:
         return [(d.name.upper(), d) for d in sorted(discs)]
     if len(leaves) == 1:
         return [("", leaves[0])]
-    # Несколько подпапок без меток CD1/CD2 (например «Steel The Light» + «mini»):
-    # их НЕЛЬЗЯ вести в один каталог телефона — второй затрёт первый. Берём имя
-    # подпапки как метку, чтобы каждая ушла в свой подкаталог.
+    # Several subfolders without CD1/CD2 labels (e.g. "Steel The Light" + "mini"):
+    # they must NOT be driven into one phone directory — the second would clobber
+    # the first. Use the subfolder name as the label so each lands in its own subdirectory.
     return [(d.name, d) for d in sorted(leaves)]
 
 
 def cue_disc_tags(cue: Path) -> dict:
-    """TITLE/PERFORMER/REM DATE/REM GENRE уровня диска из cue."""
+    """Disk-level TITLE/PERFORMER/REM DATE/REM GENRE from the cue."""
     txt = cue.read_text(encoding="utf-8", errors="ignore")
     top = txt.split("TRACK ", 1)[0]
     def grab(pat: str) -> str:
@@ -112,11 +112,11 @@ def cue_disc_tags(cue: Path) -> dict:
 
 
 def needs_split(d: Path) -> bool:
-    """Это образ+cue? Признак: есть cue И ровно один FLAC (или все FLAC — крупные).
+    """Is this an image+cue? Signs: a cue exists AND exactly one FLAC (or all FLACs are large).
 
-    Раньше split вызывался только когда FLAC в каталоге НЕТ, поэтому образ
-    (один большой .flac + .cue) уходил в реставрацию как «один трек» — и альбом
-    молча терялся.
+    Previously split was only called when there was NO FLAC in the directory, so an
+    image (one big .flac + .cue) went into restoration as "one track" — and the album
+    was silently lost.
     """
     if not list(d.glob("*.cue")):
         return False
@@ -129,20 +129,20 @@ def needs_split(d: Path) -> bool:
 
 
 def split_image(src: Path, log) -> Path:
-    """image+cue → треки рядом; образ уводится в _image/, чтобы не попал в --src."""
+    """image+cue → tracks next to it; the image moves to _image/ so it doesn't hit --src."""
     cues = list(src.glob("*.cue"))
     imgs = [p for p in src.glob("*.flac") if p.stat().st_size > 80 * 1024 * 1024]
     if not cues or not imgs:
         return src
     img = imgs[0]
-    # cwd=src обязателен: иначе shntool кладёт треки в рабочий каталог процесса
-    # (каталог репозитория), а в источнике их не оказывается — и образ уходил
-    # в реставрацию целиком как «один трек»
+    # cwd=src is required: otherwise shntool drops the tracks into the process's
+    # working directory (the repository directory), they never appear in the source,
+    # and the image went into restoration whole as "one track"
     code, out = run(["shntool", "split", "-f", str(cues[0]), "-o", "flac",
                      "-t", "%n - %t", str(img)], log, cwd=src)
     made = [p for p in src.glob("[0-9]*.flac") if p != img]
     if not made:
-        log.write(f"[warn] разбиение не дало треков: {out[-300:]}\n")
+        log.write(f"[warn] split produced no tracks: {out[-300:]}\n")
         return src
     hold = src / "_image"
     hold.mkdir(exist_ok=True)
@@ -150,9 +150,9 @@ def split_image(src: Path, log) -> Path:
         if f.is_file() and f.parent == src:
             shutil.move(str(f), str(hold / f.name))
     run(["cuetag", str(hold / cues[0].name)] + [str(p) for p in made], log)
-    # cuetag ставит только трековые TITLE/PERFORMER. Исполнитель и название
-    # альбома в cue часто заданы на УРОВНЕ ДИСКА — без переноса треки уезжают
-    # на телефон как <unknown> (так случилось с Perfect Plan).
+    # cuetag only sets per-track TITLE/PERFORMER. The performer and album name
+    # in the cue are often set at the DISK level — without carrying them over,
+    # the tracks end up on the phone as <unknown> (as happened with Perfect Plan).
     tags = cue_disc_tags(hold / cues[0].name)
     if tags:
         args = []
@@ -160,8 +160,8 @@ def split_image(src: Path, log) -> Path:
             args += [f"--set-tag={k}={v}"]
         for p in made:
             run(["metaflac", *args, str(p)], log)
-        log.write(f"метаданные диска перенесены: {tags}\n")
-    log.write(f"разбито на {len(made)} треков\n")
+        log.write(f"disk metadata carried over: {tags}\n")
+    log.write(f"split into {len(made)} tracks\n")
     return src
 
 
@@ -175,12 +175,12 @@ def process(job: str, log, clean_src: bool, skip_phone: bool, jobs: int = 1) -> 
 
     log.write(f"\n{'=' * 80}\n=== {time.strftime('%H:%M:%S')} {name}\n")
     if not src.is_dir():
-        res["error"] = "нет каталога источника"
+        res["error"] = "no source directory"
         log.write(f"[error] {src}\n")
         return res
     discs = find_discs(src)
     if not discs:
-        res["error"] = "в источнике нет FLAC"
+        res["error"] = "no FLAC in the source"
         return res
     res["tracks"] = sum(len(flacs(d)) for _, d in discs)
     res["discs"] = [label or "-" for label, _ in discs]
@@ -200,26 +200,26 @@ def process(job: str, log, clean_src: bool, skip_phone: bool, jobs: int = 1) -> 
                        "--tp", "-0.5", "--wait", "--jobs", str(jobs)], log)
         res["steps"][f"restore:{label or '-'}"] = code
         if code != 0 or not flacs(d_out):
-            res["error"] = f"реставрация не дала треков ({label or 'cd1'})"
+            res["error"] = f"restoration produced no tracks ({label or 'cd1'})"
             return res
         code, out2 = run([sys.executable, "-u", str(SCRIPTS / "finish_release.py"),
                           "--restored", str(d_out), "--source", str(ddir), "--lyrics"], log)
         res["steps"][f"finish:{label or '-'}"] = code
-        if "не найдена" in out2:
+        if "cover not found" in out2:
             res["cover"] = False
-        m = re.search(r"тексты: ([^\n]+)", out2)
+        m = re.search(r"lyrics: ([^\n]+)", out2)
         if m:
             res["lyrics"].append(f"{label}:{m.group(1)}" if label else m.group(1))
-        m = re.search(r"итог: ([^\n]+)", out2)
+        m = re.search(r"result: ([^\n]+)", out2)
         if m:
             res["summary"].append(f"{label}: {m.group(1)}" if label else m.group(1))
         if d_phone and not skip_phone:
             code, out3 = run([sys.executable, "-u", str(SCRIPTS / "phone_sync.py"),
                               "--album", str(d_out), "--rel", d_phone], log)
             res["steps"][f"phone:{label or '-'}"] = code
-            res["phone_ok"] = res.get("phone_ok", True) and "проверка ок" in out3
+            res["phone_ok"] = res.get("phone_ok", True) and "verification ok" in out3
             if code != 0:
-                res["error"] = f"копирование на телефон не прошло проверку ({label or 'cd1'})"
+                res["error"] = f"copying to the phone failed verification ({label or 'cd1'})"
                 return res
     res["summary"] = "; ".join(res["summary"])
     res["lyrics"] = "; ".join(res["lyrics"])
@@ -227,20 +227,20 @@ def process(job: str, log, clean_src: bool, skip_phone: bool, jobs: int = 1) -> 
     if clean_src and res.get("phone_ok"):
         shutil.rmtree(src, ignore_errors=True)
         res["src_removed"] = True
-        log.write(f"источник удалён (на телефоне есть): {src}\n")
+        log.write(f"source removed (already on the phone): {src}\n")
     return res
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--job", action="append", required=True,
-                    help="«источник | путь на телефоне | имя релиза»")
+                    help="\"source | path on the phone | release name\"")
     ap.add_argument("--log", default="/tmp/release_batch.log")
     ap.add_argument("--clean-src", action="store_true")
     ap.add_argument("--skip-phone", action="store_true")
     ap.add_argument("--jobs", type=int, default=3,
-                    help="треков параллельно внутри альбома (результат не зависит "
-                         "от числа потоков; память ~0.5 ГБ на поток)")
+                    help="tracks in parallel within an album (the result does not depend "
+                         "on the thread count; ~0.5 GB RAM per thread)")
     ap.add_argument("--report", default="")
     args = ap.parse_args()
 
@@ -252,13 +252,13 @@ def main() -> int:
             except Exception as e:  # noqa: BLE001
                 log.write(f"[exception] {type(e).__name__}: {e}\n")
                 results.append({"job": job, "error": f"{type(e).__name__}: {e}"})
-    print(f"\n{'=' * 80}\nИТОГ:")
+    print(f"\n{'=' * 80}\nSUMMARY:")
     for r in results:
-        status = "ок" if not r.get("error") else f"ОШИБКА: {r['error']}"
+        status = "ok" if not r.get("error") else f"ERROR: {r['error']}"
         print(f"  {r.get('name', r['job'])[:44]:<46} {status}")
         if r.get("summary"):
-            print(f"      {r['summary']}  | обложка: {'да' if r.get('cover') else 'НЕТ'}, "
-                  f"тексты: {r.get('lyrics')}")
+            print(f"      {r['summary']}  | cover: {'yes' if r.get('cover') else 'NO'}, "
+                  f"lyrics: {r.get('lyrics')}")
     if args.report:
         Path(args.report).write_text(json.dumps(results, ensure_ascii=False, indent=1),
                                      encoding="utf-8")

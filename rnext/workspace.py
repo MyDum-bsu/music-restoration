@@ -1,4 +1,4 @@
-"""Рабочая зона на флешке: единые пути и строгий лимит 40 GiB (NTFS, только файлы)."""
+"""Working area on a USB drive: unified paths and a strict 40 GiB limit (NTFS, files only)."""
 import subprocess
 from pathlib import Path
 
@@ -37,7 +37,7 @@ def dir_of(kind: str) -> Path:
 
 
 def usage_bytes() -> int:
-    """Реальный занятый байтовый объём data_root (du -sb)."""
+    """Actual bytes occupied under data_root (du -sb)."""
     out = subprocess.run(
         ["du", "-sb", "--apparent-size", str(data_root())],
         capture_output=True, text=True, check=True,

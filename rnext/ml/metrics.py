@@ -1,13 +1,13 @@
-"""Метрики качества цели: считаем ошибку и сравниваем с базами.
+"""Target quality metrics: error computation and comparison against baselines.
 
-Метрики намеренно распределённые, а не средние: внутриальбомный разброс мастера
-σ ≈ 0.8 дБ, поэтому «средняя ошибка» скрывает хвосты.
+Metrics are intentionally distributional, not averaged: the master's
+within-album spread is sigma ~ 0.8 dB, so a "mean error" hides the tails.
 
-Базы сравнения (без них число ошибки бессмысленно):
-  * noop    — не обрабатывать (Δ = 0);
-  * const46 — текущий дефолт пайплайна (4.6 на всё loud);
-  * v0table — таблица по классам из corpus/targets_v0.json;
-  * master  — «идеал» (Δcrest мастера берётся как предсказание: err = 0).
+Baselines (without them the error numbers are meaningless):
+  * noop    — do nothing (delta = 0);
+  * const46 — current pipeline default (4.6 for anything loud);
+  * v0table — per-class table from corpus/targets_v0.json;
+  * master  — the "ideal" (master delta-crest taken as the prediction: err = 0).
 """
 import json
 import statistics as S
@@ -68,7 +68,7 @@ def interval_coverage(y_true: np.ndarray, lo: np.ndarray, hi: np.ndarray) -> flo
 
 
 def compare_to_baseline(stats: dict, baseline: str = "noop") -> float:
-    """Во сколько раз модель лучше базы по медианной ошибке (<1 — лучше)."""
+    """How many times better the model is than a baseline by median error (<1 is better)."""
     b = stats.get(f"baseline_{baseline}", {}).get("median_abs")
     m = stats["all"]["median_abs"]
     if not b or not m:
@@ -77,11 +77,11 @@ def compare_to_baseline(stats: dict, baseline: str = "noop") -> float:
 
 
 def significance(y_true, y_pred, base_pred, n_boot: int = 2000, seed: int = 7) -> dict:
-    """Парный бутстрэп: значимо ли модель лучше базы по медиане |err|.
+    """Paired bootstrap: is the model significantly better than the baseline by median |err|.
 
-    10 % «на глаз» — плохой порог: при n≈150 стандартная ошибка медианы
-    ~0.08 дБ, то есть 10 % от 0.5 дБ лежат внутри шума. Поэтому решаем по
-    абсолютному выигрышу И по CI разницы.
+    "10% by eye" is a bad threshold: at n~150 the standard error of the median
+    is ~0.08 dB, so 10% of 0.5 dB sits inside the noise. Hence we decide by the
+    absolute gain AND by the CI of the difference.
     """
     rng = np.random.default_rng(seed)
     y_true = np.asarray(y_true)
@@ -103,10 +103,10 @@ def significance(y_true, y_pred, base_pred, n_boot: int = 2000, seed: int = 7) -
 
 
 def auto_gate(y_true, y_pred, dr_values, min_gain_db: float = 0.10) -> dict:
-    """Решение «пускать модель в прод»: выигрыш над ЛУЧШЕЙ базой.
+    """Decision "promote the model to production": gain over the BEST baseline.
 
-    Критерий: абсолютный выигрыш ≥ min_gain_db И нижняя граница 95 % CI > 0
-    (то есть улучшение не объясняется разбросом выборки).
+    Criterion: absolute gain >= min_gain_db AND the lower bound of the 95% CI > 0
+    (i.e. the improvement is not explained by sample spread).
     """
     bases = baselines(dr_values)
     out = {"min_gain_db": min_gain_db, "by_baseline": {}}
@@ -117,8 +117,8 @@ def auto_gate(y_true, y_pred, dr_values, min_gain_db: float = 0.10) -> dict:
         st["pass"] = bool(st["improvement_dB"] >= min_gain_db and st["ci_low"] > 0)
         out["by_baseline"][name] = st
         scored.append((name, st))
-    # сравниваемся с СИЛЬНЕЙШЕЙ базой (наименьшая медианная ошибка), иначе гейт
-    # пропускал бы модель, которая лучше слабой базы, но хуже сильной
+    # compare against the STRONGEST baseline (lowest median error), otherwise the
+    # gate would pass a model that beats a weak baseline but loses to a strong one
     best = min(scored, key=lambda kv: kv[1]["median_abs"])
     out["best_baseline"] = best[0]
     out["vs_best"] = best[1]
@@ -128,13 +128,13 @@ def auto_gate(y_true, y_pred, dr_values, min_gain_db: float = 0.10) -> dict:
 
 def format_report(stats: dict) -> str:
     a = stats["all"]
-    lines = [f"n={a['n']} медиана|err|={a['median_abs']:.2f} доля≤0.5={a['share_le_0.5']:.0%}"
-             f" доля≤1.0={a['share_le_1.0']:.0%} bias={a['bias']:+.2f}"]
+    lines = [f"n={a['n']} median|err|={a['median_abs']:.2f} share<=0.5={a['share_le_0.5']:.0%}"
+             f" share<=1.0={a['share_le_1.0']:.0%} bias={a['bias']:+.2f}"]
     for c, s in stats["by_class"].items():
-        lines.append(f"   {c:<8} n={s['n']:<4} медиана={s['median_abs']:.2f} "
-                     f"≤0.5={s['share_le_0.5']:.0%} bias={s['bias']:+.2f}")
+        lines.append(f"   {c:<8} n={s['n']:<4} median={s['median_abs']:.2f} "
+                     f"<=0.5={s['share_le_0.5']:.0%} bias={s['bias']:+.2f}")
     for k in ("noop", "const46", "v0table"):
         b = stats.get(f"baseline_{k}")
         if b:
-            lines.append(f"   база {k:<8} медиана={b['median_abs']:.2f} ≤0.5={b['share_le_0.5']:.0%}")
+            lines.append(f"   base {k:<8} median={b['median_abs']:.2f} <=0.5={b['share_le_0.5']:.0%}")
     return "\n".join(lines)

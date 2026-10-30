@@ -1,13 +1,13 @@
-"""EQ-этап: спектральная дельта от калибровки → пер-бин гейны (zero-phase via STFT)."""
+"""EQ stage: spectral delta from calibration -> per-bin gains (zero-phase via STFT)."""
 import numpy as np
 
 
 def apply_eq(x: np.ndarray, sr: int, bands_db: list[tuple[float, float]],
              frame: int = 8192) -> np.ndarray:
-    """bands_db: [(hz_center, delta_db), ...] — интерполяция по log(freq).
+    """bands_db: [(hz_center, delta_db), ...] — interpolated over log(freq).
 
-    Применение в STFT-бинах magnitudes (zero-phase, тот же фреймворк, что contour).
-    stft -> (f, t, Zxx): ПЕРВЫЙ элемент — частоты.
+    Applied to STFT magnitude bins (zero-phase, same framework as contour).
+    stft -> (f, t, Zxx): the FIRST element is frequencies.
     """
     from scipy.signal import stft, istft
     hop = frame // 4

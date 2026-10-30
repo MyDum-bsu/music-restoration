@@ -1,15 +1,15 @@
-"""Доступ к телефону по MTP через gvfs + gio. Без констант конкретного устройства.
+"""Phone access over MTP via gvfs + gio. No device-specific constants.
 
-Выученные правила (подробности — docs/mtp-notes.md):
-- fuse-монтирование gvfs на практике read-only: запись через него падает с
-  'Operation not supported'. Любая запись идёт через
-  `gio copy -p <local> <mtp://...>` с URL-encoded сегментами пути.
-- gio умеет только перезаписывать существующие файлы, но не создавать новые —
-  каталоги заранее создаются `gio mkdir -p`.
-- Большие пачки читать через copy_from_phone(use_gio=True) — примерно вдвое
-  быстрее, чем fuse cp.
-- Запись проверять чтением обратно (gio cat) и сверкой md5: fuse-метаданные
-  сразу после перезаписи врут.
+Rules learned the hard way (details in docs/mtp-notes.md):
+- gvfs fuse mounts are read-only in practice: writing through them fails with
+  'Operation not supported'. All writes go through
+  `gio copy -p <local> <mtp://...>` with URL-encoded path segments.
+- gio can only overwrite existing files, not create new ones — directories are
+  created in advance with `gio mkdir -p`.
+- Read large batches via copy_from_phone(use_gio=True) — roughly twice as fast
+  as fuse cp.
+- Verify writes by reading back (gio cat) and comparing md5: fuse metadata
+  lies right after an overwrite.
 """
 import os
 import time
@@ -20,12 +20,13 @@ from .config import get
 from .util import md5f, run
 
 AUDIO_EXTS = {".flac", ".mp3", ".m4a", ".ogg", ".oga", ".opus", ".m4b", ".mp4", ".wav"}
-MUSIC_DIR_NAMES = {"music", "музыка"}
+# "music" / ru "music" — exact on-device directory names
+MUSIC_DIR_NAMES = {"music", "\u043C\u0443\u0437\u044B\u043A\u0430"}
 
 
 def gvfs_mtp_mounts() -> list[Path]:
-    """MTP-монтирования gvfs (Linux-десктопы). Пусто в остальных местах —
-    телефонные функции деградируют в понятную ошибку, а не в падение."""
+    """gvfs MTP mounts (Linux desktops). Empty elsewhere — phone functions
+    degrade to a clear error instead of crashing."""
     if not hasattr(os, "getuid"):
         return []
     base = Path("/run/user") / str(os.getuid()) / "gvfs"
@@ -33,7 +34,7 @@ def gvfs_mtp_mounts() -> list[Path]:
 
 
 def _music_dirs_below(mount: Path, depth: int = 3) -> list[Path]:
-    """Поиск Music-каталога в MTP-монтировании с ограничением глубины (fuse медленный)."""
+    """Search for a Music directory in an MTP mount with a depth limit (fuse is slow)."""
     found = []
 
     def rec(d: Path, lev: int):
@@ -51,7 +52,7 @@ def _music_dirs_below(mount: Path, depth: int = 3) -> list[Path]:
 
 
 def phone_dir() -> Path | None:
-    """Корень музыки на телефоне: $MR_PHONE_DIR / config / автодетект gvfs."""
+    """Music root on the phone: $MR_PHONE_DIR / config / gvfs autodetect."""
     v = get("PHONE_DIR")
     if v:
         return Path(v).expanduser()
@@ -78,7 +79,7 @@ def mount_of(music_root: Path) -> Path:
 
 
 def mtp_base(music_root: Path | None = None) -> str:
-    """Базовый gio URI для корня музыки, например mtp://DEV/Storage/Music."""
+    """Base gio URI for the music root, e.g. mtp://DEV/Storage/Music."""
     root = music_root or phone_dir()
     v = get("MTP_BASE")
     if v:
@@ -94,8 +95,8 @@ def is_mtp(path) -> bool:
 
 
 def uri_for(music_root: Path, rel: Path) -> str:
-    """mtp:// URI для пути относительно корня музыки. Каждый сегмент кодируется
-    отдельно — кодирование всего пути превратило бы '/' в %2F и сломало gio."""
+    """mtp:// URI for a path relative to the music root. Each segment is encoded
+    separately — encoding the whole path would turn '/' into %2F and break gio."""
     return mtp_base(music_root) + "/" + "/".join(urllib.parse.quote(seg) for seg in Path(rel).parts)
 
 
@@ -105,7 +106,7 @@ def phone_alive(music_root: Path | None = None) -> bool:
 
 
 def copy_to_phone(music_root: Path, src: Path, rel: Path, retries: int = 3, wait: int = 5):
-    """Скопировать локальный файл поверх СУЩЕСТВУЮЩЕГО файла на телефоне."""
+    """Copy a local file over an EXISTING file on the phone."""
     if is_mtp(music_root):
         r = None
         for _ in range(retries):
@@ -122,7 +123,7 @@ def copy_to_phone(music_root: Path, src: Path, rel: Path, retries: int = 3, wait
 
 
 def copy_from_phone(music_root: Path, src: Path, dst: Path, use_gio: bool = False):
-    """Прочитать файл с телефона в локальный путь. fuse cp работает; gio ~2x быстрее."""
+    """Read a file from the phone into a local path. fuse cp works; gio is ~2x faster."""
     dst = Path(dst)
     dst.parent.mkdir(parents=True, exist_ok=True)
     if use_gio and is_mtp(src):
@@ -141,8 +142,8 @@ def mkdir_phone(music_root: Path, rel: Path) -> bool:
 
 
 def cat_md5(music_root: Path, rel: Path, local_path: Path) -> str | None:
-    """Прочитать файл с телефона через `gio cat` и вернуть md5 (None при ошибке).
-    Не доверять fuse-метаданным сразу после записи — читать байты."""
+    """Read a file from the phone via `gio cat` and return its md5 (None on failure).
+    Do not trust fuse metadata right after a write — read the bytes."""
     import subprocess
     local_path = Path(local_path)
     local_path.parent.mkdir(parents=True, exist_ok=True)

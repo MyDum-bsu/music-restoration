@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Сторож релизов: сверяет, что конвейер не теряет альбомы и не портит данные.
+"""Release watchdog: verifies the pipeline neither loses albums nor corrupts data.
 
-Проверяет по каждому завершённому релизу:
-  * все ли треки доехали до телефона и совпадает ли их число с источником;
-  * есть ли обложка и тексты (и сколько треков без текста);
-  * не было ли ошибок в шагах конвейера;
-плюс общее: место на дисках, живость цикла датасета, зависшие закачки.
+Checks per completed release:
+  * did all tracks make it to the phone and does their count match the source;
+  * is there a cover and lyrics (and how many tracks lack lyrics);
+  * were there errors in the pipeline steps;
+plus general: disk space, liveness of the dataset loop, stalled downloads.
 
-  python3 scripts/release_watch.py                 # один проход
-  python3 scripts/release_watch.py --loop 600      # в цикле, каждые 10 минут
+  python3 scripts/release_watch.py                 # one pass
+  python3 scripts/release_watch.py --loop 600      # in a loop, every 10 minutes
   python3 scripts/release_watch.py --json /tmp/watch.json
 
-Пишет только АНОМАЛИИ (норма молчит) — чтобы в логе было видно проблемы.
+Reports only ANOMALIES (normal state is silent) — so problems are visible in the log.
 """
 import argparse
 import json
@@ -39,7 +39,7 @@ def phone_root() -> Path | None:
 
 
 def phone_flacs(root: Path, rel: str) -> int | None:
-    """Сколько FLAC в каталоге на телефоне (с учётом подкаталогов)."""
+    """How many FLACs are in a directory on the phone (including subdirectories)."""
     key = (str(root), rel)
     if key in PHONE_CACHE:
         return PHONE_CACHE[key]
@@ -64,33 +64,35 @@ def phone_flacs(root: Path, rel: str) -> int | None:
 
 
 def check_blocks(latest: dict[str, str]) -> list[str]:
-    """Разбор последних блоков логов: что завершено, что с ошибками."""
+    """Parse the latest log blocks: what finished, what had errors."""
     warns: list[str] = []
     for nm, b in latest.items():
         name = nm
-        if "Traceback" in b or "ошибка" in b.lower():
-            line = next((l for l in b.splitlines() if "ошибка" in l.lower()
+        if "Traceback" in b or "error" in b.lower():
+            line = next((l for l in b.splitlines() if "error" in l.lower()
                          or "Traceback" in l), "")
-            warns.append(f"[ошибка шага] {name[:52]}: {line.strip()[:90]}")
-        # сколько треков в релизе
-        m = re.findall(r"скопировано (\d+)/(\d+) файлов", b)
+            warns.append(f"[step error] {name[:52]}: {line.strip()[:90]}")
+        # how many tracks in the release
+        m = re.findall(r"copied (\d+)/(\d+) files", b)
         if m:
             got, total = int(m[-1][0]), int(m[-1][1])
             if got != total:
-                warns.append(f"[не всё скопировано] {name[:52]}: {got} из {total}")
-        if "проверка ок" not in b and "скопировано" in b:
-            warns.append(f"[нет проверки md5] {name[:52]}")
-        # Тексты по логу НЕ проверяем: лог отражает момент прогона, а тексты
-        # могли добрать позже (Place Vendome, Q5). Факт проверяет телефон.
-        # «обложка не найдена» из лога НЕ считаем тревогой: обложку могли вшить
-        # позже (как у Bring Me Your Love), а факт проверяет check_phone_albums
+                warns.append(f"[incomplete copy] {name[:52]}: {got} of {total}")
+        if "verification ok" not in b and "copied" in b:
+            warns.append(f"[no md5 verification] {name[:52]}")
+        # Lyrics are NOT checked via the log: the log reflects the moment of the
+        # run, while lyrics could be added later (Place Vendome, Q5). The phone
+        # check verifies the fact.
+        # "cover not found" from the log is NOT treated as an alarm: the cover
+        # could have been embedded later (as with Bring Me Your Love), and
+        # check_phone_albums verifies the fact
     return warns
 
 
 def check_phone_albums(root: Path, limit: int = 0) -> list[str]:
-    """Реальная проверка телефона: у первого трека каждого альбома есть
-    встроенная обложка и текст? Лог врёт (обложку могли вшить позже), а это —
-    факт. Читаем файл обратно через gio и смотрим теги."""
+    """Real phone check: does the first track of each album have an embedded
+    cover and lyrics? The log lies (the cover could have been embedded later),
+    this is the fact. We read the file back via gio and inspect the tags."""
     import tempfile
     listfile = Path("/tmp/phone_check.txt")
     if not listfile.is_file():
@@ -102,17 +104,17 @@ def check_phone_albums(root: Path, limit: int = 0) -> list[str]:
     for rel in rels:
         d = root / rel
         if not d.is_dir():
-            warns.append(f"[телефон] нет каталога: {rel}")
+            warns.append(f"[phone] no directory: {rel}")
             continue
         try:
             cands = sorted(p for p in d.rglob("*.flac"))
         except OSError:
             continue
         if not cands:
-            warns.append(f"[телефон] нет FLAC: {rel}")
+            warns.append(f"[phone] no FLAC: {rel}")
             continue
-        # Смотрим НЕСКОЛЬКО треков: первый может быть инструменталом (у Subsignal
-        # «271 Days» — интро без текста), и одиночная проверка давала ложную тревогу.
+        # Look at SEVERAL tracks: the first may be an instrumental (Subsignal's
+        # "271 Days" is an intro without lyrics), and a single check gave false alarms.
         sample = cands if len(cands) <= 3 else [cands[0], cands[len(cands) // 2], cands[-1]]
         got = {"cover": False, "lyrics": False}
         for f in sample:
@@ -138,9 +140,9 @@ def check_phone_albums(root: Path, limit: int = 0) -> list[str]:
             got["cover"] = got["cover"] or v["cover"]
             got["lyrics"] = got["lyrics"] or v["lyrics"]
         if not got["cover"]:
-            warns.append(f"[телефон: нет обложки] {rel}")
+            warns.append(f"[phone: no cover] {rel}")
         if not got["lyrics"]:
-            warns.append(f"[телефон: нет текста] {rel}")
+            warns.append(f"[phone: no lyrics] {rel}")
     return warns
 
 
@@ -153,15 +155,15 @@ def check_disk() -> list[str]:
             continue
         free_gb = u.free / 1e9
         if free_gb < 3:
-            warns.append(f"[место] {mount}: свободно {free_gb:.1f} ГБ — КРИТИЧНО")
+            warns.append(f"[space] {mount}: {free_gb:.1f} GB free — CRITICAL")
         elif free_gb < 6:
-            warns.append(f"[место] {mount}: свободно {free_gb:.1f} ГБ")
+            warns.append(f"[space] {mount}: {free_gb:.1f} GB free")
     return warns
 
 
 def check_loop() -> list[str]:
     r = subprocess.run(["pgrep", "-f", "dataset_loop.py"], capture_output=True, text=True)
-    return [] if r.stdout.strip() else ["[цикл] dataset_loop не запущен"]
+    return [] if r.stdout.strip() else ["[loop] dataset_loop is not running"]
 
 
 def check_stalled() -> list[str]:
@@ -172,12 +174,12 @@ def check_stalled() -> list[str]:
                                        "peersConnected", "status"])
                 if "release_src" in (x["downloadDir"] or "") and x["leftUntilDone"] > 0]
     except Exception as e:  # noqa: BLE001
-        return [f"[transmission] недоступен: {type(e).__name__}"]
+        return [f"[transmission] unavailable: {type(e).__name__}"]
     out = []
     for x in rows:
         if x["peersConnected"] == 0 and x["status"] == 4:
-            out.append(f"[зависла закачка] {x['name'][:44]} — 0 пиров, "
-                       f"осталось {x['leftUntilDone'] / 1e6:.0f} МБ")
+            out.append(f"[stalled download] {x['name'][:44]} — 0 peers, "
+                       f"{x['leftUntilDone'] / 1e6:.0f} MB left")
     return out
 
 
@@ -185,11 +187,11 @@ def one_pass(args) -> int:
     warns: list[str] = []
     root = phone_root()
     if root is None:
-        warns.append("[телефон] не найден (MTP не подключён?)")
-    # Логов несколько (cc, wave2, retry, fix...), и альбом мог прогоняться
-    # повторно. Склеиваем ВСЕ блоки и берём последний по имени альбома.
+        warns.append("[phone] not found (MTP not connected?)")
+    # There are several logs (cc, wave2, retry, fix...), and an album may have
+    # been re-run. We merge ALL blocks and take the latest by album name.
     all_blocks: dict[str, str] = {}
-    # по ВРЕМЕНИ изменения: успешная переделка должна перекрывать прежний провал
+    # by modification TIME: a successful redo must override a previous failure
     logs = sorted(Path("/tmp").glob("release_*.log"),
                   key=lambda p: p.stat().st_mtime if p.is_file() else 0)
     for log in logs:
@@ -207,11 +209,11 @@ def one_pass(args) -> int:
 
     stamp = time.strftime("%d.%m %H:%M:%S")
     if warns:
-        print(f"[{stamp}] ВНИМАНИЕ, {len(warns)}:")
+        print(f"[{stamp}] ATTENTION, {len(warns)}:")
         for w in warns:
             print(f"  {w}")
     else:
-        print(f"[{stamp}] всё чисто: ошибок нет, место есть, цикл жив, закачки идут")
+        print(f"[{stamp}] all clean: no errors, space is fine, loop alive, downloads running")
     if args.json:
         Path(args.json).write_text(json.dumps({"ts": stamp, "warnings": warns},
                                               ensure_ascii=False, indent=1),
@@ -221,10 +223,10 @@ def one_pass(args) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--loop", type=int, default=0, help="цикл, секунд (0 = один проход)")
+    ap.add_argument("--loop", type=int, default=0, help="loop interval, seconds (0 = one pass)")
     ap.add_argument("--json", default="")
     ap.add_argument("--phone-limit", type=int, default=0,
-                    help="сколько альбомов на телефоне проверять за проход (0 = все)")
+                    help="how many albums on the phone to check per pass (0 = all)")
     args = ap.parse_args()
     if args.loop:
         while True:

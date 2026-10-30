@@ -1,7 +1,7 @@
-"""Секреты из ~/.config/music-restoration/secrets — никогда не хранятся в репо.
+"""Secrets from ~/.config/music-restoration/secrets — never stored in the repo.
 
-Старый каталог ~/.config/restore-next/secrets читается как запасной, чтобы
-после переименования проекта не пришлось переносить cookies руками.
+The old ~/.config/restore-next/secrets directory is read as a fallback so the
+project rename does not require manually migrating cookies.
 """
 import json
 from pathlib import Path
@@ -12,10 +12,10 @@ SECRETS = _NEW if _NEW.exists() or not _OLD.exists() else _OLD
 
 
 def rutracker_cookies() -> dict[str, str]:
-    """Файл rutracker_cookies.txt: строки 'name=value' (пустые/с # игнорируются).
+    """File rutracker_cookies.txt: 'name=value' lines (empty/# lines are ignored).
 
-    Ожидаем минимум: bb_session, bb_ssl, bb_t, cf_clearance.
-    bb_data (старая схема) тоже подхватится, если есть.
+    Expected at minimum: bb_session, bb_ssl, bb_t, cf_clearance.
+    bb_data (old scheme) is also picked up if present.
     """
     f = SECRETS / "rutracker_cookies.txt"
     if not f.is_file():
@@ -34,7 +34,7 @@ def rutracker_cookies() -> dict[str, str]:
 
 
 def rutracker_ua() -> str | None:
-    """User-Agent точно из того браузера, откуда взяты cookies (важно для cf_clearance)."""
+    """User-Agent from exactly the browser the cookies came from (matters for cf_clearance)."""
     f = SECRETS / "rutracker_ua.txt"
     if f.is_file():
         v = f.read_text(encoding="utf-8").strip()

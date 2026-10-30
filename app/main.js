@@ -1,15 +1,16 @@
-// Electron-обёртка плеера слепых сравнений.
+// Electron wrapper for the blind comparison player.
 //
-// Задача обёртки — только доступ к файловой системе и окно: пак лежит в обычной
-// папке (audio/*.flac + pack.json), рейтинги пишутся рядом в ratings.json.
-// Никакой сети и никаких фоновых процессов.
+// The wrapper only provides filesystem access and a window: a pack is an
+// ordinary folder (audio/*.flac + pack.json), ratings are written alongside
+// in ratings.json. No network, no background processes.
 const { app, BrowserWindow, ipcMain, dialog, protocol, net } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
-// Свой протокол для файлов пака: страница живёт в app/, а аудио — в папке пака
-// (вне каталога приложения), и напрямую file:// между ними Chromium не отдаёт.
+// Custom protocol for pack files: the page lives in app/ while the audio sits
+// in the pack folder (outside the app directory), and Chromium will not hand
+// file:// across the two directly.
 protocol.registerSchemesAsPrivileged([
   { scheme: 'pack', privileges: { standard: true, stream: true, supportFetchAPI: true } },
 ]);
@@ -56,7 +57,7 @@ ipcMain.handle('list-packs', () => listPacks());
 
 ipcMain.handle('pick-pack', async () => {
   const res = await dialog.showOpenDialog(win, {
-    title: 'Выбрать пак для прослушивания',
+    title: 'Pick a pack to listen to',
     defaultPath: fs.existsSync(LISTEN_ROOT) ? LISTEN_ROOT : undefined,
     properties: ['openDirectory'],
   });
@@ -66,7 +67,7 @@ ipcMain.handle('pick-pack', async () => {
 
 ipcMain.handle('load-pack', (_e, dir) => {
   const pj = path.join(dir, 'pack.json');
-  if (!fs.existsSync(pj)) throw new Error('нет pack.json в ' + dir);
+  if (!fs.existsSync(pj)) throw new Error('no pack.json in ' + dir);
   const pack = JSON.parse(fs.readFileSync(pj, 'utf8'));
   pack.dir = dir;
   currentPackDir = dir;
@@ -87,7 +88,7 @@ ipcMain.handle('save-rating', (_e, dir, itemId, payload) => {
   const f = path.join(dir, 'ratings.json');
   let doc = { ratings: {} };
   if (fs.existsSync(f)) {
-    try { doc = JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { /* перезапишем */ }
+    try { doc = JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { /* overwrite */ }
   }
   doc.ratings[itemId] = { ...payload, at: new Date().toISOString() };
   doc.updated = new Date().toISOString();

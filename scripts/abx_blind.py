@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""ABX-набор «оригинал vs наше» для слепого прослушивания.
+"""ABX set "original vs ours" for blind listening.
 
-- 8-секундные эксцерты из одного и того же места обоих источников;
-- ВЫРАВНИВАНИЕ ГРОМКОСТИ: каждый эксцерт нормируется к общему RMS
-  (по умолчанию −20 dBFS), чтобы разница уровней (у нас −5…−6 дБ от оригинала)
-  не выдавала ответ;
-- случайный порядок A/B + карта шифра abx_map.json.
+- 8-second excerpts taken from the same spot of both sources;
+- LOUDNESS MATCHING: every excerpt is normalized to a common RMS
+  (−20 dBFS by default) so the level difference (ours is −5…−6 dB below the
+  original) does not give the answer away;
+- random A/B order + cipher map in abx_map.json.
 
   python3 scripts/abx_blind.py --ours <dir> --orig <image.flac|cue> --cue <cue> \
       --tracks 1,4,9 --out /media/.../abx/blind-ross
@@ -26,12 +26,12 @@ TARGET_RMS_DB = -20.0
 
 
 def loudest_window(x: np.ndarray, sr: int, sec: float) -> float:
-    """Начало самого громкого окна длиной sec (для показательного эксцерта)."""
+    """Start of the loudest window of length sec (for the showcase excerpt)."""
     n = x.shape[0]
     win = int(sec * sr)
     if n <= win:
         return 0.0
-    step = sr  # 1 c
+    step = sr  # 1 s
     starts = list(range(0, n - win, step))
     r = [float(np.mean(x[s:s + win] ** 2)) for s in starts]
     return starts[int(np.argmax(r))] / sr
@@ -48,12 +48,12 @@ def norm_rms(y: np.ndarray, target_db: float = TARGET_RMS_DB) -> np.ndarray:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ours", required=True)
-    ap.add_argument("--orig", required=True, help="image FLAC или каталог треков")
+    ap.add_argument("--orig", required=True, help="image FLAC or a directory of tracks")
     ap.add_argument("--cue", default="")
-    ap.add_argument("--tracks", default="", help="номера через запятую; пусто = все")
+    ap.add_argument("--tracks", default="", help="comma-separated track numbers; empty = all")
     ap.add_argument("--out", required=True)
     ap.add_argument("--seconds", type=float, default=8.0)
-    ap.add_argument("--spots", default="loud,mid", help="loud|mid через запятую")
+    ap.add_argument("--spots", default="loud,mid", help="comma-separated loud|mid")
     args = ap.parse_args()
 
     ours_dir = Path(args.ours)
@@ -87,9 +87,9 @@ def main() -> int:
     for ti in trks:
         o_f = next(ours_dir.glob(f"{ti:02d}*.flac"), None)
         if not o_f:
-            print(f"t{ti}: нет нашего файла")
+            print(f"t{ti}: our file not found")
             continue
-        # опорная точка — по оригиналу
+        # reference point — from the original
         if bounds_of is not None:
             st, en = bounds_of[ti]
             xwhole, sr = grab(ti, st / 44100, (en - st) / 44100)
@@ -107,7 +107,7 @@ def main() -> int:
             if x is None or y is None:
                 continue
             x = norm_rms(x); y = norm_rms(y)
-            # референс-оригинал (можно слушать заранее, не для угадывания)
+            # reference original (can be auditioned beforehand, not for guessing)
             x16 = np.clip(np.round(x * 32768.0), -32768, 32767).astype(np.int16)
             encode_flac(x16, sx, out_dir / f"REF_t{ti:02d}_{spot}.flac", out_dir / "__tmp.wav")
             ours_is_a = rand.random() < 0.5
@@ -118,10 +118,10 @@ def main() -> int:
                 encode_flac(a16, sx, out_dir / name, out_dir / "__tmp.wav")
                 seg[tag] = {"file": name, "is_ours": (tag == "A" and ours_is_a) or (tag == "B" and not ours_is_a)}
             amap[f"t{ti:02d}_{spot}"] = {"title": titles.get(ti, "?"), "t0_s": round(t0, 2), "ab": seg}
-        print(f"t{ti:>2} {titles.get(ti,'?')[:40]}: эксцерты {len(spots)}×{args.seconds:.0f}с", flush=True)
+        print(f"t{ti:>2} {titles.get(ti,'?')[:40]}: excerpts {len(spots)}×{args.seconds:.0f}s", flush=True)
     with open(out_dir / "abx_map.json", "w", encoding="utf-8") as f:
         json.dump(amap, f, ensure_ascii=False, indent=1)
-    print(f"-> {out_dir} (карта: abx_map.json)")
+    print(f"-> {out_dir} (map: abx_map.json)")
     return 0
 
 

@@ -1,13 +1,13 @@
-"""Деклип: AR-экстраполяция blended forward+backward на клиповых runs.
+"""Declip: blended forward+backward AR extrapolation over clipped runs.
 
-Подход: автофуга сторон по соседям каждого клипованного run'а продлевает
-предсказание слева и справа; смешение линейно по позиции. Короткие runs
-(2–150 семплов) восстанавливаются с минимумом HF-артефактов.
+Approach: AR fits on the neighbors of each clipped run extend the prediction
+left and right; blending is linear by position. Short runs (2-150 samples)
+are repaired with minimal HF artifacts.
 """
 import numpy as np
 from scipy.linalg import solve_toeplitz
 
-CLIP_THRESH = 32766  # порог детекции на 16-bit int
+CLIP_THRESH = 32766  # detection threshold on 16-bit int
 
 
 def _ar_coeffs(context: np.ndarray, order: int) -> np.ndarray:
@@ -19,7 +19,7 @@ def _ar_coeffs(context: np.ndarray, order: int) -> np.ndarray:
     if order < 2:
         return np.zeros(1)
     a = solve_toeplitz(r[:order], r[1:order + 1])
-    # знаменатель полином: y[n] + Σ a_k y[n-k] = 0 → рекурсия y[n] = -Σ a_k y[n-k]
+    # characteristic polynomial: y[n] + sum a_k y[n-k] = 0 -> recursion y[n] = -sum a_k y[n-k]
     return a
 
 
@@ -54,7 +54,7 @@ def _extract_runs(clipped: np.ndarray) -> list[tuple[int, int]]:
 
 
 def declip_track(x16: np.ndarray) -> tuple[np.ndarray, int]:
-    """x16: int16 [n,2] с клипами → восстановленный int16 [n,2], + объём правок."""
+    """x16: int16 [n,2] with clips -> repaired int16 [n,2], plus the number of edited samples."""
     y = x16.copy()
     n_fills = 0
     for ch in (0, 1):
@@ -76,7 +76,7 @@ def declip_track(x16: np.ndarray) -> tuple[np.ndarray, int]:
             bwd = _ar_extrapolate(post, a_post, L, backward=True)
             w = np.linspace(1.0, 0.0, L + 2)[1:-1]
             fill = (w * fwd + (1 - w) * bwd)
-            # анти-вывод: слегка «укороченные» пики, чтобы не переклать 0 dBFS
+            # anti-overshoot: slightly "shortened" peaks so nothing goes above 0 dBFS
             fill = np.clip(fill, -32768.0, 32767.0).astype(np.int16)
             y[s0:e0, ch] = fill
             n_fills += L

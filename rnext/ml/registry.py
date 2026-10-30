@@ -1,14 +1,14 @@
-"""Версионирование датасета и снапшоты моделей.
+"""Dataset versioning and model snapshots.
 
-Идея: у каждой модели в метаданных лежит **версия датасета**, на которой она
-обучена (`ds-<хэш>` + счётчики), поэтому «какая модель на каких данных» и
-«что изменилось между снапшотами» восстанавливается однозначно.
+Idea: each model's metadata carries the **dataset version** it was trained on
+(`ds-<hash>` + counters), so "which model on which data" and "what changed
+between snapshots" can be reconstructed unambiguously.
 
-Где что лежит:
-  * снапшоты (модель + мета) — на флешке рядом с датасетом:
-    `dataset/models/<model_id>/` (чтобы не забивать /home и жить с данными);
-  * индекс-реестр (текстовый, маленький) — в репозитории: `models/registry.jsonl`,
-    он же источник для лидерборда.
+What lives where:
+  * snapshots (model + meta) — on the USB drive next to the dataset:
+    `dataset/models/<model_id>/` (keeps /home uncluttered, stays with the data);
+  * the index registry (text, small) — in the repo: `models/registry.jsonl`,
+    also the source for the leaderboard.
 """
 import hashlib
 import json
@@ -26,7 +26,7 @@ def dataset_dir() -> Path:
 
 
 def models_dir() -> Path:
-    """Снапшоты — В РЕПОЗИТОРИИ: откат на любой коммит должен давать рабочую модель."""
+    """Snapshots live IN THE REPO: a checkout of any commit must yield a working model."""
     p = Path(__file__).resolve().parents[2] / "models" / "snapshots"
     p.mkdir(parents=True, exist_ok=True)
     return p
@@ -47,7 +47,7 @@ def git_commit() -> str:
         return "unknown"
 
 
-# --- версия датасета --------------------------------------------------------
+# --- dataset version --------------------------------------------------------
 def _read_plan() -> list[dict]:
     p = workspace.dir_of("corpus") / "dataset_plan.jsonl"
     if not p.is_file():
@@ -56,7 +56,7 @@ def _read_plan() -> list[dict]:
 
 
 def compute_dataset_version() -> dict:
-    """Хэшируем СОСТАВ датасета (ключи пар + содержимое фич + метки), не mtime."""
+    """Hash the dataset COMPOSITION (pair keys + feature contents + labels), not mtimes."""
     q = dataset_dir() / "reference_quality.jsonl"
     labels = {}
     if q.is_file():
@@ -86,7 +86,7 @@ def compute_dataset_version() -> dict:
             meta = d.parent / "meta.json"
             if meta.is_file():
                 au = json.loads(meta.read_text(encoding="utf-8")).get("author_pid")
-            if not au:                     # у ранних пар автора нет в мете — берём из плана
+            if not au:                     # early pairs have no author in meta — take it from the plan
                 plan = P.get(key) or {}
                 au = plan.get("author_pid")
             au = str(au)
@@ -108,8 +108,8 @@ def write_manifest() -> dict:
     (dataset_dir() / "manifest.json").write_text(
         json.dumps({**full, "items": m["items"]}, ensure_ascii=False, indent=1),
         encoding="utf-8")
-    # копию манифеста (с пофайловыми sha1) — в репозиторий: она и есть паспорт
-    # версии датасета, по которому воспроизводится любой снапшот
+    # copy the manifest (with per-file sha1s) into the repo: it is the passport
+    # of the dataset version from which any snapshot can be reproduced
     (manifests_dir() / f"{m['version']}.json").write_text(
         json.dumps(m, ensure_ascii=False, indent=1), encoding="utf-8")
     hist = dataset_dir() / "versions.jsonl"
@@ -129,7 +129,7 @@ def current_version() -> dict:
     return write_manifest()
 
 
-# --- снапшоты моделей -------------------------------------------------------
+# --- model snapshots --------------------------------------------------------
 def snapshot_id(model: str, target: str, ds_version: str) -> str:
     stamp = time.strftime("%Y%m%d-%H%M%S")
     return f"{model}-{target}-{ds_version}-{stamp}"
@@ -145,8 +145,9 @@ def save_snapshot(model_obj, meta: dict, model_id: str) -> Path:
                                  encoding="utf-8")
     REGISTRY.parent.mkdir(parents=True, exist_ok=True)
     with open(REGISTRY, "a", encoding="utf-8") as f:
-        # promote и вердикт гейта ОБЯЗАТЕЛЬНЫ в реестре: без них рантайм не видит
-        # прошедших гейт на свежем датасете и откатывается на старую модель
+        # promote and the gate verdict are REQUIRED in the registry: without
+        # them the runtime cannot see gate-passing models on a fresh dataset
+        # and rolls back to the old model
         f.write(json.dumps({k: meta.get(k) for k in
                             ("model_id", "model", "target", "dataset_version",
                              "n_train", "n_hold", "holdout_mode", "metrics",
@@ -159,7 +160,7 @@ def load_snapshot(model_id: str):
     import joblib
     d = models_dir() / model_id
     if not d.is_dir():
-        raise FileNotFoundError(f"нет снапшота {model_id}")
+        raise FileNotFoundError(f"no snapshot {model_id}")
     return joblib.load(d / "model.joblib"), json.loads((d / "meta.json").read_text(encoding="utf-8"))
 
 
@@ -169,18 +170,19 @@ def list_snapshots() -> list[dict]:
     return [json.loads(l) for l in REGISTRY.read_text(encoding="utf-8").splitlines() if l.strip()]
 
 
-# Порядок предпочтения для рантайма: сначала устойчивые модели, knn — последним
-# (он лучше всех на by-album, но это запоминание: train-ошибка 0, и на кросс-
-# авторном сплите он теряет больше всех).
+# Preference order for the runtime: stable models first, knn last (it is the
+# best on by-album, but that is memorization: train error 0, and on the
+# cross-author split it loses the most).
 MODEL_PREFERENCE = ("ridge", "hgb", "hgbq", "conformal", "table", "knn")
 
 
 def latest_snapshot(model: str | None = None, target: str = "dcrest",
                     promoted_only: bool = True) -> str | None:
-    """Свежий снапшот. По умолчанию — только ПРОШЕДШИЙ ГЕЙТ.
+    """Latest snapshot. By default only GATE-PASSING ones.
 
-    Иначе рантайм брал бы последнюю записанную модель, а ею может оказаться
-    кросс-авторный сплит, который гейт не пропустил (и который хуже базы).
+    Otherwise the runtime would take the last recorded model, which may be a
+    cross-author split the gate did not pass (and which is worse than the
+    baseline).
     """
     rows = [r for r in list_snapshots() if r["target"] == target
             and (model is None or r["model"] == model)]
@@ -191,11 +193,11 @@ def latest_snapshot(model: str | None = None, target: str = "dcrest",
         rows = ok
     if not rows:
         return None
-    # рантайм обслуживает незнакомые альбомы, поэтому смотрим сплит by-album
+    # the runtime serves unseen albums, so prefer the by-album split
     album = [r for r in rows if r.get("holdout_mode") == "by-album"]
     rows = album or rows
-    # 1) свежая версия датасета (больше данных), 2) лучшая медиана, 3) порядок моделей
-    # (knn на равных не должен выигрывать за счёт запоминания)
+    # 1) newest dataset version (more data), 2) best median, 3) model order
+    # (knn must not win ties through memorization)
     newest = max(r.get("saved") or 0 for r in rows)
     ver = max((r.get("dataset_version") or "" for r in rows
                if (r.get("saved") or 0) == newest), default="")

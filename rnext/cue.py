@@ -1,12 +1,12 @@
-"""CUE-парсер: границы треков в целых семплах (75 fps)._ всі"""
+"""CUE parser: track boundaries in integer samples (75 fps)."""
 
 
 def parse_cue(path: str, file_key: str | None = None) -> list[dict]:
-    """Список треков cue: {n, title, start_s (в 75fps секундах), performer}.
+    """List of cue tracks: {n, title, start_s (in 75fps seconds), performer}.
 
-    INDEX 01 mm:ss:ff — старт трека; ff — CD-кадры (1/75 s).
-    Баланс FILE-строк игнорируется, если file_key задан: берём только того же файла.
-    file_key пути (baseнame) файла формата image.
+    INDEX 01 mm:ss:ff — track start; ff — CD frames (1/75 s).
+    When file_key is given, other FILE blocks are ignored: only tracks of the
+    same file are taken. file_key is the basename of the image-format file.
     """
     out = []
     cur_file = None
@@ -38,7 +38,7 @@ def parse_cue(path: str, file_key: str | None = None) -> list[dict]:
 
 
 def track_bounds(cue_tracks: list[dict], total_samples: int, sr: int = 44100) -> list[tuple[int, int]]:
-    """Слайды [start, end) в семплах (end = старта следующего, до конца файла)."""
+    """Slices [start, end) in samples (end = start of the next track, up to end of file)."""
     starts = [int(round(t["start_frames"] / 75.0 * sr)) for t in cue_tracks]
     ends = starts[1:] + [total_samples]
     return list(zip(starts, ends))

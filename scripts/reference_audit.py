@@ -1,28 +1,28 @@
 #!/usr/bin/env python3
-"""Аудит референсов: можно ли доверять мастеру как эталону для этой пары.
+"""Reference audit: can the master be trusted as the target for this pair.
 
-Проблема: мастера не идеальны, часть работ — «радикальная переработка»
-(перелёт по кресту, EQ-перекос, схлопнутая стереобаза). Имитировать такое
-нельзя, поэтому каждая пара получает метку:
+Problem: masters are not perfect, some jobs are "radical reworks"
+(crest overshoot, EQ skew, collapsed stereo base). Imitating that is wrong,
+so each pair gets a label:
 
-    trusted   — дельты в физичной полосе, артефактов нет  → идёт в статистику цели
-    suspect   — пограничные значения, нет артефактов      → в цель не идёт, для слуха остаётся
-    radical   — перелёт/перекос явно выходит за полосу    → НЕГАТИВНЫЙ пример (верхняя скобка)
-    bad_ref   — мастер сам внёс клиппинг/поднял тишину    → исключается полностью
-    weak_base — мало пар у автора, оценка только по абсолютным правилам
+    trusted   — deltas within the physical band, no artifacts  → goes into target stats
+    suspect   — borderline values, no artifacts                → excluded from the target, kept for listening
+    radical   — crest/tilt clearly outside the band            → NEGATIVE example (upper bracket)
+    bad_ref   — the master itself added clipping/raised noise  → excluded entirely
+    weak_base — few pairs by this author, scored by absolute rules only
 
-Метрики пары (медианы по loud-трекам, healthy-треки не в счёт):
+Pair metrics (medians over loud tracks, healthy tracks don't count):
 
-    dcrest          Δcrest мастера относительно оригинала (главная цель)
-    peak            пик мастера, dBFS
-    tilt            наклон спектра: верх (2…8 кГц) минус низ (125…500 Гц), дБ
-    added_clip      вклад мастера в клиппинг, сэмплов
-    tp_overshoot    прирост межсэмплового пика (TP − сэмпл-пик), дБ
-    attack_delta    изменение плотности атак (транзиентность), 1/с
-    side_delta      изменение ширины стерео (side/mid), дБ
+    dcrest          master Δcrest relative to the original (the main target)
+    peak            master peak, dBFS
+    tilt            spectral tilt: high (2…8 kHz) minus low (125…500 Hz), dB
+    added_clip      the master's contribution to clipping, samples
+    tp_overshoot    intersample peak growth (TP − sample peak), dB
+    attack_delta    change in attack density (transientness), 1/s
+    side_delta      change in stereo width (side/mid), dB
 
-  python3 scripts/reference_audit.py            # пересчитать и записать
-  python3 scripts/reference_audit.py --report   # распределения и флаги
+  python3 scripts/reference_audit.py            # recompute and write
+  python3 scripts/reference_audit.py --report   # distributions and flags
 """
 import argparse
 import json
@@ -35,23 +35,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rnext import workspace  # noqa: E402
 
-# полосы 1/3-окт от 20 Гц: индексы для «низа» и «верха»
-LOW_BANDS = slice(7, 14)      # ~125–500 Гц
-HIGH_BANDS = slice(21, 28)    # ~2–8 кГц
+# 1/3-oct bands from 20 Hz: indices for "low" and "high"
+LOW_BANDS = slice(7, 14)      # ~125–500 Hz
+HIGH_BANDS = slice(21, 28)    # ~2–8 kHz
 
-DCREST_OK = (2.0, 7.0)        # общая полоса (для раздавленного материала)
+DCREST_OK = (2.0, 7.0)        # general band (for crushed material)
 DCREST_RADICAL = 8.0
 TILT_OK = 3.0
 TILT_RADICAL = 5.0
-HEALTHY_DR = 12               # такие треки в статистику не берём
+HEALTHY_DR = 12               # such tracks are not taken into the stats
 
-# ожидаемая полоса Δcrest ЗАВИСИТ от класса исходника: на уже динамичном
-# материале мастер сам почти не трогает крест (Aerosmith t1: Δ −0.8 при DR 12),
-# поэтому «Δcrest ≈ 0» там — норма, а не повод к подозрению.
+# the expected Δcrest band DEPENDS on the source class: on already dynamic
+# material the master barely touches the crest itself (Aerosmith t1: Δ −0.8 at DR 12),
+# so "Δcrest ≈ 0" there is normal, not a reason for suspicion.
 BAND_BY_CLASS = {
-    "crushed": (3.0, 8.0),    # исходник DR < 9 — ждём заметного раскрытия
-    "mid": (0.0, 6.0),        # 9–11 — зона правил мастера неизвестна, полоса широкая
-    "healthy": (-1.5, 1.5),   # ≥ 12 — мастер прозрачен
+    "crushed": (3.0, 8.0),    # source DR < 9 — expect a noticeable expansion
+    "mid": (0.0, 6.0),        # 9–11 — the master's rules are unknown, wide band
+    "healthy": (-1.5, 1.5),   # ≥ 12 — the master is transparent
 }
 
 
@@ -66,7 +66,7 @@ def read_jsonl(p: Path) -> list[dict]:
 
 
 def plan_index() -> dict[str, dict]:
-    """author_pid и год берём из плана: в журнале загрузок их может не быть."""
+    """author_pid and year come from the plan: the download journal may lack them."""
     out = {}
     p = workspace.dir_of("corpus") / "dataset_plan.jsonl"
     if p.is_file():
@@ -177,7 +177,7 @@ def label_of(st: dict, z: float | None, weak_base: bool) -> tuple[str, list[str]
     lo, hi = BAND_BY_CLASS[st["src_class"]]
     suspect = []
     if not (lo <= st["dcrest"] <= hi):
-        suspect.append(f"dcrest={st['dcrest']} вне полосы {st['src_class']} [{lo}..{hi}]")
+        suspect.append(f"dcrest={st['dcrest']} outside the {st['src_class']} band [{lo}..{hi}]")
     if abs(st["tilt"]) > TILT_OK:
         suspect.append(f"tilt={st['tilt']}")
     if z is not None and z > 3.0:
@@ -192,7 +192,7 @@ def build() -> int:
     PLAN = plan_index()
     pairs = load_pairs()
     if not pairs:
-        print("пар с фичами нет — сначала dataset_extract")
+        print("no pairs with features — run dataset_extract first")
         return 1
     stats = {k: pair_stats(v["rows"]) for k, v in pairs.items()}
     by_author: dict[str, list[float]] = defaultdict(list)
@@ -216,11 +216,11 @@ def build() -> int:
     with open(out, "w", encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    print(f"аудит: {len(rows)} пар → {out}")
-    print("метки:", dict(Counter(r["label"] for r in rows)))
+    print(f"audit: {len(rows)} pairs → {out}")
+    print("labels:", dict(Counter(r["label"] for r in rows)))
     for r in rows:
         flags = ",".join(r["reasons"]) if r["reasons"] else ""
-        print(f"  {r['label']:<9} DRвх {r['src_dr']:>2} dcrest {r['dcrest']:>5} tilt {r['tilt']:>6} "
+        print(f"  {r['label']:<9} DRin {r['src_dr']:>2} dcrest {r['dcrest']:>5} tilt {r['tilt']:>6} "
               f"peak {r['peak']:>6} clip+{r['added_clip']:<3} "
               f"{str(r['artist'])[:18]:<18} {str(r['album'])[:24]:<24} {flags}")
     return 0
@@ -229,17 +229,17 @@ def build() -> int:
 def report() -> int:
     rows = read_jsonl(dataset_dir() / "reference_quality.jsonl")
     if not rows:
-        print("нет аудита — запустите без --report")
+        print("no audit yet — run without --report")
         return 1
-    print(f"пар: {len(rows)}; метки:", dict(Counter(r["label"] for r in rows)))
+    print(f"pairs: {len(rows)}; labels:", dict(Counter(r["label"] for r in rows)))
     for a in sorted({str(r["author_pid"]) for r in rows}):
         sub = [r for r in rows if str(r["author_pid"]) == a]
         dc = [r["dcrest"] for r in sub]
         til = [r["tilt"] for r in sub]
-        print(f"автор {a}: пар {len(sub)} | Δcrest медиана {S.median(dc):.2f} "
-              f"(разброс {min(dc):.2f}..{max(dc):.2f}) | тилт медиана {S.median(til):.2f} "
-              f"(разброс {min(til):.2f}..{max(til):.2f})")
-        print(f"   доверенных {sum(1 for r in sub if r['label'] == 'trusted')}/"
+        print(f"author {a}: pairs {len(sub)} | Δcrest median {S.median(dc):.2f} "
+              f"(range {min(dc):.2f}..{max(dc):.2f}) | tilt median {S.median(til):.2f} "
+              f"(range {min(til):.2f}..{max(til):.2f})")
+        print(f"   trusted {sum(1 for r in sub if r['label'] == 'trusted')}/"
               f"{sum(1 for r in sub if r['label'] != 'bad_ref')}")
     return 0
 

@@ -1,55 +1,56 @@
 ---
 name: audio-measure
-description: Измерить качество и подлинность аудио — DR (TT-конвенция), LUFS, true peak, клиппинг, битность/частоту, фейковый hi-res и lossy-транскод во FLAC. Использовать, когда просят «замерь DR», «какое качество у файла/альбома», «это настоящий lossless?», «не апконверт ли», «сравни версии по качеству», «проверь громкость/пики», или как шаг перед выбором версии релиза и перед реставрацией.
+description: Measure audio quality and authenticity — DR (TT convention), LUFS, true peak, clipping, bit depth/sample rate, fake hi-res and lossy-transcoded-to-FLAC. Use when asked to "measure DR", "what's the quality of this file/album", "is this real lossless?", "is it an upconvert?", "compare versions by quality", "check loudness/peaks", or as a step before picking a release version and before restoration. Do NOT use for finding or downloading releases (that's tracker) or for running the restoration itself (release-restore).
 ---
 
-# audio-measure: качество и подлинность аудио
+# audio-measure: audio quality and authenticity
 
-Один скрипт, один ответ на вопрос «что это за файл на самом деле».
+One script, one answer to the question "what is this file, really".
 
 ```bash
-python3 ~/Desktop/projects/music-restoration/scripts/audio_measure.py <файл|каталог> [...]
-python3 ~/Desktop/projects/music-restoration/scripts/audio_measure.py --json out.json <каталог>
-python3 ~/Desktop/projects/music-restoration/scripts/audio_measure.py --quick <каталог>   # без спектра/LUFS
+python3 ~/Desktop/projects/music-restoration/scripts/audio_measure.py <file|dir> [...]
+python3 ~/Desktop/projects/music-restoration/scripts/audio_measure.py --json out.json <dir>
+python3 ~/Desktop/projects/music-restoration/scripts/audio_measure.py --quick <dir>   # no spectrum/LUFS
 ```
 
-Печатает таблицу: формат (частота/битность), DR, crest, LUFS, TP, спектральный
-срез и вердикт. `--json` добавляет машинный вывод (все поля, включая `hf_floor_db`).
+Prints a table: format (sample rate/bit depth), DR, crest, LUFS, TP, spectral
+cutoff and a verdict. `--json` adds machine-readable output (all fields,
+including `hf_floor_db`).
 
-## Что означают поля
+## What the fields mean
 
-| поле | смысл |
+| field | meaning |
 |---|---|
-| `dr` | DR в **TT-конвенции** (peak − RMS по блокам), та же метрика, что в корпусе реставрации. Не путать с foobar DR: числа близки, но не идентичны |
-| `crest_tt` | peak − RMS по всему файлу |
-| `lufs_i` | интегральная громкость (EBU R128) — «насколько громко» |
-| `tp_dbfs` | true peak: **выше 0 dBFS означает интерсэмпловые пики**, обычное дело для убитых мастерингов |
-| `cutoff_hz` | последняя частота, где спектр ещё в пределах 55 дБ от пика |
-| `hf_floor_db` | медиана спектра **выше** среза относительно полосы 1–10 кГц. Это и есть детектор «стены» |
-| `clipped_pct` | доля сэмплов на пределе |
-| `fake_hires` | заявлено >44.1 кГц, а контента выше 22 кГц нет |
-| `lossy_suspect` | срез ниже 19 кГц **и** пол выше среза < −75 дБ (настоящая «стена») |
+| `dr` | DR in the **TT convention** (peak − RMS per blocks), the same metric as in the restoration corpus. Do not confuse with foobar DR: the numbers are close but not identical |
+| `crest_tt` | peak − RMS over the whole file |
+| `lufs_i` | integrated loudness (EBU R128) — "how loud" |
+| `tp_dbfs` | true peak: **above 0 dBFS means intersample peaks**, common for crushed masterings |
+| `cutoff_hz` | the last frequency where the spectrum is still within 55 dB of the peak |
+| `hf_floor_db` | median of the spectrum **above** the cutoff relative to the 1–10 kHz band. This is the "wall" detector |
+| `clipped_pct` | share of samples at full scale |
+| `fake_hires` | claims >44.1 kHz, but there is no content above 22 kHz |
+| `lossy_suspect` | cutoff below 19 kHz **and** floor above the cutoff < −75 dB (a real "wall") |
 
-## Как читать (и чего не делать)
+## How to read it (and what not to do)
 
-- **`lossy_suspect` — флаг для проверки, а не приговор.** Тёмный или сильно
-  лимитированный мастер тоже даёт низкий срез, но не даёт «стены» (пол выше
-  среза остаётся −30…−40 дБ). Ложные срабатывания отсекаются именно полом.
-  Проверено на контрольном транскоде: lossless-источник −35 дБ (чисто),
-  MP3 192k → FLAC −84 дБ (поймано).
-- **DR ≤ 6 — «сильно убит»**, 7–9 — плотный, ≥11 — здоровый. Это не оценка
-  «плохо/хорошо», а указание, нужна ли реставрация.
-- **TP > 0 dBFS не значит клиппинг файла**: это интерсэмпловые пики, которые
-  слышны как жёсткость. Наша реставрация приводит TP к −0.5 дБ.
-- **`--quick` пропускает спектр и LUFS** — для больших библиотек; DR и клиппинг
-  считаются всегда.
-- Длинные файлы декодируются первые 90 с (DR по фрагменту) — для альбомов
-  этого достаточно, для «проверить конкретный трек» тоже.
+- **`lossy_suspect` is a flag to verify, not a verdict.** A dark or heavily
+  limited master also gives a low cutoff, but no "wall" (the floor above the
+  cutoff stays at −30…−40 dB). False positives are ruled out precisely by the
+  floor. Verified on a control transcode: lossless source −35 dB (clean),
+  MP3 192k → FLAC −84 dB (caught).
+- **DR ≤ 6 — "heavily crushed"**, 7–9 — dense, ≥11 — healthy. This is not a
+  "bad/good" judgement, but an indication of whether restoration is needed.
+- **TP > 0 dBFS does not mean the file clips**: these are intersample peaks,
+  audible as harshness. Our restoration brings TP to −0.5 dB.
+- **`--quick` skips the spectrum and LUFS** — for large libraries; DR and
+  clipping are always computed.
+- Long files are decoded for the first 90 s (DR on the fragment) — enough for
+  albums, and for "check this specific track" too.
 
-## Грабли
+## Pitfalls
 
-- **Битность берётся из `bps` ffprobe**, не из `bits` — иначе выводится `?`.
-- **LUFS/TP парсятся из ПОСЛЕДНЕГО блока сводки ffmpeg**: `Integrated loudness`
-  и `True peak` идут в разных местах вывода, «Peak:» встречается несколько раз.
-- Сравнивать версии по DR имеет смысл только на **одном и том же материале**:
-  разные мастеринги одного альбома дают разный DR при одинаковой громкости.
+- **Bit depth is taken from ffprobe's `bps`, not from `bits`** — otherwise the output shows `?`.
+- **LUFS/TP are parsed from the LAST summary block of ffmpeg**: `Integrated loudness`
+  and `True peak` appear in different places in the output, and `Peak:` occurs several times.
+- Comparing versions by DR only makes sense on the **same material**:
+  different masterings of one album give different DR at the same loudness.

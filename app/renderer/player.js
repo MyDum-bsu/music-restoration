@@ -1,14 +1,14 @@
-// Логика плеера: синхронное переключение вариантов на той же позиции,
-// слепые метки, рейтинг, сохранение в ratings.json через IPC.
+// Player logic: switching variants in sync at the same playback position,
+// blind labels, rating, saving to ratings.json via IPC.
 
 const el = (id) => document.getElementById(id);
-const NAME_RU = { original: "оригинал", master: "мастер", ours: "наше" };
+const NAME_RU = { original: "original", master: "master", ours: "ours" };
 
 const state = {
   pack: null,          // pack.json + dir
   dir: null,
   index: 0,
-  current: null,       // буква активного варианта
+  current: null,       // letter of the active variant
   ratings: {},
   loop: true,
   ready: false,
@@ -17,21 +17,21 @@ const state = {
 let audio = new Audio();
 audio.preload = 'auto';
 
-// --- загрузка пака ---------------------------------------------------------
+// --- loading a pack --------------------------------------------------------
 async function openPack(dir) {
   const pack = await window.api.loadPack(dir);
   state.pack = pack;
   state.dir = dir;
   state.index = 0;
   state.ratings = (await window.api.loadRatings(dir)).ratings || {};
-  el('packInfo').textContent = `${pack.name} · ${pack.n_items} элементов · цели ${pack.target_lufs} LUFS` +
-    (pack.has_ours ? ' · есть наш вариант' : ' · без нашего варианта');
-  console.log('[listen] пак загружен:', dir, pack.n_items, 'элементов');
+  el('packInfo').textContent = `${pack.name} · ${pack.n_items} items · target ${pack.target_lufs} LUFS` +
+    (pack.has_ours ? ' · our variant included' : ' · no "ours" variant');
+  console.log('[listen] pack loaded:', dir, pack.n_items, 'items');
   renderList();
   select(0);
 }
 
-// --- список элементов ------------------------------------------------------
+// --- item list -------------------------------------------------------------
 function renderList() {
   const ol = el('items');
   ol.innerHTML = '';
@@ -52,7 +52,7 @@ function updateProgress() {
   el('progress').textContent = `${done} / ${state.pack.items.length}`;
 }
 
-// --- выбор элемента --------------------------------------------------------
+// --- selecting an item -----------------------------------------------------
 function select(i) {
   state.index = i;
   const it = state.pack.items[i];
@@ -70,8 +70,8 @@ function select(i) {
     const div = document.createElement('button');
     div.className = 'variant';
     div.id = `variant-${L}`;
-    div.innerHTML = `<div class="key">вариант ${L}</div><div class="name">${L}</div>
-      <div class="meta">${f.lufs ?? '—'} LUFS · ${f.gain_db} дБ</div>`;
+    div.innerHTML = `<div class="key">variant ${L}</div><div class="name">${L}</div>
+      <div class="meta">${f.lufs ?? '—'} LUFS · ${f.gain_db} dB</div>`;
     div.onclick = () => switchTo(L);
     box.appendChild(div);
   });
@@ -81,13 +81,13 @@ function select(i) {
   rb.innerHTML = '';
   labels.forEach((L) => {
     const b = document.createElement('button');
-    b.textContent = `${L} лучше`;
+    b.textContent = `${L} is better`;
     b.onclick = () => rate(L);
     if (r.choice === L) b.classList.add('toggled');
     rb.appendChild(b);
   });
   const eq = document.createElement('button');
-  eq.textContent = 'одинаково';
+  eq.textContent = 'equal';
   eq.onclick = () => rate('equal');
   if (r.choice === 'equal') eq.classList.add('toggled');
   rb.appendChild(eq);
@@ -96,16 +96,16 @@ function select(i) {
   switchTo(labels[0], true);
   el('reveal').textContent = r.choice ? revealText(it) : '';
   el('levelNote').textContent =
-    `Громкость всех вариантов приведена к ${state.pack.target_lufs} LUFS — разница уровней не подскажет ответ.`;
+    `All variants are loudness-matched to ${state.pack.target_lufs} LUFS — level differences will not give the answer away.`;
 }
 
 function revealText(it) {
-  return 'Ответ: ' + Object.keys(it.labels).map((L) => `${L} = ${NAME_RU[it.labels[L]] || it.labels[L]}`).join(', ');
+  return 'Answer: ' + Object.keys(it.labels).map((L) => `${L} = ${NAME_RU[it.labels[L]] || it.labels[L]}`).join(', ');
 }
 
-// --- переключение варианта с сохранением позиции ---------------------------
+// --- switching variants while keeping the position --------------------------
 function switchTo(L, first = false) {
-  console.log('[listen] вариант', L, '→', state.pack.items[state.index].files[L].file);
+  console.log('[listen] variant', L, '→', state.pack.items[state.index].files[L].file);
   const it = state.pack.items[state.index];
   const wasPlaying = !audio.paused;
   const pos = first ? 0 : audio.currentTime;
@@ -123,10 +123,10 @@ function switchTo(L, first = false) {
   });
 }
 
-// --- транспорт -------------------------------------------------------------
+// --- transport -------------------------------------------------------------
 function toggle() {
   if (audio.paused) { audio.play(); } else { audio.pause(); }
-  el('btnPlay').textContent = audio.paused ? '▶ Играть' : '❚❚ Пауза';
+  el('btnPlay').textContent = audio.paused ? '▶ Play' : '❚❚ Pause';
 }
 
 function updateTime() {
@@ -138,8 +138,8 @@ function updateTime() {
 }
 
 audio.addEventListener('timeupdate', updateTime);
-audio.addEventListener('play', () => { el('btnPlay').textContent = '❚❚ Пауза'; });
-audio.addEventListener('pause', () => { el('btnPlay').textContent = '▶ Играть'; });
+audio.addEventListener('play', () => { el('btnPlay').textContent = '❚❚ Pause'; });
+audio.addEventListener('pause', () => { el('btnPlay').textContent = '▶ Play'; });
 audio.addEventListener('ended', () => { if (state.loop && state.ready) { audio.currentTime = 0; audio.play(); } });
 
 el('seek').addEventListener('input', (e) => {
@@ -147,7 +147,7 @@ el('seek').addEventListener('input', (e) => {
   audio.currentTime = (e.target.value / 1000) * (audio.duration || 0);
 });
 
-// --- рейтинг ---------------------------------------------------------------
+// --- rating ----------------------------------------------------------------
 async function rate(choice) {
   const it = state.pack.items[state.index];
   const payload = { labels: it.labels, choice, variant: state.current, key: it.key };
@@ -158,7 +158,7 @@ async function rate(choice) {
   renderList();
 }
 
-// --- горячие клавиши -------------------------------------------------------
+// --- hotkeys ---------------------------------------------------------------
 document.addEventListener('keydown', (e) => {
   if (!state.pack) return;
   const labels = Object.keys(state.pack.items[state.index].labels);

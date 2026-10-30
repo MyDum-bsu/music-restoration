@@ -5,7 +5,7 @@ const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const main = () => $("#main");
 
-const AUTHOR = { "5618698": "Лисной Йожыг", "3048819": "Alias Divas" };
+const AUTHOR = { "5618698": "Lisnoy Yozhyg", "3048819": "Alias Divas" };
 
 /* Chart colours come from CSS so they follow the active theme. */
 function cssVar(name) {
@@ -141,8 +141,8 @@ async function viewHome() {
   const ev = (d.audio_evals || []).slice(-1)[0] || null;
   const evs = ev && ev.variants ? ev.variants : {};
 
-  // относительные величины: человеку не нужно знать, что такое дБ,
-  // чтобы понять «закрывает 84% разрыва» и «попадает в половину дБ в 38% случаев»
+  // relative values: a person does not need to know what dB is
+  // to grasp "closes 84% of the gap" and "lands within half a dB 38% of the time"
   const err = m.median_abs ?? null;
   const noop = m.baseline_noop ?? null;
   const gapClosed = (err != null && noop) ? Math.round((1 - err / noop) * 100) : null;
@@ -300,7 +300,7 @@ async function viewDataset() {
   <div class="filters">
     <input type="search" id="q" placeholder="Filter by artist, album or year">
     <select id="f-class"><option value="">All conditions</option>${cls.map(c => `<option>${c}</option>`).join("")}</select>
-    <select id="f-author"><option value="">Both engineers</option><option value="5618698">Лисной Йожыг</option><option value="3048819">Alias Divas</option></select>
+    <select id="f-author"><option value="">Both engineers</option><option value="5618698">Lisnoy Yozhyg</option><option value="3048819">Alias Divas</option></select>
   </div>
 
   <div class="tablewrap">
@@ -510,7 +510,7 @@ async function viewPair(key) {
     const pMast = g.master ? rel(g.master.file) : null;
 
     const paths = [pOrig, ours ? ours.ours_path : null, pMast].filter(Boolean);
-    // все три панели считаются по одной абсолютной шкале дБ — иначе сравнение врёт
+    // all three panels are drawn on one shared absolute dB scale — otherwise the comparison lies
     const specUrl = p => `/api/spectrogram?w=1100&h=300&path=${encodeURIComponent(p)}` +
       paths.filter(x => x !== p).map(x => `&path=${encodeURIComponent(x)}`).join("");
 

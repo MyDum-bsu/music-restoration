@@ -1,4 +1,4 @@
-"""Декод-хелперы (ffmpeg → PCM) и метрики (TT DR и т.п.) — авто-содержательная версия."""
+"""Decode helpers (ffmpeg -> PCM) and metrics (TT DR etc.) — self-contained version."""
 import math
 import numbers
 import subprocess
@@ -26,7 +26,7 @@ def ffprobe_audio(path: str) -> dict:
 
 
 def decode_s16(path: str, start_s: float | None = None, dur_s: float | None = None) -> tuple[np.ndarray, int]:
-    """Декод в int16 PCM [-32768..32767] (без ресэмпла/сжатия). Для клип статистики."""
+    """Decode to int16 PCM [-32768..32767] (no resample/compression). For clip statistics."""
     cmd = ["ffmpeg", "-v", "error", "-err_detect", "ignore_err"]
     if start_s is not None:
         cmd += ["-ss", f"{start_s:.6f}"]
@@ -39,7 +39,7 @@ def decode_s16(path: str, start_s: float | None = None, dur_s: float | None = No
 
 
 def decode_f32(path: str, start_s: float | None = None, dur_s: float | None = None) -> tuple[np.ndarray, int]:
-    """Декод в float32 [-1, 1) (стерео). Диска на Run — для DSP-математики."""
+    """Decode to float32 [-1, 1) (stereo). One decode per run — for DSP math."""
     cmd = ["ffmpeg", "-v", "error", "-err_detect", "ignore_err"]
     if start_s is not None:
         cmd += ["-ss", f"{start_s:.6f}"]
@@ -54,27 +54,26 @@ def decode_f32(path: str, start_s: float | None = None, dur_s: float | None = No
 # ---------------------------------------------------------------- numbering
 
 def dr_rms(seg: np.ndarray) -> np.ndarray:
-    """RMS в парав смысле TT DR: sqrt(2*E[x^2]) — синус full-scale даёт 1.0."""
+    """RMS in the TT DR sense: sqrt(2*E[x^2]) — a full-scale sine gives 1.0."""
     return np.sqrt(2.0 * np.sum(seg.astype(np.float64) ** 2, 0) / seg.shape[0])
 
 
 def tt_dr(x: np.ndarray, fs: int):
-    """Полный порт measure.tt_dr из restore-dr (dr14-совместимые константы)."""
+    """Full port of measure.tt_dr from restore-dr (dr14-compatible constants)."""
     delta_fs = 60 if fs == 44100 else 0
     block = BLOCK_TIME * (fs + delta_fs)
     n, ch = x.shape
-    seg_cnt = int(math.floor(n / block) + 1)
-    if seg_cnt < 1 or n < block:
+    # ceil, not floor+1: at an exact multiple of n/block the last "remainder"
+    # segment was empty and np.max crashed on a zero-size array.
+    seg_cnt = max(1, int(math.ceil(n / block)))
+    if n < block:
         return 0, 0.0, (0, 0), -100.0, -100.0
     rms = np.zeros((seg_cnt, ch))
     peaks = np.zeros((seg_cnt, ch))
-    for i in range(seg_cnt - 1):
+    for i in range(seg_cnt):
         seg = x[i * block:(i + 1) * block, :]
         rms[i] = dr_rms(seg)
         peaks[i] = np.max(np.abs(seg), 0)
-    rest = x[(seg_cnt - 1) * block:, :]
-    rms[-1] = dr_rms(rest)
-    peaks[-1] = np.max(np.abs(rest), 0)
 
     rms.sort(0)
     peaks.sort(0)
@@ -84,8 +83,8 @@ def tt_dr(x: np.ndarray, fs: int):
     ch_dr = -20.0 * np.log10(rms_energy_mean / peaks[seg_cnt - 2, :])
     ch_dr[np.logical_or(np.sum(top ** 2, 0) < AUDIO_MIN, np.abs(ch_dr) > MAX_DYNAMIC)] = 0.0
     dr = int(round(float(np.mean(ch_dr))))
-    # full_scale: для int16 — 32768, для float (наш DSP) — 1.0. Без этой ветки
-    # все уровни читались как −90 дБFS и diagnose() ломался (всё → sparse).
+    # full_scale: 32768 for int16, 1.0 for float (our DSP). Without this branch
+    # every level read as -90 dBFS and diagnose() broke (everything -> sparse).
     full_scale = 32768.0 if np.issubdtype(x.dtype, np.integer) else 1.0
     db_peak = 20.0 * math.log10(max(float(np.max(peaks)), 1e-10) / full_scale)
     db_rms = 20.0 * math.log10(
@@ -94,7 +93,7 @@ def tt_dr(x: np.ndarray, fs: int):
 
 
 def crest_db(x: np.ndarray) -> float:
-    """Кре́ст-фактор: пик vs RMS (TT DR-референс)."""
+    """Crest factor: peak vs RMS (TT DR reference)."""
     peak = float(np.max(np.abs(x)))
     rms = math.sqrt(np.mean(x.astype(np.float64) ** 2))
     if rms <= 0:
@@ -124,10 +123,10 @@ def clip_stats(x16: np.ndarray) -> dict:
 
 
 def clip_geometry(x16: np.ndarray) -> dict:
-    """Геометрия клипа: длина плоских участков и «плоскость» верхушек.
+    """Clip geometry: length of flat runs and the "flatness" of the tops.
 
-    Мягкий лимитер даёт длинные плоские полки, межсэмпловые овершуты —
-    короткие; это различает разные причины клиппинга.
+    A soft limiter leaves long flat shelves, intersample overshoots leave short
+    ones; this distinguishes different clipping causes.
     """
     out = {}
     for c, name in enumerate(("L", "R")):
@@ -159,7 +158,7 @@ _BANDS_HZ = [
 
 
 def band_rms_db(x: np.ndarray, fs: int, frame: int = 16384, hop: int | None = None) -> list[float]:
-    """Усреднённый RMS-спектр в 1/3-октавных полосах, dB re full-scale sine."""
+    """Averaged RMS spectrum in 1/3-octave bands, dB re full-scale sine."""
     import hashlib
     hop = hop or frame // 2
     win = np.hanning(frame)
@@ -189,7 +188,7 @@ def band_rms_db(x: np.ndarray, fs: int, frame: int = 16384, hop: int | None = No
 
 
 def lufs(path: str) -> dict:
-    """Интегральный LUFS/LRA/TP через ffmpeg ebur128."""
+    """Integrated LUFS/LRA/TP via ffmpeg ebur128."""
     p = subprocess.run(["ffmpeg", "-v", "info", "-i", str(path), "-filter_complex",
                         "ebur128=peak=true", "-f", "null", "-"], capture_output=True, text=True)
     txt = p.stderr.split("Summary:")[-1]
@@ -204,27 +203,27 @@ def lufs(path: str) -> dict:
     return {"lufs": f(i), "lra": f(lra), "tp_peak_dbfs": f(tp)}
 
 
-# ---------------------------------------------------------------- расширенные
-# Признаки второго уровня: распределение блочной громкости, транзиентность,
-# стерео-картина, овершут true-peak, геометрия клипа. Все считаются из того же
-# декода, что и базовые метрики (см. docs/dataset.md, раздел про признаки).
+# ---------------------------------------------------------------- extended
+# Second-level features: block-loudness distribution, transients, stereo image,
+# true-peak overshoot, clip geometry. All computed from the same decode as the
+# base metrics (see docs/dataset.md, the features section).
 
 def _db(v: float) -> float:
     return 20.0 * math.log10(max(float(v), 1e-12))
 
 
 def block_rms_stats(x: np.ndarray, fs: int, block_s: float = 3.0) -> dict:
-    """Квантили блочного RMS (3 с, как блок TT DR) — «раздавленность» vs динамика.
+    """Block-RMS quantiles (3 s, like a TT DR block) — "crushedness" vs dynamics.
 
-    TT DR использует только верхние 20 % блоков; здесь весь профиль:
-    p05 (тихие места), p95 (плотные), spread = p95 − p05.
+    TT DR uses only the top 20% of blocks; here is the whole profile:
+    p05 (quiet spots), p95 (dense), spread = p95 - p05.
     """
     block = int(block_s * fs)
     n = x.shape[0] // block
     if n < 2:
         return {}
     segs = x[: n * block].astype(np.float64).reshape(n, block, 2)
-    rms = np.sqrt(np.mean(segs ** 2, axis=1)).max(axis=1)      # худший канал
+    rms = np.sqrt(np.mean(segs ** 2, axis=1)).max(axis=1)      # worst channel
     db = 20.0 * np.log10(np.maximum(rms, 1e-12))
     q = np.percentile(db, [5, 25, 50, 75, 95])
     return {"p05": round(float(q[0]), 2), "p25": round(float(q[1]), 2),
@@ -235,8 +234,8 @@ def block_rms_stats(x: np.ndarray, fs: int, block_s: float = 3.0) -> dict:
 
 
 def transient_stats(x: np.ndarray, fs: int, frame: int = 1024, hop: int = 256) -> dict:
-    """Плотность атак и спектральный флюкс — отличает «разреженный» материал
-    от «плотного» (это тот самый Romeo t8 vs Aerosmith t15)."""
+    """Attack density and spectral flux — separates "sparse" material from
+    "dense" (the very Romeo t8 vs Aerosmith t15 case)."""
     mono = x.mean(axis=1).astype(np.float64)
     n = (mono.shape[0] - frame) // hop
     if n < 8:
@@ -265,8 +264,8 @@ def transient_stats(x: np.ndarray, fs: int, frame: int = 1024, hop: int = 256) -
 
 
 def stereo_stats(x: np.ndarray, fs: int) -> dict:
-    """Баланс mid/side и ширина в двух полосах (мастер может сужать или
-    расширять базу — это артефакт-значимо, а не только вкус)."""
+    """Mid/side balance and width in two bands (a master may narrow or widen
+    the base — artifact-significant, not just taste)."""
     from scipy import signal as _sig
     l, r = x[:, 0].astype(np.float64), x[:, 1].astype(np.float64)
     mid, side = (l + r) / 2.0, (l - r) / 2.0
@@ -285,8 +284,8 @@ def stereo_stats(x: np.ndarray, fs: int) -> dict:
 
 
 def tp_overshoot_db(x: np.ndarray, sr: int, up: int = 4) -> float | None:
-    """True-peak минус сэмпл-пик: сколько дБ добавляет межсэмпловая
-    интерполяция. Мастер на плотном материале даёт больше овершутов."""
+    """True peak minus sample peak: how many dB intersample interpolation adds.
+    A master on dense material produces more overshoots."""
     try:
         from scipy.signal import resample_poly
         sp = float(np.max(np.abs(x)))
@@ -299,7 +298,7 @@ def tp_overshoot_db(x: np.ndarray, sr: int, up: int = 4) -> float | None:
 
 
 def feature_dict(x: np.ndarray, sr: int, x16: np.ndarray | None = None) -> dict:
-    """Канонический набор фич трека (используется датасетом и ML-рантаймом)."""
+    """Canonical per-track feature set (used by the dataset and the ML runtime)."""
     if x16 is None:
         x16 = np.clip(x * 32768.0, -32768, 32767).astype(np.int16)
     dr, dr_exact, dr_ch, peak_db, rms_db = tt_dr(x, sr)

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Сплит датасета на train / holdout: по альбомам И по авторам (без утечки).
+"""Splitting the dataset into train / holdout: by albums AND by authors (no leakage).
 
-Правило: holdout — 30 % альбомов КАЖДОГО автора (детерминированно по хэшу
-ключа), плюс режим `--by-author`, когда один автор целиком уходит в holdout, а
-второй в train (проверка переноса «удалось ли обобщить на другого мастера»).
+Rule: holdout is 30% of the albums of EACH author (deterministic by key hash),
+plus the `--by-author` mode where one author goes entirely to holdout and the
+other to train (transfer check: "did we generalize to another master").
 
-Пара (релиз) — единица сплита: треки одного альбома никогда не попадают в обе
-части, иначе оценка завышается.
+A pair (release) is the split unit: tracks of one album never land in both
+parts, otherwise the evaluation is inflated.
 
-  python3 scripts/dataset_split.py                 # записать сплит
+  python3 scripts/dataset_split.py                 # write the split
   python3 scripts/dataset_split.py --report
 """
 import argparse
@@ -43,26 +43,26 @@ def h01(key: str) -> float:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--frac", type=float, default=0.3, help="доля holdout по альбомам")
+    ap.add_argument("--frac", type=float, default=0.3, help="holdout fraction by albums")
     ap.add_argument("--by-author", action="store_true",
-                    help="один автор целиком в holdout (перенос между мастерами)")
+                    help="one author entirely in holdout (transfer across masters)")
     ap.add_argument("--report", action="store_true")
     args = ap.parse_args()
 
     out_path = dataset_dir() / "split.json"
     if args.report:
         if not out_path.is_file():
-            print("сплита нет")
+            print("no split")
             return 1
         d = json.loads(out_path.read_text(encoding="utf-8"))
         print("train:", len(d["train"]), "holdout:", len(d["holdout"]),
-              "| авторы holdout:", Counter(v["author_pid"] for v in d["holdout"].values()))
+              "| holdout authors:", Counter(v["author_pid"] for v in d["holdout"].values()))
         return 0
 
     plan = read_jsonl(corpus() / "dataset_plan.jsonl")
     pairs = {r["key"]: r for r in plan if r["status"].startswith("matched")
              and r["release"].get("n_tracks", 0) >= 6}
-    print(f"пар-кандидатов: {len(pairs)}")
+    print(f"candidate pairs: {len(pairs)}")
 
     authors = sorted({str(p["author_pid"]) for p in pairs.values()})
     train, hold = {}, {}
@@ -86,8 +86,8 @@ def main() -> int:
     ho_a = Counter(str(v["author_pid"]) for v in hold.values())
     tr_t = sum(v["n_tracks"] for v in train.values())
     ho_t = sum(v["n_tracks"] for v in hold.values())
-    print(f"train {len(train)} пар / ~{tr_t} треков {dict(tr_a)}")
-    print(f"holdout {len(hold)} пар / ~{ho_t} треков {dict(ho_a)}")
+    print(f"train {len(train)} pairs / ~{tr_t} tracks {dict(tr_a)}")
+    print(f"holdout {len(hold)} pairs / ~{ho_t} tracks {dict(ho_a)}")
     print(f"→ {out_path}")
     return 0
 

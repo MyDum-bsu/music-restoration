@@ -1,13 +1,13 @@
-"""Планирование датасета: релиз мастера → кандидаты-оригиналы → решение.
+"""Dataset planning: master release -> original candidates -> decision.
 
-Отличие от `pairsearch` (один поиск на один релиз): здесь пул кандидатов
-берётся ОДИН раз на артиста (поиск rutracker по имени), а релизы матчатся
-локально по нормализованному названию/году/каталожному номеру. Это даёт
-~1 запрос на артиста вместо запроса на каждый релиз.
+Unlike `pairsearch` (one search per release): here the candidate pool is
+fetched ONCE per artist (rutracker search by name), and releases are matched
+locally by normalized title/year/catalog number. That gives ~1 request per
+artist instead of a request per release.
 
-Кандидат-оригинал обязан быть lossless-изданием, не быть чужой
-реставрацией, содержать название альбома и (в идеале) совпадать по году и
-каталожному номеру из «Исходное издание».
+An original candidate must be a lossless edition, must not be someone else's
+restoration, must contain the album title and (ideally) match by year and by
+the catalog number from "Source edition".
 """
 import re
 
@@ -23,26 +23,30 @@ _BRACKETS = re.compile(r"[\[\(].*?[\]\)]")
 _NONWORD = re.compile(r"[^\w\s]+", re.UNICODE)
 _YEAR = re.compile(r"(?<!\d)((?:19|20)\d{2})(?!\d)")
 
-OWN_MARK = re.compile(r"\[RM\]|restored|declipped|реставр|Declipped", re.IGNORECASE)
+# \u0440\u0435\u0441\u0442\u0430\u0432\u0440 = ru "restoration" stem
+OWN_MARK = re.compile(r"\[RM\]|restored|declipped|\u0440\u0435\u0441\u0442\u0430\u0432\u0440|Declipped", re.IGNORECASE)
 LOSSY = re.compile(r"\bMP3\b|\bAAC\b|\bM4A\b|\bOGG\b|V0|V2|~?320", re.IGNORECASE)
 HIRES = re.compile(r"24/\d|24-?bit|\[TR24\]|\[Hi-?Res\]|\[\d{2}/\d{3}\]|DSD|MQA", re.IGNORECASE)
-GRAPH = re.compile(r"Дискография|Discography|Studio Albums|\(releases\)|Collection|Сборник",
+# ru title words: "Discography" / "Compilation"
+GRAPH = re.compile(r"\u0414\u0438\u0441\u043A\u043E\u0433\u0440\u0430\u0444\u0438\u044F|Discography|Studio Albums|\(releases\)|Collection|\u0421\u0431\u043E\u0440\u043D\u0438\u043A",
                    re.IGNORECASE)
-BAD_MEDIA = re.compile(r"\[\d{0,2}LP\]|\bLPCM\b|\[SACD\]|\[DVD|\[VHS|\bVinyl\b|Винил", re.IGNORECASE)
-BOOTLEG = re.compile(r"CAMRip|Bootleg|\[Unofficial\]|концерт|самопал", re.IGNORECASE)
+# \u0412\u0438\u043D\u0438\u043B = ru "Vinyl"
+BAD_MEDIA = re.compile(r"\[\d{0,2}LP\]|\bLPCM\b|\[SACD\]|\[DVD|\[VHS|\bVinyl\b|\u0412\u0438\u043D\u0438\u043B", re.IGNORECASE)
+# ru: "live concert" / "bootleg"
+BOOTLEG = re.compile(r"CAMRip|Bootleg|\[Unofficial\]|\u043A\u043E\u043D\u0446\u0435\u0440\u0442|\u0441\u0430\u043C\u043E\u043F\u0430\u043B", re.IGNORECASE)
 EDITION = re.compile(r"Deluxe|Expanded|Remaster|Anniversary|Edition", re.IGNORECASE)
-# Издания, меняющие СОДЕРЖАНИЕ: акапеллы, инструменталы, кавер-версии — не пара
-# для студийного альбома, даже если название и год совпадают.
+# Editions that change the CONTENT: acapellas, instrumentals, cover versions —
+# not a pair for a studio album even if the title and year match.
 CONTENT_ALT = re.compile(
-    r"acapella|a cappella|инструментал|instrumental|karaoke|караоке|remix|ремиксер|"
-    r"cover|кавер|tribute|трибьют|demo|демо|backing track|playback", re.IGNORECASE)
+    r"acapella|a cappella|\u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u0430\u043B|instrumental|karaoke|\u043A\u0430\u0440\u0430\u043E\u043A\u0435|remix|\u0440\u0435\u043C\u0438\u043A\u0441\u0435\u0440|"
+    r"cover|\u043A\u0430\u0432\u0435\u0440|tribute|\u0442\u0440\u0438\u0431\u044C\u044E\u0442|demo|\u0434\u0435\u043C\u043E|backing track|playback", re.IGNORECASE)
 CONTENT_ALT_SOFT = re.compile(r"radio edit|single|promo|sampler|split|hits|best of|compilation",
                               re.IGNORECASE)
 _TAIL_SEP = re.compile(r"\s+[-–—]\s+")
 
 
 def _title_parts(title: str) -> tuple[str, str]:
-    """('артист', 'альбом') из заголовка раздачи: режем по первому « - »."""
+    """('artist', 'album') from a torrent title: split on the first " - "."""
     t = _BRACKETS.sub(" ", title or "")
     parts = _TAIL_SEP.split(t)
     if len(parts) > 1:
@@ -52,7 +56,8 @@ def _title_parts(title: str) -> tuple[str, str]:
 
 
 def tokens(s: str) -> list[str]:
-    s = (s or "").lower().replace("ё", "е")
+    # \u0451 -> \u0435: fold ru "yo" into "e" for normalization
+    s = (s or "").lower().replace("\u0451", "\u0435")
     s = _BRACKETS.sub(" ", s)
     s = _YEAR.sub(" ", s)
     s = _NONWORD.sub(" ", s)
@@ -60,7 +65,7 @@ def tokens(s: str) -> list[str]:
 
 
 def containment(need: list[str], have: list[str]) -> float:
-    """Какая доля токенов `need` присутствует в `have` (0..1)."""
+    """What fraction of `need` tokens are present in `have` (0..1)."""
     A, B = set(need), set(have)
     if not A:
         return 0.0
@@ -68,7 +73,7 @@ def containment(need: list[str], have: list[str]) -> float:
 
 
 def parse_restore_title(title: str) -> dict:
-    """'[RM] [restored] (Heavy Metal) Accept - Дискография (24 releases) - 1985-2022, FLAC'."""
+    """'[RM] [restored] (Heavy Metal) Accept - Discography (24 releases) - 1985-2022, FLAC'."""
     t = re.sub(r"^\s*(?:\[[^\]]*\]\s*)+", "", title or "")
     genre = None
     m = re.match(r"\(([^)]*)\)\s*", t)
@@ -89,12 +94,12 @@ def parse_restore_title(title: str) -> dict:
 
 
 def edition_codes(source_edition: str | None) -> list[str]:
-    """Каталожные номера из «Исходное издание: Noise – N 0061»."""
+    """Catalog numbers from "Source edition: Noise – N 0061"."""
     if not source_edition:
         return []
-    # «Music Theories Recordings – MTR 7562 2» → 'MTR 7562 2', 'MTR75622', 'MTR'
+    # "Music Theories Recordings – MTR 7562 2" -> 'MTR 7562 2', 'MTR75622', 'MTR'
     raw = source_edition.replace("\u200e", " ")
-    raw = re.sub(r"^\s*[^-–]+?[-–]\s*", "", raw)      # отрезаем лейбл до тире
+    raw = re.sub(r"^\s*[^-–]+?[-–]\s*", "", raw)      # cut the label before the dash
     raw = raw.strip()
     out = {raw}
     out.add(raw.replace(" ", ""))
@@ -111,7 +116,7 @@ def title_year(title: str) -> int | None:
 
 def score_candidate(row: dict, artist_tokens: list[str], album_tokens: list[str],
                     year: int | None, codes: list[str], own_poster: int | None) -> dict:
-    """Скоринг одного кандидата. Возвращает score + диагностические флаги."""
+    """Score one candidate. Returns score + diagnostic flags."""
     title = row.get("title") or ""
     t_tokens = tokens(title)
     flags = []
@@ -122,25 +127,25 @@ def score_candidate(row: dict, artist_tokens: list[str], album_tokens: list[str]
     if LOSSY.search(title):
         return {"score": -1000.0, "flags": ["lossy"], "contain": 0.0}
     if not re.search(r"FLAC|APE|WV|WavPack|lossless|ALAC", title, re.IGNORECASE):
-        # не музыкальный lossless-релиз (фильмы, софт, MP3-раздачи)
+        # not a lossless music release (movies, software, MP3 torrents)
         return {"score": -1000.0, "flags": ["not_lossless"], "contain": 0.0}
 
     head, tail = _title_parts(title)
     a_cont = containment(artist_tokens, tokens(head)) if artist_tokens else 0.0
     kind = "album"
     if not tail:
-        # без разделителя « - »: и артиста, и альбом ищем в целом заголовке
+        # no " - " separator: look for both artist and album in the whole title
         a_cont = max(a_cont, containment(artist_tokens, t_tokens) if artist_tokens else 0.0)
         cont = containment(album_tokens, t_tokens)
-        # ...но без признаков lossless-релиза такой заголовок — шум
+        # ...but without signs of a lossless release such a title is noise
         if not re.search(r"\b(19|20)\d{2}\b|FLAC|APE|\bCD\b|lossless", title, re.IGNORECASE):
             return {"score": -1000.0, "flags": ["no_evidence"], "contain": cont}
     else:
         cont = containment(album_tokens, tokens(tail))
         if cont < 0.5:
-            # нет альбома в заголовке, но это CD-дискография артиста —
-            # валидный (и часто единственный) источник CD-изданий:
-            # нужный диск выбирается уже по списку файлов раздачи.
+            # no album in the title, but it is the artist's CD discography —
+            # a valid (and often the only) source of CD editions:
+            # the wanted disc is picked later from the torrent file list.
             if GRAPH.search(title) and a_cont >= 0.5:
                 kind = "graphy"
                 cont = 0.5
@@ -173,7 +178,7 @@ def score_candidate(row: dict, artist_tokens: list[str], album_tokens: list[str]
     a_cont_legacy = containment(artist_tokens, t_tokens) if artist_tokens else 0.0
 
     if kind == "graphy":
-        flags.append("year_na")            # дискография охватывает все годы
+        flags.append("year_na")            # a discography spans all years
     elif year and ty:
         if year == ty:
             score += 12
@@ -187,28 +192,29 @@ def score_candidate(row: dict, artist_tokens: list[str], album_tokens: list[str]
     elif year and not ty:
         flags.append("year_unknown")
 
-    # винил/SACD/DVD-издания — другой мастеринг, для пары «то же издание, что
-    # реставрировал мастер» не годятся вовсе.
+    # vinyl/SACD/DVD editions are a different mastering — no good at all for a
+    # pair of "the same edition the master restored".
     if BAD_MEDIA.search(title):
         return {"score": -1000.0, "flags": ["media_mismatch"], "contain": cont}
 
-    # виниловые/хайрез-издания — это ДРУГОЙ мастеринг, для пары не годятся
+    # vinyl/hi-res editions are a DIFFERENT mastering — not suitable for a pair
     if re.search(r"\bFLAC\b|\bAPE\b|\bWV\b|WavPack", title, re.IGNORECASE):
         score += 10
     if re.search(r"image\s*\+?\s*\.?cue|cue", title, re.IGNORECASE):
         score += 8
         flags.append("image_cue")
-    # издание с другим содержимым (акапеллы/инструментал/кавер) — не оригинал
+    # an edition with different content (acapella/instrumental/cover) is not the original
     alt = CONTENT_ALT.search(title)
     if alt and kind != "graphy" and \
             not CONTENT_ALT.search(album_tokens and " ".join(album_tokens) or ""):
-        # дискографии часто содержат в названии «covers/bonus/demo» — это про
-        # состав бокса; конкретный альбом проверяется при загрузке (папка + длительности)
+        # discographies often carry "covers/bonus/demo" in the title — that is
+        # about the box contents; the specific album is checked at download
+        # (folder + durations)
         return {"score": -1000.0, "flags": [f"content_alt:{alt.group(0).lower()}"],
                 "contain": cont}
     if CONTENT_ALT_SOFT.search(title) and kind != "graphy":
-        # «singles/hits/best of» в названии дискографии — это про состав бокса,
-        # а не про альтернативное издание конкретного альбома
+        # "singles/hits/best of" in a discography title is about the box
+        # contents, not about an alternative edition of the specific album
         score -= 30
         flags.append("alt_edition")
     if re.search(r"\[CD\]", title):
@@ -222,14 +228,14 @@ def score_candidate(row: dict, artist_tokens: list[str], album_tokens: list[str]
         score -= 20
         flags.append("graphy")
     if EDITION.search(title) and kind != "graphy":
-        # у дискографии «Editions» в названии — это про состав бокса, не про издание
+        # "Editions" in a discography title is about box contents, not an edition
         score -= 25
         flags.append("edition")
     if BOOTLEG.search(title):
         score -= 40
         flags.append("bootleg")
-    # студийный альбом не может быть концертником
-    if re.search(r"\bLive\b|Live At|Live In|концерт", title, re.IGNORECASE) and \
+    # a studio album cannot be a live recording
+    if re.search(r"\bLive\b|Live At|Live In|\u043A\u043E\u043D\u0446\u0435\u0440\u0442", title, re.IGNORECASE) and \
             "live" not in album_tokens:
         score -= 30
         flags.append("live_mismatch")
@@ -251,7 +257,7 @@ def score_candidate(row: dict, artist_tokens: list[str], album_tokens: list[str]
 
 
 MATCH_THRESHOLD = 80.0
-GRAPHY_THRESHOLD = 68.0     # сборники/дискографии: нужный диск проверяется при загрузке
+GRAPHY_THRESHOLD = 68.0     # compilations/discographies: the wanted disc is checked at download
 
 
 def choose(cands: list[dict], threshold: float = MATCH_THRESHOLD,

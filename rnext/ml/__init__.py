@@ -1,9 +1,9 @@
-"""ML-слой music-restoration: версионирование датасета, обучение цели, снапшоты.
+"""ML layer of music-restoration: dataset versioning, target training, snapshots.
 
-Разделение ответственности:
-  * `dataset.py`  — обучающая таблица из пар датасета (признаки → цель);
-  * `models.py`   — зоопарк моделей и правило выбора по объёму выборки;
-  * `metrics.py`  — метрики качества цели с базами сравнения;
-  * `registry.py` — версионирование датасета и снапшоты моделей;
-  * `runtime.py`  — применение снапшота в пайплайне (предсказание цели).
+Separation of responsibilities:
+  * `dataset.py`  — training table from dataset pairs (features -> target);
+  * `models.py`   — model zoo and selection rule based on sample size;
+  * `metrics.py`  — target quality metrics with comparison baselines;
+  * `registry.py` — dataset versioning and model snapshots;
+  * `runtime.py`  — applying a snapshot in the pipeline (target prediction).
 """

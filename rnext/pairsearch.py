@@ -1,4 +1,4 @@
-"""Поиск оригиналов на rutracker: title-нормализация, скоринг кандидатов на пару."""
+"""Original-release search on rutracker: title normalization, candidate scoring."""
 import re
 
 from bs4 import BeautifulSoup
@@ -11,13 +11,14 @@ _WS = re.compile(r"\s+")
 
 def _norm(s: str) -> str:
     s = s.lower()
-    s = re.sub(r"[\[\(].*?[\]\)]", " ", s)          # скобки-пометки
-    s = re.sub(r"[^\wа-яё\s]", " ", s, flags=re.IGNORECASE)
+    s = re.sub(r"[\[\(].*?[\]\)]", " ", s)          # bracketed annotations
+    # keep Cyrillic letters (rutracker titles are often Russian): \u0430-\u044F = a-ya, \u0451 = yo
+    s = re.sub(r"[^\w\u0430-\u044F\u0451\s]", " ", s, flags=re.IGNORECASE)
     return _WS.sub(" ", s).strip()
 
 
 def title_tags(title: str) -> dict:
-    """Хвосты формата заголовков rutracker: жанр, артист, альбом/дискография, год, формат."""
+    """Tail of the rutracker title format: genre, artist, album/discography, year, format."""
     t = title
     genre = None
     m = re.match(r"\(([^)]+)\)\s*", t)
@@ -33,7 +34,10 @@ def title_tags(title: str) -> dict:
         fmt = "FLAC"
     elif re.search(r"\bMP3\b", t):
         fmt = "MP3"
-    is_graphy = bool(re.search(r"Дискография|releases|Сборники", t, re.IGNORECASE))
+    # ru title words: "Discography" / "Compilations"
+    is_graphy = bool(re.search(
+        r"\u0414\u0438\u0441\u043A\u043E\u0433\u0440\u0430\u0444\u0438\u044F|releases|\u0421\u0431\u043E\u0440\u043D\u0438\u043A\u0438",
+        t, re.IGNORECASE))
     return {"genre": genre, "year": year, "fmt": fmt, "discography": is_graphy}
 
 
@@ -48,7 +52,7 @@ def split_artist_album(title_tail: str) -> tuple[str, str | None]:
 
 
 def search_topics(nm: str, client: RTClient | None = None, pages: int = 1) -> list[dict]:
-    """Полно-текстовый поиск трекера (все топики под `nm`), rows из таблицы результатов."""
+    """Full-text tracker search (all topics under `nm`), rows from the results table."""
     c = client or RTClient()
     out: dict[int, dict] = {}
     for page in range(pages):
@@ -61,7 +65,7 @@ def search_topics(nm: str, client: RTClient | None = None, pages: int = 1) -> li
 
 
 def score_candidate(title: str, artist_n: str, album_n: str | None, year: int | None, must: dict) -> dict:
-    """Скоринг оригинал-кандидата: artist/album в заголовке, год, формат, 'не реставрация'."""
+    """Scoring of an original candidate: artist/album in the title, year, format, 'not a restoration'."""
     tags = title_tags(title)
     t_n = _norm(title)
     score = 0.0
@@ -81,14 +85,16 @@ def score_candidate(title: str, artist_n: str, album_n: str | None, year: int | 
         score += 15
     if tags["discography"]:
         score -= 25
-    if not must.get("allow_rm") and re.search(r"\bRM\b|\brestored\b|remaster|ремастер", title, re.IGNORECASE):
+    # \u0440\u0435\u043C\u0430\u0441\u0442\u0435\u0440 = ru "remaster"
+    if not must.get("allow_rm") and re.search(
+            r"\bRM\b|\brestored\b|remaster|\u0440\u0435\u043C\u0430\u0441\u0442\u0435\u0440", title, re.IGNORECASE):
         score -= 15
     return {"score": score, "tags": tags}
 
 
 def find_originals(artist: str, album: str | None, year: int | None, client: RTClient | None = None,
                    limit: int = 25, pages: int = 2) -> list[dict]:
-    """Фул-скан поиска по «Artist Album Year» → отсортированные кандидаты."""
+    """Full search scan for "Artist Album Year" -> sorted candidates."""
     artist_n, _ = split_artist_album(artist)
     album_n = _norm(album) if album else None
     q = " ".join(x for x in (artist, album) if x)

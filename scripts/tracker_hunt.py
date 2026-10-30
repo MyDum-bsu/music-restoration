@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Поиск по трекеру, разбор версий и выбор лучшей — не только для музыки.
+"""Tracker search, version parsing and picking the best — not just for music.
 
   python3 scripts/tracker_hunt.py search "Jelusick"
   python3 scripts/tracker_hunt.py info 6415449
   python3 scripts/tracker_hunt.py compare 6415449 6414919 6415449
   python3 scripts/tracker_hunt.py fetch 6415449 --dir "Jelusick/Album [TR24]"
 
-Профиль разбора подбирается по разделу темы: музыка, видео, книги, софт,
-иначе — общий. Сравнение даёт Парето-набор и объяснение, а не «одна лучшая»:
-у версий разные компромиссы (источник мастеринга, полнота, вес).
+The parsing profile is picked by the topic's forum: music, video, books, software,
+otherwise — generic. Comparison yields a Pareto set and an explanation, not a
+single "best": the versions trade off differently (mastering source, completeness, weight).
 
-Проверка подлинности (фейковый hi-res, lossy-транскод) делается ПОСЛЕ закачки
-скриптом audio_measure.py — по раздаче этого не видно.
+Authenticity checks (fake hi-res, lossy transcode) are done AFTER download
+by audio_measure.py — none of that is visible from the listing itself.
 """
 import argparse
 import json
@@ -26,28 +26,30 @@ from bs4 import BeautifulSoup  # noqa: E402
 
 from rnext.rtclient import RTClient  # noqa: E402
 
+# Unit labels on the tracker also come in Russian (Cyrillic below is
+# intentional): the patterns must keep matching the scraped listings as-is.
 SIZE_RE = re.compile(r"([\d.,]+)\s*(GB|MB|KB|ТБ|ГБ|МБ|КБ)", re.I)
 UNIT = {"GB": 1e9, "ГБ": 1e9, "MB": 1e6, "МБ": 1e6, "KB": 1e3, "КБ": 1e3, "ТБ": 1e12}
 
 
-# ---------------------------------------------------------------- профили
+# ---------------------------------------------------------------- profiles
 def parse_music(text: str, title: str) -> dict:
     t = f"{title}\n{text}"
     low = t.lower()
     d: dict = {"kind": "music"}
-    # источник
+    # source
     if re.search(r"\[tr24\]|24bit|24-bit|hi-res|hi res", low):
-        d["source"] = "hi-res (24 бита)"
+        d["source"] = "hi-res (24-bit)"
     elif re.search(r"\[web\]|web[- ]?release|digital", low):
-        d["source"] = "WEB (цифровой релиз)"
+        d["source"] = "WEB (digital release)"
     elif re.search(r"\[cd\]|\bcd\b", low):
         d["source"] = "CD"
     elif re.search(r"\[lp\]|vinyl|винил|dsd|sacd", low):
-        d["source"] = "винил/DSD"
+        d["source"] = "vinyl/DSD"
     else:
         d["source"] = "?"
     d["vinyl"] = bool(re.search(r"\[lp\]|vinyl|винил|dsd|sacd|1/5[.,]64", low))
-    # формат и лосслес
+    # format and lossless
     if re.search(r"\bflac\b|\bape\b|\bwav\b|\balac\b", low):
         d["lossless"] = True
         d["format"] = (re.search(r"\b(flac|ape|wav|alac)\b", low) or [None, "?"])[1].upper()
@@ -69,16 +71,16 @@ def parse_music(text: str, title: str) -> dict:
     m = re.search(r"1/5[.,]64|dsd\s*(\d+)", low)
     if m:
         d["khz"] = 5644.8
-    # структура
+    # structure
     d["image_cue"] = bool(re.search(r"image\+?\.?cue|image\+cue|образ", low))
     d["tracks"] = bool(re.search(r":\s*tracks|\btracks\b", low))
     d["has_log"] = bool(re.search(r"\blog\b|eac|accurip|xld", low))
     d["has_scans"] = bool(re.search(r"сканы|scans|booklet|буклет", low))
-    # DR из отчёта (foobar DR / TT DR), если он в теме
+    # DR from the report (foobar DR / TT DR), if present in the topic
     drs = [int(x) for x in re.findall(r"^\s*DR(\d{1,2})\s", text, re.M)]
     if drs:
         d["dr_published"] = sorted(drs)[len(drs) // 2]
-    # альтернативы
+    # alternatives
     d["remaster"] = bool(re.search(r"ремастер|remaster|\[rm\]|restored", low))
     return d
 
@@ -140,10 +142,10 @@ def parse_generic(text: str, title: str) -> dict:
 
 def guess_kind(forum: str, title: str) -> str:
     low = f"{forum} {title}".lower()
-    # Сначала видео: у фильмов в названии есть разрешение/источник, а раздел
-    # может называться «Музыка» из-за слова Score — иначе фильм уедет в музыку.
-    # Маркеры фильма: разрешение/источник в заголовке ИЛИ кинополя в теле темы
-    # (перевод/субтитры/продолжительность) — заголовок у rutracker часто обрезан.
+    # Video first: movie titles carry resolution/source, while the forum may be
+    # called "Music" because of the word Score — otherwise a film lands in music.
+    # Movie markers: resolution/source in the title OR cinema fields in the topic
+    # body (translation/subtitles/duration) — rutracker titles are often truncated.
     if re.search(r"\b(2160p|1080p|720p|480p|4k|uhd)\b|bdremux|bdrip|brrip|web-?dl|"
                  r"web-?rip|hdtv|dvdrip|blu-?ray|фильм|кино|сериал|документал|аниме|мульт|"
                  r"перевод|субтитры|продолжительность", low):
@@ -161,7 +163,7 @@ PARSERS = {"music": parse_music, "video": parse_video, "book": parse_book,
            "generic": parse_generic}
 
 
-# ---------------------------------------------------------------- поиск
+# ---------------------------------------------------------------- search
 def search_rows(c: RTClient, query: str, pages: int = 1) -> list[dict]:
     out = []
     for pg in range(1, pages + 1):
@@ -210,17 +212,18 @@ def topic_facts(c: RTClient, tid: str) -> dict:
     kind = guess_kind(forum, title + " " + text[:2500])
     facts = PARSERS[kind](text, title)
     facts.update(topic=tid, title=title, forum=forum, text_len=len(text))
-    # Размер из текста НЕ берём: в описании попадаются мелкие числа (размер
-    # обложки, куски треклиста) и они врут. Точный размер даёт поиск — enrich_size.
-    # .torrent-ссылка
+    # Size is NOT taken from the text: the description contains small numbers
+    # (cover size, tracklist fragments) and they lie. Search gives the exact
+    # size — enrich_size.
+    # .torrent link
     dl = soup.find("a", href=re.compile(r"dl\.php"))
     facts["has_torrent"] = bool(dl)
     return facts
 
 
-# ---------------------------------------------------------------- оценка
+# ---------------------------------------------------------------- scoring
 def score(f: dict) -> tuple[float, list[str]]:
-    """Оценка версии и человеческое объяснение. Больше — лучше."""
+    """Score a version and give a human-readable explanation. Higher is better."""
     s = 0.0
     why: list[str] = []
     if f["kind"] == "music":
@@ -231,34 +234,34 @@ def score(f: dict) -> tuple[float, list[str]]:
             s -= 100
             why.append("lossy")
         src = f.get("source", "?")
-        s += {"hi-res (24 бита)": 30, "WEB (цифровой релиз)": 25, "CD": 25,
-              "винил/DSD": 5}.get(src, 0)
+        s += {"hi-res (24-bit)": 30, "WEB (digital release)": 25, "CD": 25,
+              "vinyl/DSD": 5}.get(src, 0)
         if src != "?":
-            why.append(f"источник: {src}")
+            why.append(f"source: {src}")
         if f.get("vinyl"):
-            why.append("винил — другой мастеринг, шум/рокот")
+            why.append("vinyl — different mastering, noise/rumble")
         if f.get("bits"):
             s += 3 if f["bits"] >= 24 else 1
         if f.get("dr_published"):
             s += min(f["dr_published"], 16) * 0.5
-            why.append(f"DR в теме {f['dr_published']}")
+            why.append(f"DR in topic {f['dr_published']}")
         if f.get("has_log"):
             s += 3
-            why.append("есть log")
+            why.append("has log")
         if f.get("has_scans"):
             s += 2
-            why.append("есть сканы")
+            why.append("has scans")
         if f.get("image_cue"):
             s -= 1
-            why.append("image+cue (нужно разбивать)")
+            why.append("image+cue (needs splitting)")
     elif f["kind"] == "video":
         res = {"2160P": 40, "4K": 40, "UHD": 40, "1080P": 25, "720P": 10}.get(
             f.get("resolution", "?"), 0)
         s += res
-        why.append(f"разрешение {f.get('resolution')}")
+        why.append(f"resolution {f.get('resolution')}")
         s += {"BDRemux": 30, "BDRip": 20, "WEB-DL": 22, "WEBRip": 12, "HDTV": 5}.get(
             f.get("source", "?"), 0)
-        why.append(f"источник {f.get('source')}")
+        why.append(f"source {f.get('source')}")
         if f.get("codec") in ("x265", "hevc", "h.265", "av1"):
             s += 5
         if f.get("hdr"):
@@ -266,14 +269,14 @@ def score(f: dict) -> tuple[float, list[str]]:
             why.append(f.get("hdr"))
         if any(a in ("DTS-HD MA", "TrueHD", "LPCM", "Atmos") for a in f.get("audio", [])):
             s += 8
-            why.append("lossless-звук")
+            why.append("lossless audio")
         if "rus" in f.get("subs", []):
             s += 3
     else:
         s += 10 if f.get("format") not in ("?", None) else 0
         if f.get("text_layer"):
             s += 5
-            why.append("текстовый слой")
+            why.append("text layer")
     return s, why
 
 
@@ -288,19 +291,19 @@ def cmd_search(args) -> int:
     c = RTClient()
     rows = search_rows(c, args.query, pages=args.pages)
     if not rows:
-        print("ничего не найдено")
+        print("nothing found")
         return 1
-    print(f"{'t':<10}{'размер':>10}{'сид':>5}  заголовок")
+    print(f"{'t':<10}{'size':>10}{'seed':>5}  title")
     for r in rows:
         print(f"{r['topic']:<10}{r['size']:>10}{(r['seeders'] if r['seeders'] is not None else '?'):>5}  "
               f"{r['title'][:88]}")
     if args.facts:
-        print("\nразбор версий:")
+        print("\nversion breakdown:")
         for r in rows:
             try:
                 f = topic_facts(c, r["topic"])
             except Exception as e:  # noqa: BLE001
-                print(f"  t={r['topic']}: не разобрать ({type(e).__name__})")
+                print(f"  t={r['topic']}: unparseable ({type(e).__name__})")
                 continue
             sc, why = score(f)
             print(f"  t={r['topic']:<9} {sc:>6.1f}  {fmt_facts(f)}")
@@ -313,17 +316,17 @@ def cmd_info(args) -> int:
         f = topic_facts(c, tid)
         sc, why = score(f)
         print(f"\n=== t={tid} [{f['kind']}] {f['title'][:90]}")
-        print(f"    раздел: {f['forum']}")
-        print(f"    факты:  {fmt_facts(f) or '—'}")
-        print(f"    оценка: {sc:.1f}  ({'; '.join(why) or '—'})")
+        print(f"    forum: {f['forum']}")
+        print(f"    facts:  {fmt_facts(f) or '—'}")
+        print(f"    score: {sc:.1f}  ({'; '.join(why) or '—'})")
     return 0
 
 
 def enrich_size(c: RTClient, f: dict) -> dict:
-    """Размер и сиды по теме: на странице темы их нет, берём из поиска."""
+    """Size and seeders for a topic: not on the topic page, take them from search."""
     if f.get("size_bytes") and f["size_bytes"] >= 5e6:
         return f
-    # ключ для поиска — первые значимые слова заголовка без префиксов
+    # search key — the first meaningful title words, prefixes stripped
     words = re.sub(r"[\[\]()]", " ", f["title"])
     words = re.sub(r"\b(tr24|of|ldr|cd|web|lp|rm|flac|mp3|lossless)\b", " ", words, flags=re.I)
     key = " ".join([w for w in words.split() if len(w) > 2][:4])
@@ -348,23 +351,23 @@ def cmd_compare(args) -> int:
         try:
             facts.append(enrich_size(c, topic_facts(c, tid)))
         except Exception as e:  # noqa: BLE001
-            print(f"t={tid}: не разобрать ({e})")
+            print(f"t={tid}: unparseable ({e})")
     if not facts:
         return 1
     scored = sorted(((score(f)[0], f) for f in facts), key=lambda x: -x[0])
-    print(f"{'t':<10}{'оценка':>7}  {'размер':>10}  факты")
+    print(f"{'t':<10}{'score':>7}  {'size':>10}  facts")
     for sc, f in scored:
         size = f"{f['size_bytes'] / 1e9:.2f} GB" if f.get("size_bytes") else "?"
         seed = f.get("seeders")
-        print(f"{f['topic']:<10}{sc:>7.1f}  {size:>10}  сид {seed if seed is not None else '?':>3}  {fmt_facts(f)}")
+        print(f"{f['topic']:<10}{sc:>7.1f}  {size:>10}  seed {seed if seed is not None else '?':>3}  {fmt_facts(f)}")
     best = scored[0][1]
-    print(f"\nлучший по совокупности: t={best['topic']} — {best['title'][:80]}")
-    print(f"  причина: {'; '.join(score(best)[1])}")
+    print(f"\nbest overall: t={best['topic']} — {best['title'][:80]}")
+    print(f"  reason: {'; '.join(score(best)[1])}")
     if len(scored) > 1:
         second = scored[1][1]
-        print(f"  альтернатива: t={second['topic']} ({'; '.join(score(second)[1])})")
-    print("\nНапоминание: подлинность (фейковый hi-res, lossy-транскод) по раздаче "
-          "не видна — проверять после закачки: scripts/audio_measure.py <каталог>")
+        print(f"  alternative: t={second['topic']} ({'; '.join(score(second)[1])})")
+    print("\nReminder: authenticity (fake hi-res, lossy transcode) is not visible "
+          "from the listing — check after download: scripts/audio_measure.py <dir>")
     return 0
 
 
@@ -385,7 +388,7 @@ def main() -> int:
     s = sub.add_parser("search")
     s.add_argument("query")
     s.add_argument("--pages", type=int, default=1)
-    s.add_argument("--facts", action="store_true", help="разобрать каждую версию")
+    s.add_argument("--facts", action="store_true", help="parse every version")
     s.set_defaults(func=cmd_search)
 
     i = sub.add_parser("info")

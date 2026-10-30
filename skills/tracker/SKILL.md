@@ -1,76 +1,84 @@
 ---
 name: tracker
-description: "Работа с торрент-трекерами: поиск раздач, разбор версий, выбор лучшей по качеству и закачка с приоритетом — для музыки, фильмов, книг и любого другого жанра. Использовать, когда просят «найди на трекере», «скачай альбом/фильм/книгу», «какая версия лучше», «сравни раздачи», «есть ли lossless», «в каком качестве брать», «поставь на закачку», а также перед реставрацией или просмотром, когда нужен материал. Не для измерения качества уже скачанного (это audio-measure) и не для реставрации (release-restore)."
+description: "Work with torrent trackers: search for releases, break down versions, pick the best by quality, and queue downloads with priority — for music, movies, books and any other material. Use when asked to \"find on the tracker\", \"download an album/movie/book\", \"which version is better\", \"compare releases\", \"is there lossless\", \"what quality should I get\", \"queue the download\", or before a restoration or a listening/viewing session when source material is needed. Do NOT use for measuring the quality of already-downloaded files (that's audio-measure) or for restoration (release-restore)."
 ---
 
-# tracker: поиск, сравнение и закачка раздач
+# tracker: searching, comparing and downloading releases
 
-Один движок на все жанры: общая механика (поиск → разбор → сравнение →
-закачка), а правила качества подключаются профилем под тип материала.
+One engine for every kind of material: common mechanics (search → breakdown →
+comparison → download), while the quality rules plug in via a profile per
+material type.
 
 ```bash
 S=~/Desktop/projects/music-restoration/scripts/tracker_hunt.py
 
-python3 $S search "Jelusick"                 # список раздач
-python3 $S search "Blade Runner 2049" --facts  # + разбор каждой версии
-python3 $S info 6415449                      # факты по одной теме
-python3 $S compare 6499624 6517503 6795598   # сравнение с рекомендацией
+python3 $S search "Jelusick"                 # list of releases
+python3 $S search "Blade Runner 2049" --facts  # + breakdown of each version
+python3 $S info 6415449                      # facts on a single topic
+python3 $S compare 6499624 6517503 6795598   # comparison with a recommendation
 python3 $S fetch 6415449 --dir "Jelusick/Album [TR24]" --priority high
 ```
 
-## Профили качества
+## Quality profiles
 
-| тип | что разбирается | на что смотрим |
+| type | what gets parsed | what to look at |
 |---|---|---|
-| музыка | формат, битность, частота, источник (CD/WEB/hi-res/винил), image+cue vs tracks, log, сканы, опубликованный DR | lossless; цифровой мастер лучше винила; DR из темы |
-| видео | разрешение, источник (BDRemux/BDRip/WEB-DL/HDTV), кодек, HDR/DV, звук, сабтитры, 3D | источник важнее разрешения; lossless-звук; русские сабы |
-| книги | формат, скан vs текст, OCR | текстовый слой |
-| прочее | общий разбор | — |
+| music | format, bit depth, sample rate, source (CD/WEB/hi-res/vinyl), image+cue vs tracks, log, scans, published DR | lossless; a digital master beats vinyl; DR from the topic |
+| video | resolution, source (BDRemux/BDRip/WEB-DL/HDTV), codec, HDR/DV, audio, subtitles, 3D | source matters more than resolution; lossless audio; Russian subs |
+| books | format, scan vs text, OCR | text layer |
+| other | generic breakdown | — |
 
-Профиль выбирается автоматически по разделу и телу темы (у фильмов заголовок
-на rutracker часто **обрезан**, поэтому маркеры ищутся ещё и в теле:
-«Перевод», «Субтитры», «Продолжительность»).
+The profile is picked automatically from the forum section and the topic body
+(for movies the rutracker title is often **truncated**, so the markers are
+also searched in the body: the Russian section labels for translation,
+subtitles and runtime).
 
-## Сравнение — это Парето, а не «одна лучшая»
+## Comparison is Pareto, not "one best"
 
-`compare` печатает таблицу с оценкой и **объяснением**, затем лучшую по
-совокупности и альтернативу. Версии почти всегда дают компромисс: TR24
-24/44.1 против CD 16/44.1, BDRemux 42 ГБ против BDRip 1.4 ГБ. Задача скилла —
-показать разницу, а решение остаётся за пользователем.
+`compare` prints a table with a score and an **explanation**, then the best
+overall pick and an alternative. Versions almost always involve a trade-off:
+TR24 24/44.1 vs CD 16/44.1, BDRemux 42 GB vs BDRip 1.4 GB. The skill's job is
+to show the difference; the decision stays with the user.
 
-## Порядок работы
+## Workflow
 
-1. **Поиск** (`search`), при необходимости с `--facts`.
-2. **Сравнение** (`compare`) — выбрать версию с объяснением.
-3. **Закачка** (`fetch`) — приоритет `high`, отдельный каталог.
-4. **Проверка после закачки** — `scripts/audio_measure.py <каталог>`: по раздаче
-   **не видно**, настоящий ли это lossless (фейковый hi-res, lossy-транскод).
-   Это обязательный шаг, если качество важно.
-5. Для музыки дальше — `split-flac-album` (если image+cue) и `release-restore`.
+1. **Search** (`search`), with `--facts` if needed.
+2. **Comparison** (`compare`) — pick a version with an explanation.
+3. **Download** (`fetch`) — priority `high`, a separate directory.
+4. **Check after download** — `scripts/audio_measure.py <dir>`: from the
+   release page you **cannot tell** whether this is real lossless (fake
+   hi-res, lossy transcode). This step is mandatory when quality matters.
+5. For music, next come `split-flac-album` (if image+cue) and `release-restore`.
 
-## Грабли (каждая стоила времени — не переучиваться)
+## Pitfalls (each cost time — do not relearn)
 
-- **Трекер уходит на профилактику**: страница отвечает 200, но это заглушка
-  «Форум временно отключен на профилактические работы до HH:MM MSK». Признак:
-  страница ~1.5 КБ вместо десятков КБ. Работать по локальному `.torrent` из
-  `~/Downloads`, не считать это ошибкой авторизации.
-- **`dl.php` приходит относительной ссылкой** (`dl.php?t=…`): без базового
-  префикса `https://rutracker.org/forum/` requests падает с `MissingSchema`.
-- **Приватный трекер не отдаёт число сидов в announce** (`seederCount = -1`):
-  не полагаться на `trackerStats`, брать сиды из результатов поиска.
-- **Размер нельзя брать из текста темы** — там попадаются мелкие числа (размер
-  обложки, куски треклиста). Точный размер даёт поиск по id.
-- **«TR24» — это 24 бита при 44.1 кГц**, а не высокий семплрейт. Истинный
-  hi-res проверяется после закачки.
-- **Винил/DSD (LP, SACD) — это другой мастеринг**, а не «качество выше»: шум,
-  рокот, иная динамика. Для реставрации цифровой мастер предпочтительнее.
-- **Не путать «альтернатива только в MP3» с «этот релиз MP3»** — формулировать
-  явно, иначе получается ложный вывод о качестве (реальная ошибка этой сессии).
-- **Тестовые закачки держать вне датасетного сырья**: цикл обогащения чистит
-  только `dataset/raw/`, но всё, что положено туда, он снесёт.
-- **Свои торренты пользователя не трогать**: любые массовые операции
-  (пауза, смена приоритета, удаление) фильтровать по `downloadDir`.
-- **Зависшие раздачи**: 0 пиров → снять пару и **очистить wanted-набор**, иначе
-  торрент продолжает качать в удалённый каталог и место утекает.
-- **Закачка image+cue**: каталог с треками и образ нельзя держать вместе, если
-  дальше по нему пойдёт `--src <dir>` (образ попадёт в обработку как трек).
+- **The tracker goes down for maintenance**: the page answers 200, but it is a
+  stub saying the forum is temporarily disabled for maintenance until HH:MM
+  MSK. Telltale sign: the page is ~1.5 KB instead of tens of KB. Work from a
+  local `.torrent` in `~/Downloads`, and do not treat this as an
+  authorization failure.
+- **`dl.php` comes as a relative link** (`dl.php?t=…`): without the base
+  prefix `https://rutracker.org/forum/` requests fails with `MissingSchema`.
+- **A private tracker does not report seeder counts in announce**
+  (`seederCount = -1`): do not rely on `trackerStats`, take seeders from the
+  search results.
+- **Never take the size from the topic text** — small numbers sneak in there
+  (cover size, pieces of the tracklist). Searching by id gives the exact size.
+- **"TR24" means 24 bits at 44.1 kHz**, not a high sample rate. True hi-res
+  is verified after download.
+- **Vinyl/DSD (LP, SACD) is a different mastering**, not "higher quality":
+  noise, rumble, different dynamics. For restoration a digital master is
+  preferable.
+- **Do not confuse "the alternative only exists as MP3" with "this release is
+  MP3"** — phrase it explicitly, otherwise you get a false conclusion about
+  quality (a real mistake from a past session).
+- **Keep test downloads out of the dataset raw material**: the enrichment
+  loop only cleans `dataset/raw/`, but everything put there it will wipe.
+- **Never touch the user's own torrents**: filter any bulk operations (pause,
+  priority change, removal) by `downloadDir`.
+- **Stalled torrents**: 0 peers → remove the torrent and **clear the wanted
+  set**, otherwise the torrent keeps downloading into a deleted directory and
+  disk space leaks.
+- **image+cue downloads**: the track directory and the image must not be kept
+  together if `--src <dir>` will later run on it (the image ends up processed
+  as a track).

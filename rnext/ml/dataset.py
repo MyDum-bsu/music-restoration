@@ -1,15 +1,16 @@
-"""Обучающая таблица датасета: пары → (признаки, цель, группа, страта).
+"""Dataset training table: pairs -> (features, target, group, stratum).
 
-Единица наблюдения — трек. Группа (альбом) обязательна: без неё любой сплит
-течёт, потому что треки одного альбома коррелированы.
+The unit of observation is a track. The group (album) is mandatory: without it
+any split leaks, because tracks of one album are correlated.
 
-Цели:
-  * `dcrest` — Δcrest мастера, дБ (основная);
-  * `ddr`    — ΔDR мастера;
-  * `tilt`   — 30 band-дельт мастера (отдельный многомерный выход).
+Targets:
+  * `dcrest` — master delta-crest, dB (primary);
+  * `ddr`    — master delta-DR;
+  * `tilt`   — 30 master band deltas (a separate multi-output target).
 
-В таблицу попадают только `trusted`-пары: метки радикальных реставраций
-искажены, и учить по ним цель нельзя (см. docs/dataset.md, аудит референсов).
+Only `trusted` pairs make it into the table: labels of radical restorations
+are distorted and cannot be used to learn the target (see docs/dataset.md,
+reference audit).
 """
 import json
 import math
@@ -21,10 +22,10 @@ import numpy as np
 from rnext import workspace
 
 HEALTHY_DR = 12
-LOW_BANDS = slice(7, 14)      # ~125–500 Гц
-HIGH_BANDS = slice(21, 28)    # ~2–8 кГц
+LOW_BANDS = slice(7, 14)      # ~125-500 Hz
+HIGH_BANDS = slice(21, 28)    # ~2-8 kHz
 
-# Признаки: имя → путь в строке фич (original) или производное
+# Features: name -> path in the feature row (original) or a derived value
 BASE_FEATURES = [
     "dr", "dr_exact", "crest_db", "rms_db", "peak_db", "dur_s",
 ]
@@ -69,7 +70,7 @@ def parse_band_freqs() -> np.ndarray:
 
 
 def tilt_features(bands: list[float] | None) -> tuple[float, float]:
-    """Наклон спектра: low−high (дБ) и коэффициент линейной регрессии по log-f."""
+    """Spectral tilt: low-high (dB) and the linear regression coefficient over log-f."""
     if not bands:
         return float("nan"), float("nan")
     b = np.asarray(bands, dtype=float)
@@ -171,7 +172,7 @@ def build_table(target: str = "dcrest", trusted_only: bool = True) -> Table:
             elif target == "ddr":
                 val = r["delta"]["dr"]
             else:
-                raise ValueError(f"неизвестная цель: {target}")
+                raise ValueError(f"unknown target: {target}")
             keys.append(f"{key}#t{r['track']}")
             X.append([_row_features(r, n_tracks)[f] for f in FEATURES])
             y.append(float(val))
@@ -190,12 +191,12 @@ def build_table(target: str = "dcrest", trusted_only: bool = True) -> Table:
 
 def split(table: Table, mode: str = "by-album", frac: float = 0.3,
           seed: int = 17) -> tuple[np.ndarray, np.ndarray]:
-    """train/holdout. `by-album` — 30 % альбомов; `by-author` — один автор целиком."""
+    """train/holdout. `by-album` — 30% of albums; `by-author` — one author in full."""
     rng = np.random.default_rng(seed)
     if mode == "by-author":
         authors = sorted(set(table.authors))
         if len(authors) < 2:
-            raise ValueError("для by-author нужно ≥2 автора в таблице")
+            raise ValueError("by-author needs >=2 authors in the table")
         hold_a = authors[int(rng.integers(0, len(authors)))]
         hold = np.where(table.authors == hold_a)[0]
         train = np.where(table.authors != hold_a)[0]
@@ -210,7 +211,7 @@ def split(table: Table, mode: str = "by-album", frac: float = 0.3,
 
 
 def volume() -> dict:
-    """Объём датасета для решения «пора обучать уровень N»."""
+    """Dataset size for deciding when it is time to train level N."""
     q = load_quality()
     pairs = 0
     tracks = 0

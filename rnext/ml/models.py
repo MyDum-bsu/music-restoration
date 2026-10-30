@@ -1,17 +1,19 @@
-"""Зоопарк моделей цели и правило выбора по объёму выборки.
+"""Model zoo for the target and a selection rule based on sample size.
 
-Правило простое и явное (никакой магии): чем больше данных, тем сложнее модель,
-но каждый переход должен доказать пользу на holdout, иначе остаётся предыдущая.
+The rule is simple and explicit (no magic): the more data, the more complex
+the model, but every step up must prove its benefit on holdout, otherwise the
+previous one stays.
 
-    table   — медианы по классу исходника (n ≥ 1): интерпретируемая база
-    ridge   — линейная на стандартизованных признаках (n ≥ 150)
-    knn     — диагностика «похожий материал → похожая цель» (n ≥ 150)
-    hgb     — HistGradientBoosting с монотонностью по DR (n ≥ 400)
-    hgbq    — квантильные HGB (q10/q50/q90) для полосы доверия (n ≥ 400)
-    conformal — конформная надстройка над любой базовой моделью (n ≥ 150)
+    table   — medians by source class (n >= 1): interpretable baseline
+    ridge   — linear on standardized features (n >= 150)
+    knn     — diagnosis of "similar material -> similar target" (n >= 150)
+    hgb     — HistGradientBoosting with monotonicity on DR (n >= 400)
+    hgbq    — quantile HGBs (q10/q50/q90) for a confidence band (n >= 400)
+    conformal — conformal add-on over any base model (n >= 150)
 
-Всё на sklearn: внешних зависимостей (lightgbm/xgboost/statsmodels) нет, и это
-осознанно — их негде ставить, а HistGradientBoosting закрывает задачу.
+Everything is on sklearn: no external dependencies (lightgbm/xgboost/
+statsmodels), and that is deliberate — there is nowhere to install them, and
+HistGradientBoosting covers the task.
 """
 from dataclasses import dataclass
 
@@ -28,12 +30,12 @@ MIN_N = {"table": 1, "ridge": 150, "knn": 150, "conformal": 150,
 
 MODEL_ORDER = ["table", "ridge", "knn", "hgb"]
 
-# признаки — столбцы матрицы (см. dataset.FEATURES); монотонность по DR
+# features are matrix columns (see dataset.FEATURES); monotonicity on DR
 MONOTONE_DECREASING_ON_DR = True
 
 
 class TableModel:
-    """Медианы Δcrest по классу исходника; фолбэк — общая медиана."""
+    """Delta-crest medians by source class; fallback is the overall median."""
 
     name = "table"
 
@@ -76,10 +78,10 @@ def make_pipeline(base: str, seed: int = 17):
 
 def build(base: str, n_train: int, seed: int = 17, feature_names: list[str] | None = None,
           classes: np.ndarray | None = None, X_train=None, y_train=None):
-    """Собрать и обучить модель уровня `base` (с проверкой порога объёма)."""
+    """Build and train a model of level `base` (with a sample-size threshold check)."""
     need = MIN_N.get(base, 1)
     if n_train < need:
-        raise ValueError(f"{base}: нужно ≥ {need} треков, есть {n_train}")
+        raise ValueError(f"{base}: need >= {need} tracks, have {n_train}")
     if base == "table":
         return TableModel().fit(X_train, y_train, classes=classes, feature_names=feature_names)
     if base == "hgbq":
@@ -89,11 +91,12 @@ def build(base: str, n_train: int, seed: int = 17, feature_names: list[str] | No
 
 @dataclass
 class Conformal:
-    """Конформная полоса вокруг точечного прогноза.
+    """Conformal band around a point prediction.
 
-    split-conformal: остатки на калибровочной части train → квантиль |resid|
-    даёт полуширину с гарантированным покрытием (при обменяемости), что для нас
-    важнее «самоуверенного» точечного прогноза.
+    split-conformal: residuals on the calibration part of train -> a quantile
+    of |resid| gives a half-width with guaranteed coverage (under
+    exchangeability), which matters more to us than a "self-confident" point
+    prediction.
     """
     model: object
     half_width: float
@@ -108,11 +111,11 @@ class Conformal:
 
 @dataclass
 class QuantileHGB:
-    """Квантильные HGB (q10/q50/q90): своя полоса доверия, без калибровки.
+    """Quantile HGBs (q10/q50/q90): a built-in confidence band, no calibration.
 
-    Конформная надстройка даёт гарантию покрытия, но только вокруг точечного
-    прогноза. Здесь ширина полосы — из самих данных: если модель на части
-    материала честно не уверена, полоса там шире.
+    The conformal add-on guarantees coverage, but only around a point
+    prediction. Here the band width comes from the data itself: if the model is
+    honestly unsure about part of the material, the band is wider there.
     """
     q10: object
     q50: object
@@ -123,14 +126,14 @@ class QuantileHGB:
 
     def interval(self, X, level: float = 0.8):
         lo, hi = self.q10.predict(X), self.q90.predict(X)
-        # квантильные оценки не обязаны быть монотонными — правим порядок
+        # quantile estimates are not required to be monotonic — fix the order
         return np.minimum(lo, hi), np.maximum(lo, hi)
 
 
 def _hgb(seed: int, quantile: float | None = None) -> HistGradientBoostingRegressor:
-    # ранняя остановка и листья 30 выбраны замером на 5 сплитах: разрыв
-    # обучение/отложено падает с 0.54 до 0.40 дБ, а отложенная медиана
-    # с 0.759 до 0.694 (при 400 треках без этого hgb запоминает корпус)
+    # early stopping and 30 leaves chosen by measurement on 5 splits: the
+    # train/holdout gap drops from 0.54 to 0.40 dB and the holdout median
+    # from 0.759 to 0.694 (at 400 tracks hgb memorizes the corpus without this)
     kw = dict(max_depth=3, learning_rate=0.05, max_iter=400, min_samples_leaf=30,
               l2_regularization=1.0, random_state=seed,
               early_stopping=True, validation_fraction=0.2, n_iter_no_change=20)
@@ -148,13 +151,13 @@ def fit_hgbq(X, y, seed: int = 17) -> QuantileHGB:
 
 def fit_conformal(model, X_cal, y_cal, level: float = 0.8) -> Conformal:
     resid = np.abs(model.predict(X_cal) - y_cal)
-    # конечная поправка (1+1/n) — стандартная для split-conformal
+    # finite-sample correction (1+1/n) — standard for split-conformal
     q = float(np.quantile(resid, min(1.0, level * (1 + 1 / max(len(resid), 1)))))
     return Conformal(model=model, half_width=q)
 
 
 def suggest_models(n_train: int, n_authors: int) -> list[str]:
-    """Какие модели имеет смысл обучать при таком объёме (и что сравнивать)."""
+    """Which models are worth training at this sample size (and what to compare)."""
     out = ["table"]
     if n_train >= MIN_N["ridge"]:
         out += ["ridge", "conformal"]

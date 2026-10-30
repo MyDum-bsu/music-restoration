@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Разбор темы реставрации на per-release JSON."""
+"""Parse a restoration topic into per-release JSON."""
 import json
 import sys
 
+from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rnext.rtclient import RTClient  # noqa: E402
 from rnext.rttopic import fetch_topic  # noqa: E402
-from pathlib import Path
 
 
 def main() -> int:

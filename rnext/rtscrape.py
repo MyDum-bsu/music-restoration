@@ -1,4 +1,4 @@
-"""Скрапер rutracker: реестр тем по мастер-профилям (статическая разметка tr[data-topic_id])."""
+"""rutracker scraper: topic registry from master profiles (static tr[data-topic_id] markup)."""
 import re
 import time
 
@@ -50,7 +50,7 @@ def _row_dict(tr) -> dict:
 
 
 def poster_topics(pid: str, max_pages: int = 40, pause: float = 1.2, client: RTClient | None = None) -> list[dict]:
-    """Все темы профиля (по 50 на страницу, пагинация start=50k)."""
+    """All topics of a profile (50 per page, start=50k pagination)."""
     c = client or RTClient()
     out: dict[int, dict] = {}
     for page in range(max_pages):

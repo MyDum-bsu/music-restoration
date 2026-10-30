@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Статус рабочего места: лимит флешки, cookie, transmission RPC."""
+"""Workplace status: flash drive budget, cookie, transmission RPC."""
 import sys
 import json
 
 import requests
 
+from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rnext import workspace  # noqa: E402
 from rnext import secrets  # noqa: E402
-from pathlib import Path
 
 
 def human(n: int) -> str:
@@ -28,23 +28,23 @@ def main() -> int:
         return 1
     budget = workspace.budget_bytes()
     bar = int(20 * used / budget)
-    print(f"флешка {workspace.data_root()}")
-    print(f"  [{('#' * bar).ljust(20)}] {human(used)} / {human(budget)}  (свободно {human(budget - used)})")
+    print(f"flash drive {workspace.data_root()}")
+    print(f"  [{('#' * bar).ljust(20)}] {human(used)} / {human(budget)}  (free {human(budget - used)})")
 
     cookies = secrets.rutracker_cookies()
     if cookies:
-        print(f"cookie: ок ({len(cookies)} шт: {', '.join(list(cookies)[:6])})")
+        print(f"cookie: ok ({len(cookies)} pcs: {', '.join(list(cookies)[:6])})")
     else:
-        print("cookie: НЕТО")
+        print("cookie: NONE")
 
-    # RPC требует рукопожатие X-Transmission-Session-Id — используем клиент
+    # RPC requires the X-Transmission-Session-Id handshake — use the client
     from rnext import transm as transm_mod
     rpc = transm_mod.check()
     if not rpc.get("ok"):
-        print(f"transmission rpc: оффа ({rpc.get('err')})")
+        print(f"transmission rpc: down ({rpc.get('err')})")
         return 0
     print(f"transmission rpc: ok {rpc['version']}")
-    # Проверяем, что тюнинг качки на месте (иначе скорость упадёт в разы)
+    # Verify the download tuning is still in place (otherwise speed drops severalfold)
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
         from scripts.transmission_tune import WATCH, TUNE  # type: ignore
@@ -53,11 +53,11 @@ def main() -> int:
     s = transm_mod.Transm().session()
     drift = {k: (s.get(k), TUNE.get(k)) for k in WATCH if k in TUNE and s.get(k) != TUNE[k]}
     if drift:
-        print("transmission тюнинг: СБИЛСЯ " + ", ".join(f"{k}: {v[0]}≠{v[1]}" for k, v in drift.items()))
-        print("   → запустите: python3 scripts/transmission_tune.py --apply")
+        print("transmission tuning: DRIFTED " + ", ".join(f"{k}: {v[0]}≠{v[1]}" for k, v in drift.items()))
+        print("   → run: python3 scripts/transmission_tune.py --apply")
     else:
-        print(f"transmission тюнинг: ок (очередь {s.get('download-queue-size')}, "
-              f"DHT {'вкл' if s.get('dht-enabled') else 'выкл'})")
+        print(f"transmission tuning: ok (queue {s.get('download-queue-size')}, "
+              f"DHT {'on' if s.get('dht-enabled') else 'off'})")
     return 0
 
 

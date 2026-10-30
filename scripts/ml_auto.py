@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Оркестратор: по мере роста датасета — обучение, эвалы, лидерборд.
+"""Orchestrator: as the dataset grows — training, evals, leaderboard.
 
-Логика (идемпотентная, можно звать из cron или держать в цикле):
+Logic (idempotent, can be called from cron or kept in a loop):
 
-  1. пересчитать версию датасета (manifest);
-  2. проверить объёмы: уровни M1=600 / M2=1500 / M3=3000 trusted-треков,
-     плюс требование ≥2 авторов и ≥5 альбомов в holdout;
-  3. для моделей, допустимых на этом объёме и ещё не обученных на ЭТОЙ версии
-     датасета, — обучить (сплит по альбомам); при ≥2 авторах дополнительно
-     обучить/оценить перенос (сплит по авторам);
-  4. записать снапшоты и дописать строку в лидерборд;
-  5. напечатать сводку: что обучено, что лучше базы, что ждёт объёма.
+  1. recompute the dataset version (manifest);
+  2. check volume: levels M1=600 / M2=1500 / M3=3000 trusted tracks,
+     plus a requirement of ≥2 authors and ≥5 albums in the holdout;
+  3. for models allowed at this volume and not yet trained on THIS dataset
+     version — train (split by album); with ≥2 authors, additionally
+     train/evaluate transfer (split by author);
+  4. write snapshots and append a row to the leaderboard;
+  5. print a summary: what was trained, what beats the baseline, what waits for volume.
 
-  python3 scripts/ml_auto.py             # один проход
-  python3 scripts/ml_auto.py --interval 1800   # цикл, раз в 30 минут
-  python3 scripts/ml_auto.py --force     # обучить всё заново на текущей версии
+  python3 scripts/ml_auto.py             # single pass
+  python3 scripts/ml_auto.py --interval 1800   # loop, every 30 minutes
+  python3 scripts/ml_auto.py --force     # retrain everything on the current version
 """
 import argparse
 import json
@@ -31,13 +31,13 @@ from rnext.ml import metrics as M  # noqa: E402
 from rnext.ml import models as Z  # noqa: E402
 from rnext.ml import registry as reg  # noqa: E402
 
-# Уровни привязаны к порогам моделей (rnext/ml/models.MIN_N), а не «на глаз»:
-#   ridge/knn/conformal — с 150 в fit ≈ 300 треков всего
-#   hgb/hgbq           — с 400 в fit ≈ 760 треков всего
-#   кросс-авторная проверка осмысленна с ~300 треков НА КАЖДОГО автора
-LEVELS = [(1, 300, "M1: регрессия цели (ridge/knn)"),
-          (2, 760, "M2: бустинг (hgb)"),
-          (3, 1500, "M3: кросс-авторская проверка")]
+# Levels are tied to model thresholds (rnext/ml/models.MIN_N), not eyeballed:
+#   ridge/knn/conformal — from 150 in fit ≈ 300 tracks total
+#   hgb/hgbq           — from 400 in fit ≈ 760 tracks total
+#   cross-author validation makes sense from ~300 tracks PER AUTHOR
+LEVELS = [(1, 300, "M1: target regression (ridge/knn)"),
+          (2, 760, "M2: boosting (hgb)"),
+          (3, 1500, "M3: cross-author validation")]
 ROOT_M = Path(__file__).resolve().parents[1] / "models"
 LEADERBOARD = ROOT_M / "leaderboard.jsonl"
 
@@ -54,10 +54,10 @@ def train_and_eval(table, base: str, target: str, holdout_mode: str, seed: int) 
     try:
         train_idx, hold_idx = ds.split(table, mode=holdout_mode, frac=0.3, seed=seed)
     except ValueError as e:
-        print(f"  [{base}/{holdout_mode}] пропуск сплита: {e}")
+        print(f"  [{base}/{holdout_mode}] skipping split: {e}")
         return None
     if len(train_idx) < Z.MIN_N.get(base, 1) or len(hold_idx) < 5:
-        print(f"  [{base}/{holdout_mode}] мало данных: train {len(train_idx)}, hold {len(hold_idx)}")
+        print(f"  [{base}/{holdout_mode}] too little data: train {len(train_idx)}, hold {len(hold_idx)}")
         return None
 
     Xtr, ytr = table.X[train_idx], table.y[train_idx]
@@ -67,8 +67,8 @@ def train_and_eval(table, base: str, target: str, holdout_mode: str, seed: int) 
     n_cal = max(1, int(0.25 * len(perm)))
     cal, fit = perm[:n_cal], perm[n_cal:]
     if len(fit) < Z.MIN_N.get(base, 1):
-        print(f"  [{base}] после калибровочного сплита осталось {len(fit)} треков "
-              f"(нужно {Z.MIN_N.get(base)}) — пропуск")
+        print(f"  [{base}] after the calibration split {len(fit)} tracks remain "
+              f"(need {Z.MIN_N.get(base)}) — skipping")
         return None
     model = Z.build(base, len(fit), seed=seed, feature_names=table.feature_names,
                     classes=table.classes[train_idx][fit], X_train=Xtr[fit], y_train=ytr[fit])
@@ -102,16 +102,16 @@ def train_and_eval(table, base: str, target: str, holdout_mode: str, seed: int) 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--interval", type=int, default=0, help="цикл, секунд (0 = один проход)")
-    ap.add_argument("--force", action="store_true", help="переобучить на текущей версии")
+    ap.add_argument("--interval", type=int, default=0, help="loop interval, seconds (0 = single pass)")
+    ap.add_argument("--force", action="store_true", help="retrain on the current version")
     ap.add_argument("--target", default="dcrest")
     ap.add_argument("--seed", type=int, default=17)
     ap.add_argument("--audio-max-pairs", type=int, default=3,
-                    help="сколько пар прогнать через аудио-эвал (0 = не гонять)")
+                    help="how many pairs to run through the audio eval (0 = none)")
     ap.add_argument("--audio-window", default="02:00-07:00",
-                    help="окно, когда аудио-эвал гоняется в полном объёме (локальное время)")
+                    help="window when the audio eval runs at full scale (local time)")
     ap.add_argument("--with-audio", action="store_true",
-                    help="плюс к обучению — end-to-end аудио-эвал на парах с сырьём")
+                    help="in addition to training — end-to-end audio eval on pairs with raw sources")
     args = ap.parse_args()
     while True:
         run_once(args)
@@ -121,7 +121,7 @@ def main() -> int:
 
 
 def in_window(spec: str) -> bool:
-    """'02:00-07:00' → сейчас внутри окна?"""
+    """'02:00-07:00' → is the current time inside the window?"""
     try:
         a, b = spec.split("-")
         ha, ma = (int(x) for x in a.split(":"))
@@ -138,21 +138,21 @@ def run_once(args) -> None:
     manifest = reg.write_manifest()
     trusted = manifest["trusted_tracks"]
     lvl = level_of(trusted)
-    print(f"[{time.strftime('%H:%M:%S')}] версия {manifest['version']}: "
-          f"пар {manifest['pairs']}, trusted-треков {trusted}, уровень M{lvl}")
+    print(f"[{time.strftime('%H:%M:%S')}] version {manifest['version']}: "
+          f"pairs {manifest['pairs']}, trusted tracks {trusted}, level M{lvl}")
 
     table = ds.build_table(target=args.target)
     if len(table) == 0:
-        print("  таблица пуста — ждём данные")
+        print("  table is empty — waiting for data")
         return
     n_authors = len(set(table.authors.tolist()))
     n_albums = len(set(table.groups.tolist()))
-    print(f"  треков {len(table)}, авторов {n_authors}, альбомов {n_albums}")
+    print(f"  tracks {len(table)}, authors {n_authors}, albums {n_albums}")
 
     todo = [m for m in Z.suggest_models(len(table), n_authors)
             if args.force or not reg.already_trained(manifest["version"], m.replace("conformal", "ridge"),
                                                       args.target)]
-    # conformal строится поверх ridge/hgb — обучаем отдельно поверх лучшей базы
+    # conformal is built on top of ridge/hgb — train it separately on top of the best base
     modes = ["by-album"] + (["by-author"] if n_authors >= 2 else [])
     done = 0
     for mode in modes:
@@ -200,33 +200,33 @@ def run_once(args) -> None:
                 }, ensure_ascii=False) + "\n")
             done += 1
             g = res["metrics"]["gate"]["vs_best"]
-            print(f"  ✓ {base}/{mode}: медиана|err| {res['metrics']['all']['median_abs']:.2f} "
+            print(f"  ✓ {base}/{mode}: median|err| {res['metrics']['all']['median_abs']:.2f} "
                   f"(noop {res['metrics']['baseline_noop']['median_abs']:.2f}, "
                   f"const46 {res['metrics']['baseline_const46']['median_abs']:.2f}, "
                   f"v0 {res['metrics']['baseline_v0table']['median_abs']:.2f}) | "
-                  f"гейт: {g['improvement_dB']:+.2f} дБ [{g['ci_low']:+.2f},{g['ci_high']:+.2f}] "
-                  f"{'PROMOTE' if res['metrics']['gate']['promote'] else 'держим прежнее'}")
+                  f"gate: {g['improvement_dB']:+.2f} dB [{g['ci_low']:+.2f},{g['ci_high']:+.2f}] "
+                  f"{'PROMOTE' if res['metrics']['gate']['promote'] else 'keeping the previous one'}")
 
     if not done:
-        print("  новых моделей нет (всё обучено на этой версии)")
+        print("  no new models (everything already trained on this version)")
 
     volume_checkpoints(table, manifest, args)
 
     nxt = next(((n, need, name) for n, need, name in LEVELS if trusted < need), None)
     if nxt:
-        print(f"  до M{nxt[0]} ({nxt[2]}): ещё {nxt[1] - trusted} trusted-треков")
+        print(f"  until M{nxt[0]} ({nxt[2]}): {nxt[1] - trusted} more trusted tracks")
     else:
-        print("  все уровни по объёму достигнуты — дальше только качество и слух")
+        print("  all volume levels reached — from here on it's only quality and listening")
     if args.with_audio:
         run_audio_eval(args, manifest)
     print(leaderboard_text())
 
 
 def run_audio_eval(args, manifest) -> None:
-    """End-to-end эвал: наш прогон на оригинале пары против мастера.
+    """End-to-end eval: our run on the pair's original against the master.
 
-    Гоняется только по парам, у которых сохранилось сырьё (--keep-raw при
-    извлечении). Результат прикладывается к версии датасета.
+    Runs only on pairs whose raw sources are still kept (--keep-raw at
+    extraction time). The result is attached to the dataset version.
     """
     import subprocess
     root = Path(__file__).resolve().parents[1]
@@ -235,15 +235,15 @@ def run_audio_eval(args, manifest) -> None:
         return
     night = in_window(args.audio_window)
     if not night:
-        n = 1                     # днём — минимум, полный прогон в окне
-        print(f"  аудио-эвал: днём только {n} пара (полный объём в окне {args.audio_window})")
+        n = 1                     # daytime — minimum, full run in the window
+        print(f"  audio eval: only {n} pair during the day (full scale in the window {args.audio_window})")
     out = subprocess.run([sys.executable, str(root / "scripts/dataset_eval.py"),
                           "--all", "--limit", str(n), "--max-tracks", "2",
                           "--variants", "flat,class",
                           "--summary-out", str(reg.dataset_dir() / "audio_eval_summary.json")],
                          capture_output=True, text=True, cwd=str(root))
     tail = (out.stdout or "").strip().splitlines()[-6:]
-    print("  аудио-эвал:")
+    print("  audio eval:")
     for line in tail:
         print("   ", line)
     sfile = reg.dataset_dir() / "audio_eval_summary.json"
@@ -256,10 +256,10 @@ def run_audio_eval(args, manifest) -> None:
 
 
 def volume_checkpoints(table, manifest, args) -> None:
-    """Снапшот модели каждые +100 trusted-треков: кривая «качество против объёма».
+    """Model snapshot every +100 trusted tracks: a "quality vs volume" curve.
 
-    Это не рабочие модели, а метки роста: они позволяют увидеть, где данные
-    перестают давать выигрыш (и не тратить трафик впустую).
+    These are not production models but growth markers: they show where data
+    stops paying off (so traffic is not wasted).
     """
     curve = ROOT_M / "volume_curve.jsonl"
     step = 100
@@ -292,16 +292,16 @@ def volume_checkpoints(table, manifest, args) -> None:
                "gate_gain": res["metrics"]["gate"]["vs_best"]["improvement_dB"]}
         with open(curve, "a", encoding="utf-8") as f:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
-        print(f"  кривая объёма: {base} на {trusted} треках → медиана|err| "
+        print(f"  volume curve: {base} at {trusted} tracks → median|err| "
               f"{row['median_abs']:.2f} (v0 {row['baseline_v0table']:.2f})")
 
 
 def leaderboard_text(limit: int = 8) -> str:
     if not LEADERBOARD.is_file():
-        return "  лидерборд пуст"
+        return "  leaderboard is empty"
     rows = [json.loads(l) for l in LEADERBOARD.read_text(encoding="utf-8").splitlines() if l.strip()]
     rows.sort(key=lambda r: (r["holdout_mode"], r["median_abs"]))
-    out = ["  лидерборд (медиана|err|, дБ):"]
+    out = ["  leaderboard (median|err|, dB):"]
     for r in rows[:limit]:
         out.append(f"    {r['holdout_mode']:<9} {r['model']:<10} ds={r['dataset_version']} "
                    f"n={r['n_train']:<4} {r['median_abs']:.2f} "

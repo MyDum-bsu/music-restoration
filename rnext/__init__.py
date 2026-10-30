@@ -1,1 +1,1 @@
-"""music-restoration: собственное DSP-ядро + корпус + краулер (без Stereo Tool)."""
+"""music-restoration: own DSP core + corpus + crawler (no Stereo Tool)."""

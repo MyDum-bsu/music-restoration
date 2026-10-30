@@ -1,6 +1,6 @@
 ---
 name: phone-music
-description: Work with a phone music library over MTP (or any local library) — audit it, bulk-add lyrics, embed covers and track numbers, fix untagged albums. Deterministic scripts, chunked and verify-everything. Use when the user asks to do anything with "телефон", "телефонная библиотека", phone albums/songs, or asks for covers/track info/lyrics on the phone.
+description: Work with a phone music library over MTP (or any local library) — audit it, bulk-add lyrics, embed covers and track numbers, fix untagged albums. Deterministic scripts, chunked and verify-everything. Use when the user asks to do anything with the "phone", the "phone library", phone albums/songs, or asks for covers/track info/lyrics on the phone. Do NOT use for one-off lyrics or split/tag jobs on desktop files (that's add-lyrics and split-flac-album), nor for quality measurement or restoration.
 ---
 
 # Phone Music Library

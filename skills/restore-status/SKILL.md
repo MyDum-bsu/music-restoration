@@ -1,132 +1,135 @@
 ---
 name: restore-status
-description: Отчёт о состоянии проекта music-restoration (реставрация аудио) одной командой — датасет, план пар, качка, процессы, модели и их метрики, плюс глубокая проверка (целостность данных, тесты DSP, сквозной прогон пайплайна). Использовать, когда просят «как дела», «что по датасету», «статус», «сколько треков», «провалидируй состояние», «идёт ли прогресс», «status report», «проверь, что всё работает». Не для запуска реставрации конкретного альбома (это release-restore).
+description: One-command status report of the music-restoration project (audio restoration) — dataset, pair plan, torrent queue, processes, models and their metrics, plus a deep check (data integrity, DSP tests, end-to-end pipeline run). Use when asked "how are things", "what's the dataset status", "status", "how many tracks", "validate the state", "is there progress", "status report", "check that everything works". Do NOT use for restoring a specific album (that's release-restore).
 ---
 
-# music-restoration: состояние проекта
+# music-restoration: project status
 
-Проект: `~/Desktop/projects/music-restoration` — пайплайн DR-реставрации, обучаемый на
-парах «оригинал → мастер-реставрация» с rutracker (два автора: Лисной Йожыг
-`pid=5618698`, Alias Divas `pid=3048819`). Данные — на флешке
-`/media/mydum/Data/Music/restore` (бюджет 40 ГиБ).
+Project: `~/Desktop/projects/music-restoration` — a DR-restoration pipeline
+trained on "original → master restoration" pairs from rutracker (two
+restoration authors: Lisnoy Yozhyg `pid=5618698`, Alias Divas `pid=3048819`).
+The data lives on a flash drive at `/media/mydum/Data/Music/restore`
+(40 GiB budget).
 
-## Быстрый ответ
+## Quick answer
 
 ```bash
-python3 ~/Desktop/projects/music-restoration/scripts/status_report.py          # отчёт
-python3 ~/Desktop/projects/music-restoration/scripts/status_report.py --deep   # + целостность, тесты, прогон
+python3 ~/Desktop/projects/music-restoration/scripts/status_report.py          # report
+python3 ~/Desktop/projects/music-restoration/scripts/status_report.py --deep   # + integrity, tests, run
 ```
 
-Скрипт печатает 6 (или 7 с `--deep`) секций и не падает, если одна из них
-недоступна:
+The script prints 6 sections (7 with `--deep`) and does not crash if one of
+them is unavailable:
 
-| секция | что показывает |
+| section | what it shows |
 |---|---|
-| 1. Флешка и бюджет | смонтирована ли, занято/лимит 40 ГиБ, свободно на разделе |
-| 2. Датасет | пар / треков / вырезок, классы исходника, версия `ds-…`, расстояние до M1/M2/M3 |
-| 3. План и журнал | matched-пары, цели мастера без аудио, статусы заведённых пар |
-| 4. Качка | раздачи, активные, скорость, «в работе» и сколько из этого с живыми пирами |
-| 5. Процессы | цикл обогащения, сторож, Transmission, плеер + последние строки лога цикла |
-| 6. Модели | сколько снапшотов, какие прошли гейт, что выберет рантайм, последний лидерборд |
-| 7. Глубокая (--deep) | целостность данных, тесты DSP, сквозной прогон пайплайна с моделью |
+| 1. Flash & budget | mounted or not, used/40 GiB limit, free space on the partition |
+| 2. Dataset | pairs / tracks / excerpts, source classes, the `ds-…` version, distance to M1/M2/M3 |
+| 3. Plan & journal | matched pairs, master targets without audio, statuses of registered pairs |
+| 4. Torrents | downloads, active ones, speed, what is "in progress" and how much of it has live peers |
+| 5. Processes | enrichment loop, watchdog, Transmission, player + the last lines of the loop log |
+| 6. Models | how many snapshots, which passed the gate, what the runtime will pick, the latest leaderboard |
+| 7. Deep (--deep) | data integrity, DSP tests, end-to-end pipeline run with a model |
 
-## Что важно знать про модели (проверено замерами)
+## What matters about the models (verified by measurements)
 
-- **Выбор рантайм-модели**: свежая версия датасета → лучшая медиана (by-album) →
-  только потом фиксированный порядок моделей. Вердикт гейта (`promote`) пишется
-  в реестр снапшотов — без него снапшот для рантайма невидим.
-- **hgbq** (квантильные HGB q10/q50/q90) реализован и даёт свою полосу доверия
-  рядом с конформной.
-- **Сквозная оценка на вырезках** (`dataset_eval.py`, варианты `flat,class,model`,
-  флаг `--holdout-only`): в-выборке модель лучшая (0.86 против 0.99 у классовой
-  таблицы), но **на holdout преимущество исчезает** (0.92 против 0.79–0.85;
-  разница в пределах шума, CI пересекает ноль). Зато пайплайн против «ничего не
-  делать» выигрывает огромно: −2.5 дБ, CI [−3.7, −1.6].
-- **By-author не проходит ни одна модель** (хуже классовой таблицы). Причина не
-  в объёме: **во всём плане всего 2 реставратора** (3164 и 1192 пары), и на
-  одинаковом материале они расходятся на 0.2–0.7 дБ. Больше треков от тех же
-  двух людей кросс-авторского обобщения не даст — нужны другие реставраторы.
-- **Продовая готовность: бета.** Ядро реставрации (DSP + классовая таблица +
-  физические инварианты) надёжно; ML-модель безопасна (зажата в ±2.5 дБ,
-  OOD-гейт), но её выигрыш вне обучающего корпуса пока не доказан.
+- **Runtime model selection**: the freshest dataset version → the best median
+  (by-album) → only then a fixed model order. The gate verdict (`promote`) is
+  written into the snapshot registry — without it a snapshot is invisible to
+  the runtime.
+- **hgbq** (quantile HGB q10/q50/q90) is implemented and gives its own
+  confidence band next to the conformal one.
+- **End-to-end evaluation on excerpts** (`dataset_eval.py`, variants
+  `flat,class,model`, flag `--holdout-only`): in-sample the model wins (0.86
+  vs 0.99 for the class table), but **on holdout the advantage disappears**
+  (0.92 vs 0.79–0.85; the difference is within noise, the CI crosses zero).
+  But the pipeline vs "do nothing" wins hugely: −2.5 dB, CI [−3.7, −1.6].
+- **No model passes the by-author split** (worse than the class table). The
+  reason is not volume: **the whole plan has only 2 restorers** (3164 and 1192
+  pairs), and on identical material they diverge by 0.2–0.7 dB. More tracks
+  from the same two people will not give cross-author generalization —
+  different restorers are needed.
+- **Production readiness: beta.** The restoration core (DSP + class table +
+  physical invariants) is reliable; the ML model is safe (clamped to ±2.5 dB,
+  OOD gate), but its benefit outside the training corpus is not yet proven.
 
-## Как читать
+## How to read it
 
-- **Уровни объёма** привязаны к порогам моделей: **M1 = 300 треков**
-  (ridge/knn/conformal), **M2 = 760** (hgb/hgbq), **M3 = 1500** (осмысленная
-  кросс-авторская проверка).
-- **Гейт продвижения**: модель попадает в рантайм, только если на отложенной
-  выборке она лучше СИЛЬНЕЙШЕЙ базы (обычно `v0table` — классовая таблица) на
-  ≥0.10 дБ и нижняя граница 95 % CI парного бутстрэпа > 0. Пока не пройдено —
-  в проде работает классовая таблица целей (crushed ≈5.3, mid ≈2.3, healthy 0).
-  Это норма, а не поломка.
-- **By-author сплит** (обучение на одном мастере, проверка на другом) — наш
-  тест на «выучили вкус одного корпуса». Он пока не проходит ни у одной модели;
-  это ожидаемо и отражено в отчёте.
-- **«В работе» vs «с пирами»**: кап на новые партии считается по раздачам,
-  у которых есть пиры. Мёртвые сиды (0 пиров) не должны блокировать конвейер —
-  их снимает `dataset_prune_stalled.py --peerless`.
+- **Volume levels** are tied to model thresholds: **M1 = 300 tracks**
+  (ridge/knn/conformal), **M2 = 760** (hgb/hgbq), **M3 = 1500** (meaningful
+  cross-author validation).
+- **Promotion gate**: a model enters the runtime only if on the holdout it
+  beats the STRONGEST baseline (usually `v0table` — the class table) by
+  ≥0.10 dB and the lower bound of the 95 % CI of a paired bootstrap > 0.
+  Until that happens, the class table of targets runs in production
+  (crushed ≈5.3, mid ≈2.3, healthy 0). That is normal, not a breakage.
+- **By-author split** (train on one master, validate on the other) — our test
+  for "learned the taste of one corpus". No model passes it yet; that is
+  expected and reflected in the report.
+- **"In progress" vs "with peers"**: the cap on new batches counts downloads
+  that have peers. Dead swarms (0 peers) must not block the pipeline —
+  `dataset_prune_stalled.py --peerless` removes them.
 
-## Если что-то не так
+## If something is off
 
-| симптом в отчёте | действие |
+| symptom in the report | action |
 |---|---|
-| «флешка НЕ смонтирована» | `scripts/repair_flash.sh` (найдёт раздел «Data», снимет флаг dirty, смонтирует; при отказе — `sudo ntfsfix -d /dev/sda5`) |
-| «свободно < 12 GB» | `scripts/dataset_prune_stalled.py --max-progress 0.5` и/или `--peerless` |
-| цикл/сторож не запущен | `scripts/resume.sh` (монтирование → тюнинг Transmission → целостность → цикл → обучение); сторож `scripts/watchdog.sh` поднимает цикл сам |
-| «нет продвинутой модели» | ничего не делать: копить треки, гейт пропустит сам; ускорить можно `scripts/ml_auto.py --force` |
-| Transmission RPC оффа | `transmission-gtk` не запущен: `scripts/resume.sh` поднимет; тюнинг — `scripts/transmission_tune.py --apply` |
-| много `paused_space` в журнале | пары отложены по месту/мёртвым сидам — селектор вернёт их в работу; при желании `scripts/dataset_fetch.py --refetch` |
-| много `dead_swarm` в журнале | пары с 0 пиров после двух заходов помечены терминально — это норма, слоты партий они не занимают |
-| зависшие раздачи в Transmission | `scripts/dataset_prune_stalled.py --peerless`, затем `scripts/dataset_fetch.py --repair` (снимает wanted у снятых пар и убирает «зомби»-раздачи) |
+| flash drive reported as not mounted | `scripts/repair_flash.sh` (finds the "Data" partition, clears the dirty flag, mounts; on refusal — `sudo ntfsfix -d /dev/sda5`) |
+| free space below 12 GB | `scripts/dataset_prune_stalled.py --max-progress 0.5` and/or `--peerless` |
+| loop/watchdog not running | `scripts/resume.sh` (mounting → Transmission tuning → integrity → loop → training); the watchdog `scripts/watchdog.sh` raises the loop by itself |
+| no promoted model | do nothing: keep accumulating tracks, the gate will pass one on its own; can be accelerated with `scripts/ml_auto.py --force` |
+| Transmission RPC off | `transmission-gtk` is not running: `scripts/resume.sh` will raise it; tuning — `scripts/transmission_tune.py --apply` |
+| many `paused_space` entries in the journal | pairs postponed over space/dead swarms — the selector will return them to work; optionally `scripts/dataset_fetch.py --refetch` |
+| many `dead_swarm` entries in the journal | pairs with 0 peers after two attempts are marked terminal — that is normal, they do not occupy batch slots |
+| stalled torrents in Transmission | `scripts/dataset_prune_stalled.py --peerless`, then `scripts/dataset_fetch.py --repair` (clears wanted on removed pairs and removes zombie torrents) |
 
-## Полезные команды (глубже)
+## Useful commands (deeper)
 
 ```bash
-python3 scripts/dataset_audit.py            # что скачано/извлечено/утеряно
+python3 scripts/dataset_audit.py            # what was downloaded/extracted/lost
 python3 scripts/dataset_audit.py --integrity
-python3 scripts/dataset_select.py --limit 12   # что попадёт в следующую партию
-python3 scripts/ml_auto.py --force             # переобучить на текущих данных
-python3 scripts/fit_tilt.py --report           # тональная кривая корпуса
-python3 scripts/dataset_eval.py --all --variants flat,class,model   # сквозная оценка
-python3 scripts/dataset_eval.py --all --holdout-only                # честная (не-в-выборке)
+python3 scripts/dataset_select.py --limit 12   # what goes into the next batch
+python3 scripts/ml_auto.py --force             # retrain on the current data
+python3 scripts/fit_tilt.py --report           # tonal curve of the corpus
+python3 scripts/dataset_eval.py --all --variants flat,class,model   # end-to-end evaluation
+python3 scripts/dataset_eval.py --all --holdout-only                # honest (not in-sample)
 
-# реставрация и оформление релиза (подробнее — скилл release-restore)
+# restoration and release packaging (details — the release-restore skill)
 python3 scripts/restore_one.py --src <dir> --out out/ \
         --auto-policy --adaptive --ml-snapshot auto --tp -0.5
 python3 scripts/finish_release.py --restored out/ --source <src> \
         --dest ~/Music/restorations/<name> --lyrics
 
-# поиск и выбор материала на трекере (подробнее — скилл tracker)
+# finding and picking material on the tracker (details — the tracker skill)
 python3 scripts/tracker_hunt.py search "Artist" --facts
 python3 scripts/tracker_hunt.py compare <tid> <tid>
 python3 scripts/fetch_release.py --topic <tid> --dir "Artist/Album" --priority high
 
-# качество и подлинность аудио (подробнее — скилл audio-measure)
-python3 scripts/audio_measure.py <каталог>
+# audio quality and authenticity (details — the audio-measure skill)
+python3 scripts/audio_measure.py <dir>
 ```
 
-## Ключевые пути
+## Key paths
 
 ```
 /media/mydum/Data/Music/restore/
-  corpus/dataset_plan.jsonl        план пар (релиз мастера → оригинал)
-  corpus/restored/{tid}.json       разбор тем мастера (+ таблицы DR мастера)
-  corpus/master_targets.jsonl      цели мастера без аудио (637 релизов / 8104 трека)
-  corpus/tilt_curve.json           подогнанная тональная кривая
-  dataset/pairs/<key>/             фичи (features.json), meta.json, вырезки
-  dataset/raw/<key>/{orig,master}  сырьё (транзит, окно свежих пар)
-  dataset/state.jsonl              журнал загрузок (сливается по ключу);
-                                   статусы: downloading, paused_space, dead_swarm,
+  corpus/dataset_plan.jsonl        pair plan (master release → original)
+  corpus/restored/{tid}.json       topic breakdowns of masters (+ master DR tables)
+  corpus/master_targets.jsonl      master targets without audio (637 releases / 8104 tracks)
+  corpus/tilt_curve.json           fitted tonal curve
+  dataset/pairs/<key>/             features (features.json), meta.json, excerpts
+  dataset/raw/<key>/{orig,master}  raw material (transit, window of fresh pairs)
+  dataset/state.jsonl              download journal (merged by key);
+                                   statuses: downloading, paused_space, dead_swarm,
                                    no_match, edition_mismatch, error
-  dataset/loop.log                 лог цикла обогащения
-  release/                         оформленные реставрации (теги, текст, обложка)
-  release_src/                     скачанные исходники релизов (мимо датасетного сырья)
+  dataset/loop.log                 enrichment loop log
+  release/                         packaged restorations (tags, lyrics, cover)
+  release_src/                     downloaded release sources (bypasses the dataset raw)
 
-~/Music/restorations/              готовое к прослушиванию (копия из release/)
-~/Desktop/projects/music-restoration/skills/   скиллы проекта (audio-measure, tracker,
+~/Music/restorations/              ready for listening (copy from release/)
+~/Desktop/projects/music-restoration/skills/   project skills (audio-measure, tracker,
                                    release-restore, restore-status)
 
-~/Desktop/projects/music-restoration/models/registry.jsonl      снапшоты моделей
-~/Desktop/projects/music-restoration/models/leaderboard.jsonl   результаты прогонов
+~/Desktop/projects/music-restoration/models/registry.jsonl      model snapshots
+~/Desktop/projects/music-restoration/models/leaderboard.jsonl   run results
 ```

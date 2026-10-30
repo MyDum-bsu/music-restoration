@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Измерение качества аудио: DR, громкость, пики и — главное — подлинность.
+"""Audio quality measurement: DR, loudness, peaks and — above all — authenticity.
 
-Отвечает на вопросы, которые возникают при выборе версии релиза:
-  * какой это DR (TT-конвенция, как в корпусе) и насколько он убит;
-  * не фейковый ли это hi-res (24/96 при пустоте выше 22 кГц);
-  * не перекодирован ли FLAC из lossy (обрыв спектра на 16–20 кГц);
-  * нет ли клиппинга и сколько сэмплов на пределе;
-  * совпадает ли заявленная битность/частота с фактической.
+Answers the questions that come up when picking a release version:
+  * what the DR is (TT convention, as in the corpus) and how crushed it is;
+  * whether the hi-res is fake (24/96 with nothing above 22 kHz);
+  * whether the FLAC was transcoded from lossy (spectrum cut at 16–20 kHz);
+  * whether there is clipping and how many samples sit at the limit;
+  * whether the declared bit depth/sample rate matches the actual one.
 
-  python3 scripts/audio_measure.py <файл|каталог> [...]        # таблица
-  python3 scripts/audio_measure.py --json out.json <каталог>   # + машинный вывод
-  python3 scripts/audio_measure.py --quick <каталог>           # без спектра (быстро)
+  python3 scripts/audio_measure.py <file|dir> [...]        # table
+  python3 scripts/audio_measure.py --json out.json <dir>   # + machine output
+  python3 scripts/audio_measure.py --quick <dir>           # no spectrum (fast)
 
-Спектральная проверка считается по самому громкому участку (2 с), поэтому
-требует декода; для больших библиотек есть --quick.
+The spectral check runs on the loudest spot (2 s), so it requires decoding;
+for large libraries there is --quick.
 """
 import argparse
 import json
@@ -40,7 +40,7 @@ def ffprobe(path: Path) -> dict:
 
 
 def decode(path: Path, max_s: float = 90.0):
-    """Декод в float32; для длинных файлов — только начало (DR по фрагменту)."""
+    """Decode to float32; for long files only the beginning (DR over the fragment)."""
     try:
         x, sr = F.decode_f32(str(path), 0.0, max_s)
         if x.size == 0:
@@ -51,7 +51,7 @@ def decode(path: Path, max_s: float = 90.0):
 
 
 def loudest_window(x: np.ndarray, sr: int, win_s: float = 2.0) -> np.ndarray:
-    """Самый громкий участок — по нему считаем спектр (тихие места врут)."""
+    """The loudest spot — the spectrum is computed there (quiet places lie)."""
     n = int(win_s * sr)
     if len(x) <= n:
         return x
@@ -66,10 +66,10 @@ def loudest_window(x: np.ndarray, sr: int, win_s: float = 2.0) -> np.ndarray:
 
 
 def spectral_cutoff(x: np.ndarray, sr: int, drop_db: float = 55.0) -> tuple[float, float, float]:
-    """Верхняя граница спектра и крутизна обрыва.
+    """Upper edge of the spectrum and the steepness of the cutoff.
 
-    Возвращает (cutoff_hz, rolloff_db_per_khz). Lossy-транскод виден как
-    обрыв на 16–20 кГц с последующим «ничем»; честный CD — до ~21 кГц.
+    Returns (cutoff_hz, rolloff_db_per_khz). A lossy transcode shows up as a
+    cut at 16–20 kHz followed by "nothing"; an honest CD reaches ~21 kHz.
     """
     seg = loudest_window(x, sr)
     if seg.ndim > 1:
@@ -80,7 +80,7 @@ def spectral_cutoff(x: np.ndarray, sr: int, drop_db: float = 55.0) -> tuple[floa
     win = np.hanning(n)
     spec = np.abs(np.fft.rfft(seg[:n] * win))
     freqs = np.fft.rfftfreq(n, 1 / sr)
-    # сглаживание по 1/12 октавы, чтобы не поймать узкий провал
+    # 1/12-octave smoothing so a narrow notch is not taken for the cutoff
     k = 64
     spec = np.convolve(spec, np.ones(k) / k, mode="same")
     peak = spec.max()
@@ -91,15 +91,15 @@ def spectral_cutoff(x: np.ndarray, sr: int, drop_db: float = 55.0) -> tuple[floa
     if len(idx) == 0:
         return 0.0, 0.0, 0.0
     cut = float(freqs[idx[-1]])
-    # крутизна: сколько дБ теряется в последних 2 кГц перед обрывом
+    # steepness: how many dB are lost in the last 2 kHz before the cutoff
     hi = idx[-1]
     lo = np.searchsorted(freqs, max(0.0, cut - 2000))
     if hi > lo + 1 and spec[lo] > 0:
         roll = 20 * math.log10(max(spec[hi], 1e-12) / spec[lo]) / ((cut - freqs[lo]) / 1000)
     else:
         roll = 0.0
-    # «пол» выше среза: у lossy-транскода там практически пусто (−80 дБ и ниже),
-    # у честного мастера остаётся естественный спад
+    # "floor" above the cutoff: for a lossy transcode it is nearly empty
+    # (−80 dB and below); an honest master keeps a natural rolloff there
     passband = spec[(freqs > 1000) & (freqs < max(2000, cut - 1000))]
     above = spec[(freqs > cut + 500) & (freqs < freqs[-1])]
     pb = float(np.median(passband)) if passband.size else 0.0
@@ -109,7 +109,7 @@ def spectral_cutoff(x: np.ndarray, sr: int, drop_db: float = 55.0) -> tuple[floa
 
 
 def lufs_tp(path: Path) -> tuple[float | None, float | None]:  # noqa: D401
-    """Интегральная громкость и true peak через ffmpeg ebur128."""
+    """Integrated loudness and true peak via ffmpeg ebur128."""
     try:
         r = subprocess.run(["ffmpeg", "-v", "info", "-i", str(path),
                             "-filter:a", "ebur128=peak=true", "-f", "null", "-"],
@@ -118,7 +118,7 @@ def lufs_tp(path: Path) -> tuple[float | None, float | None]:  # noqa: D401
         return None, None
     out = r.stderr
     lufs = tp = None
-    # итоговая сводка печатается в конце: берём ПОСЛЕДНИЕ блоки
+    # the final summary is printed at the end: take the LAST blocks
     i = out.rfind("Integrated loudness")
     if i >= 0:
         for line in out[i:].splitlines()[:4]:
@@ -146,7 +146,7 @@ def analyse(path: Path, quick: bool = False) -> dict:
            "dur_s": round(info.get("dur") or 0, 1)}
     x, sr = decode(path)
     if x is None or x.size == 0:
-        out["error"] = "не декодируется"
+        out["error"] = "does not decode"
         return out
     dr, drx, _ch, peak, rms = F.tt_dr(x, sr)
     out.update(dr=dr, dr_exact=round(float(drx), 2), crest_tt=round(peak - rms, 2),
@@ -160,11 +160,11 @@ def analyse(path: Path, quick: bool = False) -> dict:
         nyq = sr / 2
         out.update(cutoff_hz=round(cut), rolloff_db_per_khz=round(roll, 1),
                    hf_floor_db=round(floor_db, 1), nyquist_hz=round(nyq))
-        # фейковый hi-res: заявлено >44.1 кГц, а контента выше 22 кГц нет
+        # fake hi-res: declared >44.1 kHz but no content above 22 kHz
         out["fake_hires"] = bool(sr > 48000 and cut < 0.9 * 22050)
-        # lossy-транскод = обрыв НИЖЕ 19 кГц И практически пустота выше среза.
-        # Одного низкого среза мало: тёмный или сильно лимитированный мастер
-        # тоже даёт низкий срез, но не даёт «стены».
+        # lossy transcode = cutoff BELOW 19 kHz AND near-emptiness above it.
+        # A low cutoff alone is not enough: a dark or heavily limited master
+        # also yields a low cutoff, but no "wall".
         out["lossy_suspect"] = bool(cut and cut < 19000 and floor_db < -75)
     lufs, tp = lufs_tp(path)
     out["lufs_i"] = lufs
@@ -175,23 +175,23 @@ def analyse(path: Path, quick: bool = False) -> dict:
 def verdict(r: dict) -> list[str]:
     v = []
     if r.get("error"):
-        return ["не читается"]
+        return ["unreadable"]
     if r.get("fake_hires"):
-        v.append("ФЕЙКОВЫЙ HI-RES")
+        v.append("FAKE HI-RES")
     if r.get("lossy_suspect"):
-        v.append("подозрение на lossy-транскод")
+        v.append("lossy transcode suspected")
     if r.get("clipped_pct", 0) > 0.05:
-        v.append(f"клиппинг {r['clipped_pct']:.2f}%")
+        v.append(f"clipping {r['clipped_pct']:.2f}%")
     if (r.get("dr") or 99) <= 6:
-        v.append("сильно убит DR")
-    return v or ["ок"]
+        v.append("DR heavily crushed")
+    return v or ["ok"]
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("paths", nargs="+")
     ap.add_argument("--json", default="")
-    ap.add_argument("--quick", action="store_true", help="без спектра и LUFS")
+    ap.add_argument("--quick", action="store_true", help="no spectrum or LUFS")
     ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
 
@@ -205,15 +205,15 @@ def main() -> int:
     if args.limit:
         files = files[:args.limit]
     if not files:
-        print("нет аудиофайлов")
+        print("no audio files")
         return 1
 
     rows = []
-    print(f"{'файл':<44}{'формат':>14}{'DR':>4}{'crest':>7}{'LUFS':>7}{'TP':>7}{'срез':>7}  вердикт")
+    print(f"{'file':<44}{'format':>14}{'DR':>4}{'crest':>7}{'LUFS':>7}{'TP':>7}{'cut':>7}  verdict")
     for f in files:
         r = analyse(f, quick=args.quick)
         rows.append(r)
-        fmt = f"{r.get('sr') or '?'}Гц/{r.get('bits') or '?'}бит"
+        fmt = f"{r.get('sr') or '?'}Hz/{r.get('bits') or '?'}bit"
         cut = r.get("cutoff_hz")
         print(f"{f.name[:43]:<44}{fmt:>14}{r.get('dr', '-'):>4}{r.get('crest_tt', 0):>7.2f}"
               f"{(r.get('lufs_i') if r.get('lufs_i') is not None else 0):>7.1f}"
@@ -223,12 +223,12 @@ def main() -> int:
 
     ok = [r for r in rows if not r.get("error")]
     if ok:
-        print(f"\nитог по {len(ok)} файлам: DR медиана {S.median([r['dr'] for r in ok]):.0f} "
-              f"(диапазон {min(r['dr'] for r in ok)}…{max(r['dr'] for r in ok)}), "
-              f"LUFS медиана {S.median([r['lufs_i'] for r in ok if r.get('lufs_i')] or [0]):.1f}, "
-              f"клиппинг есть в {sum(1 for r in ok if r.get('clipped_pct', 0) > 0.05)} файлах, "
-              f"фейковый hi-res — {sum(1 for r in ok if r.get('fake_hires'))}, "
-              f"lossy-подозрений — {sum(1 for r in ok if r.get('lossy_suspect'))}")
+        print(f"\ntotal over {len(ok)} files: DR median {S.median([r['dr'] for r in ok]):.0f} "
+              f"(range {min(r['dr'] for r in ok)}…{max(r['dr'] for r in ok)}), "
+              f"LUFS median {S.median([r['lufs_i'] for r in ok if r.get('lufs_i')] or [0]):.1f}, "
+              f"clipping in {sum(1 for r in ok if r.get('clipped_pct', 0) > 0.05)} files, "
+              f"fake hi-res — {sum(1 for r in ok if r.get('fake_hires'))}, "
+              f"lossy suspects — {sum(1 for r in ok if r.get('lossy_suspect'))}")
     if args.json:
         Path(args.json).write_text(json.dumps(rows, ensure_ascii=False, indent=1),
                                    encoding="utf-8")

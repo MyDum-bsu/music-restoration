@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Обучение модели цели на текущей версии датасета + снапшот + метрики.
+"""Train a target model on the current dataset version + snapshot + metrics.
 
-Модель выбирается по объёму (см. rnext/ml/models.py) либо задаётся явно.
-Сплит по альбомам (по умолчанию) или по авторам (`--by-author`) — последний
-и есть честная проверка переноса между мастерами.
+The model is picked by volume (see rnext/ml/models.py) or set explicitly.
+Split by album (default) or by author (`--by-author`) — the latter is the
+honest check of transfer between masters.
 
   python3 scripts/ml_train.py --model auto
   python3 scripts/ml_train.py --model ridge --by-author
@@ -28,17 +28,17 @@ def train_one(table, base: str, train_idx, hold_idx, target: str, seed: int,
               conformal: bool = False) -> tuple[object, dict]:
     Xtr, ytr = table.X[train_idx], table.y[train_idx]
     Xho, yho = table.X[hold_idx], table.y[hold_idx]
-    # калибровочная часть train — для конформной полосы
+    # calibration part of train — for the conformal band
     rng = np.random.default_rng(seed)
     perm = rng.permutation(len(train_idx))
     n_cal = max(1, int(0.25 * len(perm)))
     cal, fit = perm[:n_cal], perm[n_cal:]
 
     if len(fit) < Z.MIN_N.get(base, 1):
-        print(f"  [{base}] после калибровочного сплита осталось {len(fit)} треков "
-              f"(нужно {Z.MIN_N.get(base)}) — пропуск")
+        print(f"  [{base}] after the calibration split {len(fit)} tracks remain "
+              f"(need {Z.MIN_N.get(base)}) — skipping")
         return None
-    # conformal — надстройка, а не базовая модель: строим поверх ridge
+    # conformal is an add-on, not a base model: built on top of ridge
     real_base = "ridge" if base == "conformal" else base
     model = Z.build(real_base, len(fit), seed=seed, feature_names=table.feature_names,
                     classes=table.classes[train_idx][fit], X_train=Xtr[fit], y_train=ytr[fit])
@@ -52,8 +52,8 @@ def train_one(table, base: str, train_idx, hold_idx, target: str, seed: int,
         stats["coverage_80"] = M.interval_coverage(yho, lo, hi)
     stats["vs_noop"] = M.compare_to_baseline(stats, "noop")
     stats["vs_v0table"] = M.compare_to_baseline(stats, "v0table")
-    # гейт обязателен и здесь: без вердикта снапшот невидим для рантайма
-    # (он берёт только прошедшие гейт) — ручной прогон давал «мёртвые» снапшоты
+    # the gate is required here too: without a verdict the snapshot is invisible to the runtime
+    # (it only picks gate-passing snapshots) — manual runs produced "dead" snapshots
     stats["gate"] = M.auto_gate(yho, pred, Xho[:, table.feature_names.index("dr")])
     Xf = Xtr[fit]
     fstats = {}
@@ -73,11 +73,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="auto", help="auto | table | ridge | knn | hgb | hgbq")
     ap.add_argument("--target", default="dcrest")
-    ap.add_argument("--by-author", action="store_true", help="holdout = целый автор")
+    ap.add_argument("--by-author", action="store_true", help="holdout = a whole author")
     ap.add_argument("--frac", type=float, default=0.3)
     ap.add_argument("--seed", type=int, default=17)
     ap.add_argument("--no-save", action="store_true")
-    ap.add_argument("--list", action="store_true", help="показать реестр снапшотов")
+    ap.add_argument("--list", action="store_true", help="show the snapshot registry")
     args = ap.parse_args()
 
     if args.list:
@@ -86,21 +86,21 @@ def main() -> int:
         return 0
 
     manifest = reg.write_manifest()
-    print(f"версия датасета: {manifest['version']} "
-          f"(пар {manifest['pairs']}, треков {manifest['tracks']}, "
-          f"trusted {manifest['trusted_tracks']}, метки {manifest['labels']})")
+    print(f"dataset version: {manifest['version']} "
+          f"(pairs {manifest['pairs']}, tracks {manifest['tracks']}, "
+          f"trusted {manifest['trusted_tracks']}, labels {manifest['labels']})")
 
     table = ds.build_table(target=args.target)
     if len(table) == 0:
-        print("таблица пуста — нет trusted-пар с фичами")
+        print("table is empty — no trusted pairs with features")
         return 0
     n_authors = len(set(table.authors.tolist()))
-    print(f"треков в таблице: {len(table)}, авторов {n_authors}, "
-          f"альбомов {len(set(table.groups.tolist()))}")
+    print(f"tracks in table: {len(table)}, authors {n_authors}, "
+          f"albums {len(set(table.groups.tolist()))}")
 
     candidates = Z.suggest_models(len(table), n_authors) if args.model == "auto" else [args.model]
     if args.model == "auto":
-        print(f"объём {len(table)} → модели: {candidates}")
+        print(f"volume {len(table)} → models: {candidates}")
 
     mode = "by-author" if args.by_author else "by-album"
     try:
@@ -108,21 +108,21 @@ def main() -> int:
     except ValueError as e:
         print(f"[skip] {e}")
         return 0
-    print(f"сплит {mode}: train {len(train_idx)} / holdout {len(hold_idx)} треков")
+    print(f"split {mode}: train {len(train_idx)} / holdout {len(hold_idx)} tracks")
     if len(train_idx) < 20 or len(hold_idx) < 5:
-        print("[skip] слишком мало данных для честной оценки — рано обучать "
-              f"(нужно ≥150 треков для ridge, ≥400 для hgb)")
+        print("[skip] too little data for an honest evaluation — too early to train "
+              f"(need ≥150 tracks for ridge, ≥400 for hgb)")
         return 0
 
     results = []
     for base in candidates:
         if len(train_idx) < Z.MIN_N.get(base, 1):
-            print(f"  {base}: пропуск (мало данных, нужно {Z.MIN_N.get(base)})")
+            print(f"  {base}: skipping (too little data, need {Z.MIN_N.get(base)})")
             continue
         model, info = train_one(table, base, train_idx, hold_idx, args.target, args.seed)
-        print(f"\n== {base}: медиана|err| {info['metrics']['all']['median_abs']:.2f} дБ, "
-              f"доля≤0.5 {info['metrics']['all']['share_le_0.5']:.0%}, "
-              f"против noop ×{info['metrics']['vs_noop']}")
+        print(f"\n== {base}: median|err| {info['metrics']['all']['median_abs']:.2f} dB, "
+              f"share≤0.5 {info['metrics']['all']['share_le_0.5']:.0%}, "
+              f"vs noop ×{info['metrics']['vs_noop']}")
         print(M.format_report(info["metrics"]))
         results.append((base, model, info))
         if not args.no_save:
@@ -141,12 +141,12 @@ def main() -> int:
                     **{k: v for k, v in info.items() if k != "metrics"},
                     "metrics": info["metrics"]}
             d = reg.save_snapshot(model, meta, mid)
-            print(f"  снапшот: {d}")
+            print(f"  snapshot: {d}")
 
     if results and not args.no_save:
         best = min(results, key=lambda r: r[2]["metrics"]["all"]["median_abs"])
-        print(f"\nлучшая модель этого прогона: {best[0]} "
-              f"(медиана|err| {best[2]['metrics']['all']['median_abs']:.2f} дБ)")
+        print(f"\nbest model of this run: {best[0]} "
+              f"(median|err| {best[2]['metrics']['all']['median_abs']:.2f} dB)")
     return 0
 
 

@@ -1,4 +1,4 @@
-"""Transmission RPC-клиент: сессия, добавление .torrent, статус очереди."""
+"""Transmission RPC client: session, adding .torrent files, queue status."""
 import base64
 import json
 from pathlib import Path
@@ -37,7 +37,7 @@ class Transm:
 
     def add_torrent_file(self, path: str, download_dir: str, stopped: bool = False) -> dict:
         from .workspace import data_root, dir_of
-        _ = data_root(), dir_of  # keep import warm for logging elsewhere
+        _ = data_root(), dir_of  # keep the import warm for logging elsewhere
         b64 = base64.b64encode(open(path, "rb").read()).decode()
         return self._call("torrent-add", {
             "metainfo": b64,
