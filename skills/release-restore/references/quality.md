@@ -59,7 +59,9 @@ the pictures masters attach: per-track PNG pages (waveform envelope, original
 vs restored spectrograms on one absolute dB scale, normalized average
 spectrum, short-term crest over time) and an animated GIF alternating the two
 spectrograms. Default selection: first, middle and last track; `--tracks`
-overrides.
+overrides. Style presets: `--style espresso` (default; black & gold, Source
+Serif Pro + JetBrains Mono), `cognac`, `noir`. Track numbers carry no leading
+zeros ("9. Creatures in Heaven").
 
 ## Useful artifacts
 
