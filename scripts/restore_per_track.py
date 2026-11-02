@@ -314,7 +314,9 @@ def main():
                       f"{row['better']['crest']:+.2f} shape {row['better']['shape_rms']:+.2f}", flush=True)
         rows.append(row)
         (out / "per_track_report.json").write_text(
-            json.dumps(rows, indent=1, ensure_ascii=False), encoding="utf-8")
+            json.dumps(rows, indent=1, ensure_ascii=False,
+                       default=lambda o: o.item() if hasattr(o, "item") else str(o)),
+            encoding="utf-8")
 
     write_report(out, rows)
     print(f"\ndone: {out}\nreport: {out / 'PER_TRACK_REPORT.md'}")
