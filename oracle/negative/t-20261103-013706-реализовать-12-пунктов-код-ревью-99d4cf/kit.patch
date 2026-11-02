@@ -1,0 +1,16 @@
+--- /dev/null
++++ b/skills/_negative_probe/SKILL.md
+@@ -0,0 +1,13 @@
++---
++name: _negative_probe
++description: "Negative-control fixture for the review contract, never merged."
++---
++
++# negative probe
++
++This file exists only to prove the contract can fail.
++
++R=/media/mydum/Data/Music/restore
++S=~/Desktop/projects/music-restoration
++
++Run `python3 scripts/does_not_exist.py` before restoring anything.
