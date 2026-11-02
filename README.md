@@ -1,10 +1,10 @@
 # music-restoration
 
 Say "restore this" to an agent with these skills, and it takes an album the
-whole way: finds the best release on the tracker if you don't have the files,
-checks them for real lossless, restores every track, runs the quality gates,
-tags the result, embeds cover art and lyrics, and puts the album in your
-collection with a DR report and spectrum charts.
+whole way. It finds the best release on the tracker if you don't have the
+files, checks them for real lossless, restores every track, runs the quality
+gates, then tags the result, embeds cover art and lyrics, and puts the album
+in your collection with a DR report and spectrum charts.
 
 The restoration is deterministic DSP: a 25 Hz high-pass, declipping when the
 master actually clips, per-band dynamics work, and a true-peak ceiling at
@@ -28,7 +28,7 @@ two spectrograms:
 ![spectrogram flip](docs/spectra/10_Lift_Somebody_Up.gif)
 
 Numbers for this track: DR 5 → 11, true peak +0.4 → −0.5 dBFS, zero added
-clipping, duration unchanged. Every release also ships `DR Report.txt` — the
+clipping, duration unchanged. Every release also ships `DR Report.txt`, the
 DR-meter table in the format restoration masters post in their topics.
 
 ## Install
@@ -83,4 +83,4 @@ python3 -m pytest tests/ -q
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).
