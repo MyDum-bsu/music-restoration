@@ -1,0 +1,20 @@
+[project]
+name = "music-restoration"
+base = "dev"
+protected = ["main"]
+wip = 1
+
+[runner]
+kind = "herdr-app"
+app = "herdr-app"
+agent = "pi"
+space = "music-restoration"
+
+[factory]
+auto_approve = true
+autonomy = "yolo"
+
+[risk]
+low = "auto"
+medium = "auto"
+high = "human"

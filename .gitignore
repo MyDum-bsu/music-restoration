@@ -15,3 +15,5 @@ node_modules/
 /out/
 /release_src/
 /dataset/
+.agent/
+.factory/
