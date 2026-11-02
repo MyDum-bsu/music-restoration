@@ -1,6 +1,6 @@
 ---
 name: release-restore
-description: Full agent cycle for music restoration — from "restore this" with no file on disk to a finished album in the collection: finds the release, downloads the best quality, measures, restores track-by-track, applies tags/cover/lyrics, generates a master-style DR report with spectra, and reports. Use when the user says "restore", "raise the DR", "save this crushed master", "make a release", "prepare the album for listening", gives a path/link/album name to restore, or asks to take downloaded music all the way to the collection. Do NOT use for measurements without restoration (audio-measure), searching/downloading without restoring (tracker), phone library care (phone-music), or project status (restore-status).
+description: "Full agent cycle for music restoration — from \"restore this\" with no file on disk to a finished album in the collection: finds the release, downloads the best quality, measures, restores track-by-track, applies tags/cover/lyrics, generates a master-style DR report with spectra, and reports. Use when the user says \"restore\", \"raise the DR\", \"save this crushed master\", \"make a release\", \"prepare the album for listening\", gives a path/link/album name to restore, or asks to take downloaded music all the way to the collection. Do NOT use for measurements without restoration (audio-measure), searching/downloading without restoring (tracker), phone library care (phone-music), or project status (restore-status)."
 ---
 
 # release-restore: "restore this" — from search to collection
