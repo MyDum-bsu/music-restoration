@@ -1,0 +1,15 @@
+diff --git a/scripts/release_scoring_legacy.py b/scripts/release_scoring_legacy.py
+new file mode 100644
+--- /dev/null
++++ b/scripts/release_scoring_legacy.py
+@@ -0,0 +1,2 @@
++"""Negative-control mutant: a second copy of the version-quality weights."""
++SCORE = {"BDRemux": 30, "WEB-DL": 22, "TrueHD": 8}
+diff --git a/skills/release-restore/LEGACY_PATHS.md b/skills/release-restore/LEGACY_PATHS.md
+new file mode 100644
+--- /dev/null
++++ b/skills/release-restore/LEGACY_PATHS.md
+@@ -0,0 +1,3 @@
++# Negative-control mutant
++
++Restore root hardcoded as `/media/mydum/Data/Music/restore`.
