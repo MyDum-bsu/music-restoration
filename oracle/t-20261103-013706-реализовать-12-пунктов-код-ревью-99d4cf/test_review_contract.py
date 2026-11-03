@@ -318,9 +318,13 @@ def portable_workspace_template(root: Path) -> list[str]:
     problems: list[str] = []
     text = example.read_text(encoding="utf-8")
     try:
-        json.loads(text)
+        data = json.loads(text)
     except json.JSONDecodeError as exc:
         problems.append(f"config/workspace.example.json is not valid JSON: {exc}")
+        data = None
+
+    if isinstance(data, dict) and not data:
+        problems.append("config/workspace.example.json is an empty object")
 
     for lineno, line in enumerate(text.splitlines(), start=1):
         match = MACHINE_PATH_RE.search(line)
@@ -329,8 +333,13 @@ def portable_workspace_template(root: Path) -> list[str]:
                 f"config/workspace.example.json:{lineno}: machine path `{match.group(0)}`"
             )
 
-    if not (root / "config" / "workspace.json").is_file():
-        problems.append("missing config/workspace.json (the template must mirror its keys)")
+    docs = [root / "docs" / "setup.md", root / "README.md"]
+    mentioned = any(
+        doc.is_file() and "workspace.example.json" in doc.read_text(encoding="utf-8")
+        for doc in docs
+    )
+    if not mentioned:
+        problems.append("config/workspace.example.json is not mentioned in docs/setup.md or README.md")
     return problems
 
 
@@ -378,7 +387,7 @@ def skill_frontmatter_is_valid_yaml(root: Path) -> list[str]:
                 problems.append(f"{path.relative_to(root)}: frontmatter is not a mapping")
             continue
 
-        # No PyYAML installed: validate shape instead of parsing.
+        # No PyYAML installed: validate the shape instead of parsing it.
         for lineno, line in enumerate(block.splitlines(), start=2):
             if not line.strip() or line.lstrip().startswith("#"):
                 continue
