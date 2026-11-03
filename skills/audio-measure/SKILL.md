@@ -8,9 +8,9 @@ description: Measure audio quality and authenticity — DR (TT convention), LUFS
 One script, one answer to the question "what is this file, really".
 
 ```bash
-python3 ~/Desktop/projects/music-restoration/scripts/audio_measure.py <file|dir> [...]
-python3 ~/Desktop/projects/music-restoration/scripts/audio_measure.py --json out.json <dir>
-python3 ~/Desktop/projects/music-restoration/scripts/audio_measure.py --quick <dir>   # no spectrum/LUFS
+python3 scripts/audio_measure.py <file|dir> [...]
+python3 scripts/audio_measure.py --json out.json <dir>
+python3 scripts/audio_measure.py --quick <dir>   # no spectrum/LUFS
 ```
 
 Prints a table: format (sample rate/bit depth), DR, crest, LUFS, TP, spectral

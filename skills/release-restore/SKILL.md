@@ -1,6 +1,6 @@
 ---
 name: release-restore
-description: Full agent cycle for music restoration — from "restore this" with no file on disk to a finished album in the collection: finds the release, downloads the best quality, measures, restores track-by-track, applies tags/cover/lyrics, generates a master-style DR report with spectra, and reports. Use when the user says "restore", "raise the DR", "save this crushed master", "make a release", "prepare the album for listening", gives a path/link/album name to restore, or asks to take downloaded music all the way to the collection. Do NOT use for measurements without restoration (audio-measure), searching/downloading without restoring (tracker), phone library care (phone-music), or project status (restore-status).
+description: "Full agent cycle for music restoration — from \"restore this\" with no file on disk to a finished album in the collection: finds the release, downloads the best quality, measures, restores track-by-track, applies tags/cover/lyrics, generates a master-style DR report with spectra, and reports. Use when the user says \"restore\", \"raise the DR\", \"save this crushed master\", \"make a release\", \"prepare the album for listening\", gives a path/link/album name to restore, or asks to take downloaded music all the way to the collection. Do NOT use for measurements without restoration (audio-measure), searching/downloading without restoring (tracker), phone library care (phone-music), or project status (restore-status)."
 ---
 
 # release-restore: "restore this" — from search to collection
@@ -9,8 +9,9 @@ One scenario covers everything: the user may not have the file — then the
 source is found and downloaded. If the file exists, the search step is skipped.
 
 ```bash
-S=~/Desktop/projects/music-restoration/scripts
-R=/media/mydum/Data/Music/restore          # work flash drive (config/workspace.json)
+S=scripts                                  # run from the repository root
+R="$(python3 -c 'from rnext import workspace; print(workspace.data_root())')"
+                                           # work drive: config/workspace.json
 ALBUM="<Artist> - <Album> (<year>)"        # release name
 ```
 

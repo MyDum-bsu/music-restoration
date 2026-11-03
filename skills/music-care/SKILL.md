@@ -1,6 +1,6 @@
 ---
 name: music-care
-description: Router for every music skill of the music-restoration project — find and download the best release, measure DR/authenticity, restore an album or track, embed lyrics, split image+cue, fix covers, sync to the phone, build blind listening packs. Use when the user asks for anything music-related — even if they never name a skill: "download this album", "how's the quality", "embed lyrics", "check my phone", "restore this", "restoration status". Do NOT use for non-music torrents (tracker handles movies/books itself — hand over to it) or anything outside audio.
+description: "Router for every music skill of the music-restoration project — find and download the best release, measure DR/authenticity, restore an album or track, embed lyrics, split image+cue, fix covers, sync to the phone, build blind listening packs. Use when the user asks for anything music-related — even if they never name a skill: \"download this album\", \"how's the quality\", \"embed lyrics\", \"check my phone\", \"restore this\", \"restoration status\". Do NOT use for non-music torrents (tracker handles movies/books itself — hand over to it) or anything outside audio."
 ---
 
 # music-care: one entry point for music
