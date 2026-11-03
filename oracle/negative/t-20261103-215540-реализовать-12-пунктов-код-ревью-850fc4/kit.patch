@@ -1,0 +1,67 @@
+Negative corpus for t-20261103-215540-реализовать-12-пунктов-код-ревью-850fc4.
+A "bad kit": apply to the base revision, then run the contract oracle — every
+hunk below must turn at least one contract test red.
+  hunk 1 -> item 2 (machine paths in skills)
+  hunk 2 -> item 3 (skill points at a non-existent file)
+  hunk 3 -> item 10 (workspace example: invalid JSON + machine path)
+  hunk 4 -> item 11 (version rolled back below 2.1)
+  hunk 5 -> item 9 (CI exists but never runs pytest)
+Do not apply this to a working tree that is being reviewed for merge.
+
+diff --git a/skills/release-restore/BAD_PATHS.md b/skills/release-restore/BAD_PATHS.md
+new file mode 100644
+--- /dev/null
++++ b/skills/release-restore/BAD_PATHS.md
+@@ -0,0 +1,5 @@
++# Bad kit: hardcoded machine paths
++
++R=/media/mydum/Data/Music/restore
++S=~/Desktop/projects/music-restoration
++W=C:\Users\mydum\Music
+diff --git a/skills/release-restore/REFS.md b/skills/release-restore/REFS.md
+new file mode 100644
+--- /dev/null
++++ b/skills/release-restore/REFS.md
+@@ -0,0 +1,3 @@
++# Bad kit: dangling references
++
++См. research/does_not_exist.py и scripts/status_report.py
+diff --git a/config/workspace.example.json b/config/workspace.example.json
+new file mode 100644
+--- /dev/null
++++ b/config/workspace.example.json
+@@ -0,0 +1,5 @@
++{
++  "data_root": "/home/user/Music",
++  "transmission": {"host": "127.0.0.1", "port": 9091},
++  "rutracker_cookies": "~/.config/music-restoration/cookies.txt"
++}
+diff --git a/pyproject.toml b/pyproject.toml
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -5,7 +5,7 @@
+ [project]
+ name = "music-restoration"
+-version = "2.0.0"
++version = "1.9.0"
+ description = "DR restoration of music albums: a custom DSP core, calibration on original → master-restoration pairs, ML estimation of the target"
+ readme = "README.md"
+ requires-python = ">=3.10"
+ license = { text = "MIT" }
+diff --git a/.github/workflows/lint.yml b/.github/workflows/lint.yml
+new file mode 100644
+--- /dev/null
++++ b/.github/workflows/lint.yml
+@@ -0,0 +1,12 @@
++name: lint
++
++on: [push, pull_request]
++
++jobs:
++  lint:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-python@v5
++      - run: pip install ruff
++      - run: ruff check .
