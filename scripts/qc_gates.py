@@ -8,9 +8,12 @@ Checks:
      not a verdict: on transients it is honestly large. The true contour gain
      is checked via the gains matrix from the pipeline (restore_track keep_arrays=True);
   4. absolute "jaggedness": no single amplitude jumps > 0.9 between adjacent
-     samples (click-like garbage from pipeline bugs).
+     samples (click-like garbage from pipeline bugs). With --orig the gate is
+     relative: FAIL only when the output has MORE such jumps than the source
+     take (a hot master already carries hundreds).
 
-Return codes: 0 = ok, 1 = violations found. Prints a JSON report.
+Return codes: 0 = ok, 1 = violations found (a missing/unreadable source take
+with --orig is a violation, not a silent fallback). Prints a JSON report.
 """
 import argparse
 import json
@@ -112,15 +115,60 @@ def sample_spikes(x: np.ndarray) -> int:
     return int((d > 0.95).sum())
 
 
+def source_take(orig_dir: str, out_name: str) -> Path | None:
+    """The source take `out_name` was restored from, or None if there is none.
+
+    Matched by track number: "07 - Title.flac" ↔ "07*.flac" in the source
+    directory. A name without a track number, or a directory without that
+    track, has no source — the caller turns that into an explicit failure
+    instead of a silent absolute verdict.
+    """
+    root = Path(orig_dir)
+    if not root.is_dir():
+        return None
+    m = re.match(r"\s*(\d{1,3})", out_name)
+    if m is None:
+        return None
+    cands = sorted(root.glob(f"{int(m.group(1)):02d}*.flac"))
+    return cands[0] if cands else None
+
+
+def spike_verdict(spikes: int, orig_spikes: int | None) -> tuple[bool, str]:
+    """Does the spike gate fail, and against what was it compared?
+
+    Without a source take every click-like jump is ours (absolute verdict).
+    With `--orig` only the GROWTH matters: a hot master already carries
+    hundreds of such jumps and the restoration must not add more.
+    """
+    if orig_spikes is None:
+        return spikes > 0, "absolute"
+    return spikes > orig_spikes, "vs_orig"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("files", nargs="+")
     ap.add_argument("--tp-ceiling", type=float, default=-0.5)
-    ap.add_argument("--orig", help="source directory: check the applied gain (out−in)")
+    ap.add_argument("--orig", help="source directory: compare against the source "
+                                    "take (spikes FAIL only if the output has more, "
+                                    "and the applied gain gets checked)")
     args = ap.parse_args()
 
     bad = False
     for f in args.files:
+        if args.orig:
+            # The source take is mandatory in this mode: a missing source is an
+            # explicit error, never a silent fallback to the absolute gate.
+            orig_path = source_take(args.orig, Path(f).name)
+            if orig_path is None:
+                rec = {"file": f, "verdict": "FAIL", "orig": args.orig,
+                       "reason": f"no source take in {args.orig} for {Path(f).name}"}
+                print(json.dumps(rec, ensure_ascii=False))
+                bad = True
+                continue
+        else:
+            orig_path = None
+
         x, sr = F.decode_f32(f)
         if x is None:
             print(f"{f}: DECODE FAIL")
@@ -130,15 +178,20 @@ def main() -> int:
         tp = true_peak_dbfs(x, sr)
         g = gain_smoothness(x, sr)
         gain_step = None
-        if args.orig:
-            m = re.match(r"\s*(\d{1,3})", Path(f).name)
-            tn = int(m.group(1)) if m else None
-            cands = sorted(Path(args.orig).glob(f"{tn:02d}*.flac")) if tn is not None else []
-            if cands:
-                xo, sro = F.decode_f32(str(cands[0]))
-                if xo is not None and sro == sr:
-                    gain_step = gain_smoothness_pair(xo, x, sr)["max_gain_step_db_per_frame"]
+        orig_spikes = None
+        if orig_path is not None:
+            xo, sro = F.decode_f32(str(orig_path))
+            if xo is None:
+                rec = {"file": f, "verdict": "FAIL", "orig": str(orig_path),
+                       "reason": f"source take does not decode: {orig_path}"}
+                print(json.dumps(rec, ensure_ascii=False))
+                bad = True
+                continue
+            orig_spikes = sample_spikes(xo)
+            if sro == sr:
+                gain_step = gain_smoothness_pair(xo, x, sr)["max_gain_step_db_per_frame"]
         spikes = sample_spikes(x)
+        spike_fail, spike_mode = spike_verdict(spikes, orig_spikes)
         clipped = int((np.abs((x * 32768).astype(np.int32)) >= 32766).sum())
         rec = {
             "file": f, "dr": st[0], "peak_db": round(st[3], 2),
@@ -150,10 +203,12 @@ def main() -> int:
             "gain_step_note": "info: effective out-in, not contour gain",
             "signal_step_db_per_frame": g["max_gain_step_db_per_frame"],
             "sample_spikes_gt09": spikes,
+            "sample_spikes_orig": orig_spikes,
+            "spike_gate": spike_mode,
         }
         # gain_step is informational: effective out−in, not the contour gain.
         # The verdict only uses TP, clipping and click-like spikes.
-        bad_cnt = (not rec["tp_ok"]) or clipped > 0 or spikes > 0
+        bad_cnt = (not rec["tp_ok"]) or clipped > 0 or spike_fail
         rec["verdict"] = "FAIL" if bad_cnt else "OK"
         print(json.dumps(rec, ensure_ascii=False))
         if bad_cnt:

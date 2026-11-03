@@ -19,7 +19,7 @@ Tags written (for maximum phone-player compatibility):
 
 ## Script
 
-`scripts/genius_lyrics.py` (next to this file). Subcommands:
+`skills/add-lyrics/scripts/genius_lyrics.py` (next to this file). Subcommands:
 
 ```bash
 S=<path-to-repo>/skills/add-lyrics/scripts/genius_lyrics.py

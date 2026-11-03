@@ -10,7 +10,7 @@ comparison → download), while the quality rules plug in via a profile per
 material type.
 
 ```bash
-S=~/Desktop/projects/music-restoration/scripts/tracker_hunt.py
+S=scripts/tracker_hunt.py                    # from the repository root
 
 python3 $S search "Jelusick"                 # list of releases
 python3 $S search "Blade Runner 2049" --facts  # + breakdown of each version

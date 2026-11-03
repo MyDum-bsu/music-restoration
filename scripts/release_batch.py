@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-"""Batch run of releases: restoration → finalization → phone, one by one.
+"""DEPRECATED legacy batch runner — use scripts/restore_per_track.py instead.
+
+It is kept only so old call sites do not break: it still runs restore_one.py per
+release, which is the single-policy path that produced worse results than the
+per-track pipeline ("не то качество", review item Standards #4).
+
+Replacement:
+  python3 scripts/restore_per_track.py --src "album/" --out "out/album [restored]"
+  python3 scripts/finish_release.py --restored "out/album [restored]" --source "album/"
+
+Batch run of releases: restoration → finalization → phone, one by one.
 
   python3 scripts/release_batch.py \
       --job "release_src/City and Colour/2005 - Sometimes|City and Colour/2005 - Sometimes|City and Colour - Sometimes (2005)" \
@@ -232,7 +242,9 @@ def process(job: str, log, clean_src: bool, skip_phone: bool, jobs: int = 1) -> 
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(
+        description="DEPRECATED (legacy): batch restore via restore_one.py. "
+                    "Use scripts/restore_per_track.py + scripts/finish_release.py.")
     ap.add_argument("--job", action="append", required=True,
                     help="\"source | path on the phone | release name\"")
     ap.add_argument("--log", default="/tmp/release_batch.log")
