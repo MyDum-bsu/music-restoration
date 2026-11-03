@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from bs4 import BeautifulSoup  # noqa: E402
 
+from rnext.planner import score_facts  # noqa: E402
 from rnext.rtclient import RTClient  # noqa: E402
 
 # Unit labels on the tracker also come in Russian (Cyrillic below is
@@ -223,61 +224,9 @@ def topic_facts(c: RTClient, tid: str) -> dict:
 
 # ---------------------------------------------------------------- scoring
 def score(f: dict) -> tuple[float, list[str]]:
-    """Score a version and give a human-readable explanation. Higher is better."""
-    s = 0.0
-    why: list[str] = []
-    if f["kind"] == "music":
-        if f.get("lossless"):
-            s += 100
-            why.append("lossless")
-        else:
-            s -= 100
-            why.append("lossy")
-        src = f.get("source", "?")
-        s += {"hi-res (24-bit)": 30, "WEB (digital release)": 25, "CD": 25,
-              "vinyl/DSD": 5}.get(src, 0)
-        if src != "?":
-            why.append(f"source: {src}")
-        if f.get("vinyl"):
-            why.append("vinyl — different mastering, noise/rumble")
-        if f.get("bits"):
-            s += 3 if f["bits"] >= 24 else 1
-        if f.get("dr_published"):
-            s += min(f["dr_published"], 16) * 0.5
-            why.append(f"DR in topic {f['dr_published']}")
-        if f.get("has_log"):
-            s += 3
-            why.append("has log")
-        if f.get("has_scans"):
-            s += 2
-            why.append("has scans")
-        if f.get("image_cue"):
-            s -= 1
-            why.append("image+cue (needs splitting)")
-    elif f["kind"] == "video":
-        res = {"2160P": 40, "4K": 40, "UHD": 40, "1080P": 25, "720P": 10}.get(
-            f.get("resolution", "?"), 0)
-        s += res
-        why.append(f"resolution {f.get('resolution')}")
-        s += {"BDRemux": 30, "BDRip": 20, "WEB-DL": 22, "WEBRip": 12, "HDTV": 5}.get(
-            f.get("source", "?"), 0)
-        why.append(f"source {f.get('source')}")
-        if f.get("codec") in ("x265", "hevc", "h.265", "av1"):
-            s += 5
-        if f.get("hdr"):
-            s += 8
-            why.append(f.get("hdr"))
-        if any(a in ("DTS-HD MA", "TrueHD", "LPCM", "Atmos") for a in f.get("audio", [])):
-            s += 8
-            why.append("lossless audio")
-        if "rus" in f.get("subs", []):
-            s += 3
-    else:
-        s += 10 if f.get("format") not in ("?", None) else 0
-        if f.get("text_layer"):
-            s += 5
-            why.append("text layer")
-    return s, why
+    """Score a parsed version and explain it. Higher is better (rnext.planner)."""
+    out = score_facts(f)
+    return out["score"], out["flags"]
 
 
 def fmt_facts(f: dict) -> str:

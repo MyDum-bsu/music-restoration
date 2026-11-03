@@ -9,8 +9,9 @@ One scenario covers everything: the user may not have the file — then the
 source is found and downloaded. If the file exists, the search step is skipped.
 
 ```bash
-S=~/Desktop/projects/music-restoration/scripts
-R=/media/mydum/Data/Music/restore          # work flash drive (config/workspace.json)
+S=scripts                                  # run from the repository root
+R="$(python3 -c 'from rnext import workspace; print(workspace.data_root())')"
+                                           # work drive: config/workspace.json
 ALBUM="<Artist> - <Album> (<year>)"        # release name
 ```
 
