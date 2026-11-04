@@ -130,7 +130,7 @@ def write_track(path: Path, seconds: float = 3.0, freq: float = 440.0,
         if clip:
             s = max(-1.0, min(1.0, s * 2.5))
         v = int(max(-32768, min(32767, round(s * 32767.0))))
-        buf += struct.pack("<h", v, v)
+        buf += struct.pack("<hh", v, v)
     with wave.open(str(path), "wb") as w:
         w.setnchannels(2)
         w.setsampwidth(2)
