@@ -1,0 +1,34 @@
+{
+  "variants": [
+    "indep",
+    "orig",
+    "ours"
+  ],
+  "albums": 16,
+  "tracks": 188,
+  "rows": 564,
+  "artists": [
+    "City and Colour",
+    "Dino Jelusick",
+    "Jelusick",
+    "Lost Society",
+    "Papa Roach",
+    "Perfect Plan",
+    "Ross The Boss",
+    "Whom Gods Destroy"
+  ],
+  "src": "/home/mydum/Desktop/projects/music-restoration/.factory/worktrees/t-20261104-104731-цель-доказательное-сравнение-кач-519fb2-9b8a857ce7ea75fe/.run/stage",
+  "ours": "/media/mydum/Data/Music",
+  "indep": "/home/mydum/Desktop/projects/music-restoration/.factory/worktrees/t-20261104-104731-цель-доказательное-сравнение-кач-519fb2-9b8a857ce7ea75fe/.run/indep",
+  "procedure": {
+    "peak_disqualify_above_dbfs": -0.9,
+    "dr_threshold": 0.3,
+    "loudness_mismatch_lu": 2.0
+  },
+  "verdict_counts": {
+    "ours_better": 0,
+    "indep_better": 187,
+    "comparable": 0,
+    "inconclusive": 1
+  }
+}

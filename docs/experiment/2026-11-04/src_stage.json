@@ -1,0 +1,911 @@
+{
+  "src": "/media/mydum/Data/Music/restore/release_src",
+  "ours": "/media/mydum/Data/Music",
+  "albums": [
+    {
+      "album": "City and Colour - Bring Me Your Love (2008)",
+      "artist": "City and Colour",
+      "staged": 14,
+      "dropped": [
+        "2008 - Bring Me Your Love Special Edition/CD2/01 - Forgive Me (Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/02 - Confessions (Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/03 - The Death of Me (Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/04 - Body in a Box (Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/05 - Sleeping Sickness (Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/06 - What Makes a Man  (Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/07 - Waiting...  (Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/08 - Constant Knot (Quiet Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/09 - Constant Know (Horns Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/10 - Against the Grain (Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/11 - Sensible Heart (Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/12 - As Much as I Ever Could (Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/13 - Faithless (Demo).flac",
+        "2008 - Bring Me Your Love Special Edition/CD2/14 - I Don't Need to Know (Demo).flac"
+      ],
+      "tracks": [
+        {
+          "track": "01. Forgive Me",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/01 - Forgive Me.flac"
+        },
+        {
+          "track": "02. Confessions",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/02 - Confessions.flac"
+        },
+        {
+          "track": "03. The Death Of Me",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/03 - The Death Of Me.flac"
+        },
+        {
+          "track": "04. Body In A Box",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/04 - Body In A Box.flac"
+        },
+        {
+          "track": "05. Sleeping Sickness",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/05 - Sleeping Sickness.flac"
+        },
+        {
+          "track": "06. What Makes A Man",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/06 - What Makes A Man .flac"
+        },
+        {
+          "track": "07. Waiting...",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/07 - Waiting....flac"
+        },
+        {
+          "track": "08. Constant Knot",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/08 - Constant Knot.flac"
+        },
+        {
+          "track": "09. Against The Grain",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/09 - Against The Grain.flac"
+        },
+        {
+          "track": "10. The Girl",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/10 - The Girl.flac"
+        },
+        {
+          "track": "11. Sensible Heart",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/11 - Sensible Heart.flac"
+        },
+        {
+          "track": "12. As Much As I Ever Could",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/12 - As Much As I Ever Could.flac"
+        },
+        {
+          "track": "13. Faithless",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/13 - Faithless.flac"
+        },
+        {
+          "track": "14. I Don't Need To Know",
+          "source": "2008 - Bring Me Your Love Special Edition/CD1/14 - I Don't Need To Know.flac"
+        }
+      ]
+    },
+    {
+      "album": "City and Colour - If I Should Go Before You (2015)",
+      "artist": "City and Colour",
+      "staged": 11,
+      "dropped": [],
+      "tracks": [
+        {
+          "track": "01. Woman",
+          "source": "City and Colour - If I Should Go Before You (2015) [FLAC]/01 Woman.flac"
+        },
+        {
+          "track": "02. Northern Blues",
+          "source": "City and Colour - If I Should Go Before You (2015) [FLAC]/02 Northern Blues.flac"
+        },
+        {
+          "track": "03. Mizzy C",
+          "source": "City and Colour - If I Should Go Before You (2015) [FLAC]/03 Mizzy C.flac"
+        },
+        {
+          "track": "04. If I Should Go Before You",
+          "source": "City and Colour - If I Should Go Before You (2015) [FLAC]/04 If I Should Go Before You.flac"
+        },
+        {
+          "track": "05. Killing Time",
+          "source": "City and Colour - If I Should Go Before You (2015) [FLAC]/05 Killing Time.flac"
+        },
+        {
+          "track": "06. Wasted Love",
+          "source": "City and Colour - If I Should Go Before You (2015) [FLAC]/06 Wasted Love.flac"
+        },
+        {
+          "track": "07. Runaway",
+          "source": "City and Colour - If I Should Go Before You (2015) [FLAC]/07 Runaway.flac"
+        },
+        {
+          "track": "08. Lover Come Back",
+          "source": "City and Colour - If I Should Go Before You (2015) [FLAC]/08 Lover Come Back.flac"
+        },
+        {
+          "track": "09. Map of the World",
+          "source": "City and Colour - If I Should Go Before You (2015) [FLAC]/09 Map of the World.flac"
+        },
+        {
+          "track": "10. Friends",
+          "source": "City and Colour - If I Should Go Before You (2015) [FLAC]/10 Friends.flac"
+        },
+        {
+          "track": "11. Blood",
+          "source": "City and Colour - If I Should Go Before You (2015) [FLAC]/11 Blood.flac"
+        }
+      ]
+    },
+    {
+      "album": "City and Colour - Sometimes (2005)",
+      "artist": "City and Colour",
+      "staged": 10,
+      "dropped": [],
+      "tracks": [
+        {
+          "track": "01. City and Colour - ....Off By Heart",
+          "source": "City And Colour (Sometimes) 2005 Flac/01 - City and Colour - ....Off By Heart.flac"
+        },
+        {
+          "track": "02. City and Colour - Like Knives",
+          "source": "City And Colour (Sometimes) 2005 Flac/02 - City and Colour - Like Knives.flac"
+        },
+        {
+          "track": "03. City and Colour - Hello, I'm in Delaware",
+          "source": "City And Colour (Sometimes) 2005 Flac/03 - City and Colour - Hello, I'm in Delaware.flac"
+        },
+        {
+          "track": "04. City and Colour - Save Your Scissors",
+          "source": "City And Colour (Sometimes) 2005 Flac/04 - City and Colour - Save Your Scissors.flac"
+        },
+        {
+          "track": "05. City and Colour - In the Water I Am Beautiful",
+          "source": "City And Colour (Sometimes) 2005 Flac/05 - City and Colour - In the Water I Am Beautiful.flac"
+        },
+        {
+          "track": "06. City and Colour - Day Old Hate",
+          "source": "City And Colour (Sometimes) 2005 Flac/06 - City and Colour - Day Old Hate.flac"
+        },
+        {
+          "track": "07. City and Colour - Sam Malone",
+          "source": "City And Colour (Sometimes) 2005 Flac/07 - City and Colour - Sam Malone.flac"
+        },
+        {
+          "track": "08. City and Colour - Comin' Home",
+          "source": "City And Colour (Sometimes) 2005 Flac/08 - City and Colour - Comin' Home.flac"
+        },
+        {
+          "track": "09. City and Colour - Casey's Song",
+          "source": "City And Colour (Sometimes) 2005 Flac/09 - City and Colour - Casey's Song.flac"
+        },
+        {
+          "track": "10. City and Colour - Sometimes (I Wish)",
+          "source": "City And Colour (Sometimes) 2005 Flac/10 - City and Colour - Sometimes (I Wish).flac"
+        }
+      ]
+    },
+    {
+      "album": "City and Colour - The Hurry And The Harm (2013)",
+      "artist": "City and Colour",
+      "staged": 12,
+      "dropped": [
+        "City And Colour - The Hurry And The Harm (2013) FLAC/City And Colour - The Hurry And The Harm.flac"
+      ],
+      "tracks": [
+        {
+          "track": "01. The Hurry And The Harm",
+          "source": "City And Colour - The Hurry And The Harm (2013) FLAC/_tracks/01 - The Hurry And The Harm.flac"
+        },
+        {
+          "track": "02. Harder Than Stone",
+          "source": "City And Colour - The Hurry And The Harm (2013) FLAC/_tracks/02 - Harder Than Stone.flac"
+        },
+        {
+          "track": "03. Of Space And Time",
+          "source": "City And Colour - The Hurry And The Harm (2013) FLAC/_tracks/03 - Of Space And Time.flac"
+        },
+        {
+          "track": "04. The Lonely Life",
+          "source": "City And Colour - The Hurry And The Harm (2013) FLAC/_tracks/04 - The Lonely Life.flac"
+        },
+        {
+          "track": "05. Paradise",
+          "source": "City And Colour - The Hurry And The Harm (2013) FLAC/_tracks/05 - Paradise.flac"
+        },
+        {
+          "track": "06. Commentators",
+          "source": "City And Colour - The Hurry And The Harm (2013) FLAC/_tracks/06 - Commentators.flac"
+        },
+        {
+          "track": "07. Thirst",
+          "source": "City And Colour - The Hurry And The Harm (2013) FLAC/_tracks/07 - Thirst.flac"
+        },
+        {
+          "track": "08. Two Coins",
+          "source": "City And Colour - The Hurry And The Harm (2013) FLAC/_tracks/08 - Two Coins.flac"
+        },
+        {
+          "track": "09. Take Care",
+          "source": "City And Colour - The Hurry And The Harm (2013) FLAC/_tracks/09 - Take Care.flac"
+        },
+        {
+          "track": "10. Ladies And Gentlemen",
+          "source": "City And Colour - The Hurry And The Harm (2013) FLAC/_tracks/10 - Ladies And Gentlemen.flac"
+        },
+        {
+          "track": "11. The Golden State",
+          "source": "City And Colour - The Hurry And The Harm (2013) FLAC/_tracks/11 - The Golden State.flac"
+        },
+        {
+          "track": "12. Death's Song",
+          "source": "City And Colour - The Hurry And The Harm (2013) FLAC/_tracks/12 - Death's Song.flac"
+        }
+      ]
+    },
+    {
+      "album": "City and Colour - The Love Still Held Me Near (2023)",
+      "artist": "City and Colour",
+      "staged": 12,
+      "dropped": [],
+      "tracks": [
+        {
+          "track": "01. City and Colour - Meant to Be",
+          "source": "City and Colour - The Love Still Held Me Near (2023) [FLAC] [16B-44.1kHz]/01. City and Colour - Meant to Be.flac"
+        },
+        {
+          "track": "02. City and Colour - Underground",
+          "source": "City and Colour - The Love Still Held Me Near (2023) [FLAC] [16B-44.1kHz]/02. City and Colour - Underground.flac"
+        },
+        {
+          "track": "03. City and Colour - Fucked It Up",
+          "source": "City and Colour - The Love Still Held Me Near (2023) [FLAC] [16B-44.1kHz]/03. City and Colour - Fucked It Up.flac"
+        },
+        {
+          "track": "04. City and Colour - The Love Still Held Me Near",
+          "source": "City and Colour - The Love Still Held Me Near (2023) [FLAC] [16B-44.1kHz]/04. City and Colour - The Love Still Held Me Near.flac"
+        },
+        {
+          "track": "05. City and Colour - A Little Mercy",
+          "source": "City and Colour - The Love Still Held Me Near (2023) [FLAC] [16B-44.1kHz]/05. City and Colour - A Little Mercy.flac"
+        },
+        {
+          "track": "06. City and Colour - Things We Choose to Care About",
+          "source": "City and Colour - The Love Still Held Me Near (2023) [FLAC] [16B-44.1kHz]/06. City and Colour - Things We Choose to Care About.flac"
+        },
+        {
+          "track": "07. City and Colour - After Disaster",
+          "source": "City and Colour - The Love Still Held Me Near (2023) [FLAC] [16B-44.1kHz]/07. City and Colour - After Disaster.flac"
+        },
+        {
+          "track": "08. City and Colour - Without Warning",
+          "source": "City and Colour - The Love Still Held Me Near (2023) [FLAC] [16B-44.1kHz]/08. City and Colour - Without Warning.flac"
+        },
+        {
+          "track": "09. City and Colour - Hard, Hard Time",
+          "source": "City and Colour - The Love Still Held Me Near (2023) [FLAC] [16B-44.1kHz]/09. City and Colour - Hard, Hard Time.flac"
+        },
+        {
+          "track": "10. City and Colour - The Water is Coming",
+          "source": "City and Colour - The Love Still Held Me Near (2023) [FLAC] [16B-44.1kHz]/10. City and Colour - The Water is Coming.flac"
+        },
+        {
+          "track": "11. City and Colour - Bow Down to Love",
+          "source": "City and Colour - The Love Still Held Me Near (2023) [FLAC] [16B-44.1kHz]/11. City and Colour - Bow Down to Love.flac"
+        },
+        {
+          "track": "12. City and Colour - Begin Again",
+          "source": "City and Colour - The Love Still Held Me Near (2023) [FLAC] [16B-44.1kHz]/12. City and Colour - Begin Again.flac"
+        }
+      ]
+    },
+    {
+      "album": "Dino Jelusick - Chosen Gems (2024)",
+      "artist": "Dino Jelusick",
+      "staged": 17,
+      "dropped": [
+        "Dino Jelusick - Chosen Gems (2024)/Dino Jelusick - Chosen Gems (20240116-1-).flac"
+      ],
+      "tracks": [
+        {
+          "track": "01. The Look",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/01 - The Look.flac"
+        },
+        {
+          "track": "02. Judgement Day",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/02 - Judgement Day.flac"
+        },
+        {
+          "track": "03. Monkey Business",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/03 - Monkey Business.flac"
+        },
+        {
+          "track": "04. Uncle Tom's Cabin",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/04 - Uncle Tom's Cabin.flac"
+        },
+        {
+          "track": "05. Foreplay - Long Time",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/05 - Foreplay - Long Time.flac"
+        },
+        {
+          "track": "06. Stormbringer",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/06 - Stormbringer.flac"
+        },
+        {
+          "track": "07. Jane",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/07 - Jane.flac"
+        },
+        {
+          "track": "08. Immigrant Song",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/08 - Immigrant Song.flac"
+        },
+        {
+          "track": "09. Serpent's Kiss",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/09 - Serpent's Kiss.flac"
+        },
+        {
+          "track": "10. Thorn In Our Side",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/10 - Thorn In Our Side.flac"
+        },
+        {
+          "track": "11. Terranigma",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/11 - Terranigma.flac"
+        },
+        {
+          "track": "12. The Last Time",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/12 - The Last Time.flac"
+        },
+        {
+          "track": "13. Black Hole Sun",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/13 - Black Hole Sun.flac"
+        },
+        {
+          "track": "14. The Great Divide",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/14 - The Great Divide.flac"
+        },
+        {
+          "track": "15. Down In A Hole",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/15 - Down In A Hole.flac"
+        },
+        {
+          "track": "16. Beneath Your Beautiful",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/16 - Beneath Your Beautiful.flac"
+        },
+        {
+          "track": "17. Bohemian Rhapsody",
+          "source": "Dino Jelusick - Chosen Gems (2024)/_tracks/17 - Bohemian Rhapsody.flac"
+        }
+      ]
+    },
+    {
+      "album": "Jelusick - Apolitical Ecstasy (2025)",
+      "artist": "Jelusick",
+      "staged": 10,
+      "dropped": [],
+      "tracks": [
+        {
+          "track": "01. Jaws Of Life",
+          "source": "Jelusick-Apolitical Ecstasy-(2025)/01 - Jaws Of Life.flac"
+        },
+        {
+          "track": "02. Power To The People",
+          "source": "Jelusick-Apolitical Ecstasy-(2025)/02 - Power To The People.flac"
+        },
+        {
+          "track": "03. Hangman",
+          "source": "Jelusick-Apolitical Ecstasy-(2025)/03 - Hangman.flac"
+        },
+        {
+          "track": "04. Seasons",
+          "source": "Jelusick-Apolitical Ecstasy-(2025)/04 - Seasons.flac"
+        },
+        {
+          "track": "05. What The Hell Is Goin' On",
+          "source": "Jelusick-Apolitical Ecstasy-(2025)/05 - What The Hell Is Goin' On.flac"
+        },
+        {
+          "track": "06. Groove Central",
+          "source": "Jelusick-Apolitical Ecstasy-(2025)/06 - Groove Central.flac"
+        },
+        {
+          "track": "07. Fool In Rain",
+          "source": "Jelusick-Apolitical Ecstasy-(2025)/07 - Fool In Rain.flac"
+        },
+        {
+          "track": "08. How Many Times",
+          "source": "Jelusick-Apolitical Ecstasy-(2025)/08 - How Many Times.flac"
+        },
+        {
+          "track": "09. Torn",
+          "source": "Jelusick-Apolitical Ecstasy-(2025)/09 - Torn.flac"
+        },
+        {
+          "track": "10. Apolitical Ecstasy",
+          "source": "Jelusick-Apolitical Ecstasy-(2025)/10 - Apolitical Ecstasy.flac"
+        }
+      ]
+    },
+    {
+      "album": "Jelusick - Follow The Blind Man (2023)",
+      "artist": "Jelusick",
+      "staged": 11,
+      "dropped": [],
+      "tracks": [
+        {
+          "track": "01. Reign of Vultures",
+          "source": "Jelusick - 2023 - Follow The Blind Man (24bit-44.1kHz)/01 Reign of Vultures.flac"
+        },
+        {
+          "track": "02. Died",
+          "source": "Jelusick - 2023 - Follow The Blind Man (24bit-44.1kHz)/02 Died.flac"
+        },
+        {
+          "track": "03. Animal Inside",
+          "source": "Jelusick - 2023 - Follow The Blind Man (24bit-44.1kHz)/03 Animal Inside.flac"
+        },
+        {
+          "track": "04. Follow The Blind Man",
+          "source": "Jelusick - 2023 - Follow The Blind Man (24bit-44.1kHz)/04 Follow The Blind Man.flac"
+        },
+        {
+          "track": "05. What I Want",
+          "source": "Jelusick - 2023 - Follow The Blind Man (24bit-44.1kHz)/05 What I Want.flac"
+        },
+        {
+          "track": "06. Acid Rain",
+          "source": "Jelusick - 2023 - Follow The Blind Man (24bit-44.1kHz)/06 Acid Rain.flac"
+        },
+        {
+          "track": "07. Healer",
+          "source": "Jelusick - 2023 - Follow The Blind Man (24bit-44.1kHz)/07 Healer.flac"
+        },
+        {
+          "track": "08. The Great Divide",
+          "source": "Jelusick - 2023 - Follow The Blind Man (24bit-44.1kHz)/08 The Great Divide.flac"
+        },
+        {
+          "track": "09. Fly High Again",
+          "source": "Jelusick - 2023 - Follow The Blind Man (24bit-44.1kHz)/09 Fly High Again.flac"
+        },
+        {
+          "track": "10. Chaos Master",
+          "source": "Jelusick - 2023 - Follow The Blind Man (24bit-44.1kHz)/10 Chaos Master.flac"
+        },
+        {
+          "track": "11. The Bitter End (Chaos Master pt. 2)",
+          "source": "Jelusick - 2023 - Follow The Blind Man (24bit-44.1kHz)/11 The Bitter End (Chaos Master pt. 2).flac"
+        }
+      ]
+    },
+    {
+      "album": "Lost Society - Hell Is A State Of Mind (2026) TR24",
+      "artist": "Lost Society",
+      "staged": 10,
+      "dropped": [],
+      "tracks": [
+        {
+          "track": "01. Afterlife",
+          "source": "Lost Society - 2026 - Hell Is A State Of Mind (24bit-44.1kHz)/01 Afterlife.flac"
+        },
+        {
+          "track": "02. Blood Diamond",
+          "source": "Lost Society - 2026 - Hell Is A State Of Mind (24bit-44.1kHz)/02 Blood Diamond.flac"
+        },
+        {
+          "track": "03. Synthetic",
+          "source": "Lost Society - 2026 - Hell Is A State Of Mind (24bit-44.1kHz)/03 Synthetic.flac"
+        },
+        {
+          "track": "04. Is This What You Wanted",
+          "source": "Lost Society - 2026 - Hell Is A State Of Mind (24bit-44.1kHz)/04 Is This What You Wanted.flac"
+        },
+        {
+          "track": "05. L'appel Du Vide",
+          "source": "Lost Society - 2026 - Hell Is A State Of Mind (24bit-44.1kHz)/05 L'appel Du Vide.flac"
+        },
+        {
+          "track": "06. Kill The Light",
+          "source": "Lost Society - 2026 - Hell Is A State Of Mind (24bit-44.1kHz)/06 Kill The Light.flac"
+        },
+        {
+          "track": "07. No Longer Human",
+          "source": "Lost Society - 2026 - Hell Is A State Of Mind (24bit-44.1kHz)/07 No Longer Human.flac"
+        },
+        {
+          "track": "08. Dead People Scare Me (But The Living Make Me Sick)",
+          "source": "Lost Society - 2026 - Hell Is A State Of Mind (24bit-44.1kHz)/08 Dead People Scare Me (But The Living Make Me Sick).flac"
+        },
+        {
+          "track": "09. Personal Judas",
+          "source": "Lost Society - 2026 - Hell Is A State Of Mind (24bit-44.1kHz)/09 Personal Judas.flac"
+        },
+        {
+          "track": "10. Hell Is A State Of Mind",
+          "source": "Lost Society - 2026 - Hell Is A State Of Mind (24bit-44.1kHz)/10 Hell Is A State Of Mind.flac"
+        }
+      ]
+    },
+    {
+      "album": "Papa Roach - The Paramour Sessions (2006)",
+      "artist": "Papa Roach",
+      "staged": 13,
+      "dropped": [],
+      "tracks": [
+        {
+          "track": "01. ...To Be Loved",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/01 - ...To Be Loved.flac"
+        },
+        {
+          "track": "02. Alive (N' Out Of Control)",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/02 - Alive (N' Out Of Control).flac"
+        },
+        {
+          "track": "03. Crash",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/03 - Crash.flac"
+        },
+        {
+          "track": "04. The World Around You",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/04 - The World Around You.flac"
+        },
+        {
+          "track": "05. Forever",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/05 - Forever.flac"
+        },
+        {
+          "track": "06. I Devise My Own Demise",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/06 - I Devise My Own Demise.flac"
+        },
+        {
+          "track": "07. Time Is Running Out",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/07 - Time Is Running Out.flac"
+        },
+        {
+          "track": "08. What Do You Do",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/08 - What Do You Do .flac"
+        },
+        {
+          "track": "09. My Heart Is A Fist",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/09 - My Heart Is A Fist.flac"
+        },
+        {
+          "track": "10. No More Secrets",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/10 - No More Secrets.flac"
+        },
+        {
+          "track": "11. Reckless",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/11 - Reckless.flac"
+        },
+        {
+          "track": "12. The Fire",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/12 - The Fire.flac"
+        },
+        {
+          "track": "13. Roses On My Grave",
+          "source": "Papa Roach - The Paramour Sessions - 2006 (CD - FLAC - Lossless)/13 - Roses On My Grave.flac"
+        }
+      ]
+    },
+    {
+      "album": "Perfect Plan - All Rise (2018) JP",
+      "artist": "Perfect Plan",
+      "staged": 12,
+      "dropped": [
+        "Perfect Plan/Perfect Plan - All Rise (2018)/All Rise [Japanese Edition].flac",
+        "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/12 - Heaven In Your Eyes (Acoustic Version) [Bonus Track].flac",
+        "Perfect Plan/Perfect Plan - Time For A Miracle (2020)/Time For A Miracle [Bonus Track].flac"
+      ],
+      "tracks": [
+        {
+          "track": "01. Bad City Woman",
+          "source": "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/01 - Bad City Woman.flac"
+        },
+        {
+          "track": "01. Perfect Plan - Bad City Woman",
+          "source": "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/01 - Bad City Woman.flac"
+        },
+        {
+          "track": "02. Perfect Plan - In and out of Love",
+          "source": "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/02 - In And Out Of Love.flac"
+        },
+        {
+          "track": "03. Perfect Plan - Stone Cold Lover",
+          "source": "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/03 - Stone Cold Lover.flac"
+        },
+        {
+          "track": "04. Perfect Plan - Gone Too Far",
+          "source": "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/04 - Gone Too Far.flac"
+        },
+        {
+          "track": "05. Perfect Plan - What Goes Around",
+          "source": "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/05 - What Goes Around.flac"
+        },
+        {
+          "track": "06. Perfect Plan - Too Late",
+          "source": "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/06 - Too Late.flac"
+        },
+        {
+          "track": "07. Perfect Plan - Can't Turn Back",
+          "source": "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/07 - Can't Turn Back.flac"
+        },
+        {
+          "track": "08. Perfect Plan - Never Surrender",
+          "source": "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/08 - Never Surrender.flac"
+        },
+        {
+          "track": "09. Perfect Plan - 1985",
+          "source": "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/09 - 1985.flac"
+        },
+        {
+          "track": "10. Perfect Plan - What Can I Do",
+          "source": "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/10 - What Can I Do.flac"
+        },
+        {
+          "track": "11. Perfect Plan - Heaven in Your Eyes",
+          "source": "Perfect Plan/Perfect Plan - All Rise (2018)/_tracks/11 - Heaven In Your Eyes.flac"
+        }
+      ]
+    },
+    {
+      "album": "Perfect Plan - All Rise (2018) TR24",
+      "artist": "Perfect Plan",
+      "staged": 12,
+      "dropped": [],
+      "tracks": [
+        {
+          "track": "01. Bad City Woman",
+          "source": "Perfect Plan - All Rise (2018) [24bit Hi-Res]/01. Perfect Plan - Bad City Woman.flac"
+        },
+        {
+          "track": "01. Perfect Plan - Bad City Woman",
+          "source": "Perfect Plan - All Rise (2018) [24bit Hi-Res]/01. Perfect Plan - Bad City Woman.flac"
+        },
+        {
+          "track": "02. Perfect Plan - In and out of Love",
+          "source": "Perfect Plan - All Rise (2018) [24bit Hi-Res]/02. Perfect Plan - In and out of Love.flac"
+        },
+        {
+          "track": "03. Perfect Plan - Stone Cold Lover",
+          "source": "Perfect Plan - All Rise (2018) [24bit Hi-Res]/03. Perfect Plan - Stone Cold Lover.flac"
+        },
+        {
+          "track": "04. Perfect Plan - Gone Too Far",
+          "source": "Perfect Plan - All Rise (2018) [24bit Hi-Res]/04. Perfect Plan - Gone Too Far.flac"
+        },
+        {
+          "track": "05. Perfect Plan - What Goes Around",
+          "source": "Perfect Plan - All Rise (2018) [24bit Hi-Res]/05. Perfect Plan - What Goes Around.flac"
+        },
+        {
+          "track": "06. Perfect Plan - Too Late",
+          "source": "Perfect Plan - All Rise (2018) [24bit Hi-Res]/06. Perfect Plan - Too Late.flac"
+        },
+        {
+          "track": "07. Perfect Plan - Can't Turn Back",
+          "source": "Perfect Plan - All Rise (2018) [24bit Hi-Res]/07. Perfect Plan - Can't Turn Back.flac"
+        },
+        {
+          "track": "08. Perfect Plan - Never Surrender",
+          "source": "Perfect Plan - All Rise (2018) [24bit Hi-Res]/08. Perfect Plan - Never Surrender.flac"
+        },
+        {
+          "track": "09. Perfect Plan - 1985",
+          "source": "Perfect Plan - All Rise (2018) [24bit Hi-Res]/09. Perfect Plan - 1985.flac"
+        },
+        {
+          "track": "10. Perfect Plan - What Can I Do",
+          "source": "Perfect Plan - All Rise (2018) [24bit Hi-Res]/10. Perfect Plan - What Can I Do.flac"
+        },
+        {
+          "track": "11. Perfect Plan - Heaven in Your Eyes",
+          "source": "Perfect Plan - All Rise (2018) [24bit Hi-Res]/11. Perfect Plan - Heaven in Your Eyes.flac"
+        }
+      ]
+    },
+    {
+      "album": "Perfect Plan - Heart Of A Lion (2025) TR24",
+      "artist": "Perfect Plan",
+      "staged": 11,
+      "dropped": [],
+      "tracks": [
+        {
+          "track": "01. Heart Of A Lion",
+          "source": "Perfect Plan - 2025 - Heart Of A Lion (24bit-44.1kHz)/01 Heart Of A Lion.flac"
+        },
+        {
+          "track": "02. We Are Heroes",
+          "source": "Perfect Plan - 2025 - Heart Of A Lion (24bit-44.1kHz)/02 We Are Heroes.flac"
+        },
+        {
+          "track": "03. All Night",
+          "source": "Perfect Plan - 2025 - Heart Of A Lion (24bit-44.1kHz)/03 All Night.flac"
+        },
+        {
+          "track": "04. Turn Up Your Radio",
+          "source": "Perfect Plan - 2025 - Heart Of A Lion (24bit-44.1kHz)/04 Turn Up Your Radio.flac"
+        },
+        {
+          "track": "05. My Unsung Hero",
+          "source": "Perfect Plan - 2025 - Heart Of A Lion (24bit-44.1kHz)/05 My Unsung Hero.flac"
+        },
+        {
+          "track": "06. Ready To Break",
+          "source": "Perfect Plan - 2025 - Heart Of A Lion (24bit-44.1kHz)/06 Ready To Break.flac"
+        },
+        {
+          "track": "07. Too Tough",
+          "source": "Perfect Plan - 2025 - Heart Of A Lion (24bit-44.1kHz)/07 Too Tough.flac"
+        },
+        {
+          "track": "08. Lady Mysterious",
+          "source": "Perfect Plan - 2025 - Heart Of A Lion (24bit-44.1kHz)/08 Lady Mysterious.flac"
+        },
+        {
+          "track": "09. One Touch",
+          "source": "Perfect Plan - 2025 - Heart Of A Lion (24bit-44.1kHz)/09 One Touch.flac"
+        },
+        {
+          "track": "10. Danger On The Loose",
+          "source": "Perfect Plan - 2025 - Heart Of A Lion (24bit-44.1kHz)/10 Danger On The Loose.flac"
+        },
+        {
+          "track": "11. At Your Stone",
+          "source": "Perfect Plan - 2025 - Heart Of A Lion (24bit-44.1kHz)/11 At Your Stone.flac"
+        }
+      ]
+    },
+    {
+      "album": "Perfect Plan - Time For A Miracle (2020) TR24",
+      "artist": "Perfect Plan",
+      "staged": 12,
+      "dropped": [],
+      "tracks": [
+        {
+          "track": "01. Time for a Miracle",
+          "source": "Perfect Plan - 2020 - Time for a Miracle [Hi-Res]/01 Time for a Miracle.flac"
+        },
+        {
+          "track": "02. Better Walk Alone",
+          "source": "Perfect Plan - 2020 - Time for a Miracle [Hi-Res]/02 Better Walk Alone.flac"
+        },
+        {
+          "track": "03. Heart To Stone",
+          "source": "Perfect Plan - 2020 - Time for a Miracle [Hi-Res]/03 Heart To Stone.flac"
+        },
+        {
+          "track": "04. Fighting to Win",
+          "source": "Perfect Plan - 2020 - Time for a Miracle [Hi-Res]/04 Fighting to Win.flac"
+        },
+        {
+          "track": "05. Every Time We Cry",
+          "source": "Perfect Plan - 2020 - Time for a Miracle [Hi-Res]/05 Every Time We Cry.flac"
+        },
+        {
+          "track": "06. What About Love",
+          "source": "Perfect Plan - 2020 - Time for a Miracle [Hi-Res]/06 What About Love.flac"
+        },
+        {
+          "track": "07. Nobody's Fool",
+          "source": "Perfect Plan - 2020 - Time for a Miracle [Hi-Res]/07 Nobody's Fool.flac"
+        },
+        {
+          "track": "08. Living on the Run",
+          "source": "Perfect Plan - 2020 - Time for a Miracle [Hi-Res]/08 Living on the Run.flac"
+        },
+        {
+          "track": "09. Just One Wish",
+          "source": "Perfect Plan - 2020 - Time for a Miracle [Hi-Res]/09 Just One Wish.flac"
+        },
+        {
+          "track": "10. Don't Blame It on Love Again",
+          "source": "Perfect Plan - 2020 - Time for a Miracle [Hi-Res]/10 Don't Blame It on Love Again.flac"
+        },
+        {
+          "track": "11. Give a Little Lovin",
+          "source": "Perfect Plan - 2020 - Time for a Miracle [Hi-Res]/11 Give a Little Lovin.flac"
+        },
+        {
+          "track": "12. Don't Leave Me Here Alone",
+          "source": "Perfect Plan - 2020 - Time for a Miracle [Hi-Res]/12 Don't Leave Me Here Alone.flac"
+        }
+      ]
+    },
+    {
+      "album": "Ross The Boss - Born Of Fire (2020)",
+      "artist": "Ross The Boss",
+      "staged": 12,
+      "dropped": [
+        "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/Ross The Boss - Born Of Fire (FO1553CD).flac"
+      ],
+      "tracks": [
+        {
+          "track": "01. Glory To The Slain",
+          "source": "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/_tracks/01 - Glory To The Slain.flac"
+        },
+        {
+          "track": "02. Fight The Fight",
+          "source": "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/_tracks/02 - Fight The Fight.flac"
+        },
+        {
+          "track": "03. Denied By The Cross",
+          "source": "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/_tracks/03 - Denied By The Cross.flac"
+        },
+        {
+          "track": "04. Maiden Of Shadows",
+          "source": "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/_tracks/04 - Maiden Of Shadows.flac"
+        },
+        {
+          "track": "05. I Am The Sword",
+          "source": "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/_tracks/05 - I Am The Sword.flac"
+        },
+        {
+          "track": "06. Shotgun Evolution",
+          "source": "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/_tracks/06 - Shotgun Evolution.flac"
+        },
+        {
+          "track": "07. Born Of Fire",
+          "source": "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/_tracks/07 - Born Of Fire.flac"
+        },
+        {
+          "track": "08. Godkiller",
+          "source": "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/_tracks/08 - Godkiller.flac"
+        },
+        {
+          "track": "09. The Blackest Heart",
+          "source": "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/_tracks/09 - The Blackest Heart.flac"
+        },
+        {
+          "track": "10. Demon Holiday",
+          "source": "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/_tracks/10 - Demon Holiday.flac"
+        },
+        {
+          "track": "11. Undying",
+          "source": "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/_tracks/11 - Undying.flac"
+        },
+        {
+          "track": "12. Waking The Moon",
+          "source": "Ross The Boss - 2020 - Born Of Fire [CD-FLAC]/_tracks/12 - Waking The Moon.flac"
+        }
+      ]
+    },
+    {
+      "album": "Whom Gods Destroy - Insanium (2024) TR24",
+      "artist": "Whom Gods Destroy",
+      "staged": 9,
+      "dropped": [],
+      "tracks": [
+        {
+          "track": "01. In the Name of War",
+          "source": "Whom Gods Destroy - 2024 - Insanium (24bit-44.1kHz)/01 In the Name of War.flac"
+        },
+        {
+          "track": "02. Over Again",
+          "source": "Whom Gods Destroy - 2024 - Insanium (24bit-44.1kHz)/02 Over Again.flac"
+        },
+        {
+          "track": "03. The Decision",
+          "source": "Whom Gods Destroy - 2024 - Insanium (24bit-44.1kHz)/03 The Decision.flac"
+        },
+        {
+          "track": "04. Crawl",
+          "source": "Whom Gods Destroy - 2024 - Insanium (24bit-44.1kHz)/04 Crawl.flac"
+        },
+        {
+          "track": "05. Find My Way Back",
+          "source": "Whom Gods Destroy - 2024 - Insanium (24bit-44.1kHz)/05 Find My Way Back.flac"
+        },
+        {
+          "track": "06. Crucifier",
+          "source": "Whom Gods Destroy - 2024 - Insanium (24bit-44.1kHz)/06 Crucifier.flac"
+        },
+        {
+          "track": "07. Keeper of the Gate",
+          "source": "Whom Gods Destroy - 2024 - Insanium (24bit-44.1kHz)/07 Keeper of the Gate.flac"
+        },
+        {
+          "track": "08. Hypernova 158",
+          "source": "Whom Gods Destroy - 2024 - Insanium (24bit-44.1kHz)/08 Hypernova 158.flac"
+        },
+        {
+          "track": "09. Insanium",
+          "source": "Whom Gods Destroy - 2024 - Insanium (24bit-44.1kHz)/09 Insanium.flac"
+        }
+      ]
+    }
+  ]
+}

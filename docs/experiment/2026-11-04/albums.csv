@@ -1,0 +1,49 @@
+album,artist,variant,n_tracks,dr_median,crest_median,lufs_median,tp_max,clipped_pct_sum,spikes_gt_0_9_sum,band_delta_max_db
+City and Colour - Bring Me Your Love (2008),City and Colour,indep,14,9.00,10.47,-14.00,-0.80,0.0000,0,5.20
+City and Colour - Bring Me Your Love (2008),City and Colour,orig,14,9.00,10.47,-9.95,1.10,0.0000,49776,0.00
+City and Colour - Bring Me Your Love (2008),City and Colour,ours,14,11.00,15.84,-16.40,-0.50,0.0000,214,14.96
+City and Colour - If I Should Go Before You (2015),City and Colour,indep,11,6.00,8.24,-14.00,-1.50,0.0000,0,7.30
+City and Colour - If I Should Go Before You (2015),City and Colour,orig,11,6.00,8.24,-7.80,3.70,0.0000,489085,0.00
+City and Colour - If I Should Go Before You (2015),City and Colour,ours,11,12.00,13.99,-15.30,-0.50,0.0000,399,14.73
+City and Colour - Sometimes (2005),City and Colour,indep,10,8.50,10.71,-14.00,-2.60,0.0000,0,6.10
+City and Colour - Sometimes (2005),City and Colour,orig,10,8.50,10.71,-9.80,1.30,0.0000,18186,0.00
+City and Colour - Sometimes (2005),City and Colour,ours,10,12.00,15.62,-16.40,-0.30,0.0000,4,14.62
+City and Colour - The Hurry And The Harm (2013),City and Colour,indep,12,8.00,10.23,-14.00,-0.90,0.0000,0,5.00
+City and Colour - The Hurry And The Harm (2013),City and Colour,orig,12,8.00,10.23,-10.05,1.20,0.0000,38622,0.00
+City and Colour - The Hurry And The Harm (2013),City and Colour,ours,12,12.50,15.78,-16.90,-0.50,0.0000,55,13.18
+City and Colour - The Love Still Held Me Near (2023),City and Colour,indep,12,8.00,10.35,-14.00,-0.90,0.0000,0,5.90
+City and Colour - The Love Still Held Me Near (2023),City and Colour,orig,12,8.00,10.35,-10.00,0.60,0.0010,109279,0.00
+City and Colour - The Love Still Held Me Near (2023),City and Colour,ours,12,12.00,16.00,-16.50,-0.50,0.0000,570,11.89
+Dino Jelusick - Chosen Gems (2024),Dino Jelusick,indep,17,6.00,6.97,-14.00,-3.70,0.0000,0,7.80
+Dino Jelusick - Chosen Gems (2024),Dino Jelusick,orig,17,6.00,6.96,-6.90,2.70,2.5053,913597,0.00
+Dino Jelusick - Chosen Gems (2024),Dino Jelusick,ours,17,10.00,13.12,-13.80,-0.50,0.0000,113,13.65
+Jelusick - Apolitical Ecstasy (2025),Jelusick,indep,10,5.00,7.34,-14.00,-4.60,0.0000,0,7.82
+Jelusick - Apolitical Ecstasy (2025),Jelusick,orig,10,5.00,7.33,-6.55,1.80,0.2963,613383,0.00
+Jelusick - Apolitical Ecstasy (2025),Jelusick,ours,10,10.50,12.83,-14.05,-0.50,0.0000,158,8.92
+Jelusick - Follow The Blind Man (2023),Jelusick,indep,11,7.00,8.30,-14.00,-0.90,0.0000,0,7.60
+Jelusick - Follow The Blind Man (2023),Jelusick,orig,11,7.00,8.30,-7.20,-0.10,0.0000,153599,0.00
+Jelusick - Follow The Blind Man (2023),Jelusick,ours,11,11.00,13.71,-13.70,-0.50,0.0000,26,12.94
+Lost Society - Hell Is A State Of Mind (2026) TR24,Lost Society,indep,10,6.00,7.36,-14.00,-6.10,0.0000,0,8.20
+Lost Society - Hell Is A State Of Mind (2026) TR24,Lost Society,orig,10,6.00,7.37,-6.50,1.30,0.0059,498646,0.00
+Lost Society - Hell Is A State Of Mind (2026) TR24,Lost Society,ours,10,11.00,13.54,-13.95,-0.50,0.0000,110,13.15
+Papa Roach - The Paramour Sessions (2006),Papa Roach,indep,13,6.00,7.25,-14.00,-5.00,0.0000,0,8.00
+Papa Roach - The Paramour Sessions (2006),Papa Roach,orig,13,6.00,7.25,-6.60,1.00,0.0010,685260,0.00
+Papa Roach - The Paramour Sessions (2006),Papa Roach,ours,13,11.00,13.16,-13.60,-0.40,0.0000,466,12.97
+Perfect Plan - All Rise (2018) JP,Perfect Plan,indep,12,6.00,6.66,-14.00,-7.10,0.0000,0,7.80
+Perfect Plan - All Rise (2018) JP,Perfect Plan,orig,12,6.00,6.66,-6.40,-0.00,0.0000,801061,0.00
+Perfect Plan - All Rise (2018) JP,Perfect Plan,ours,12,11.00,12.91,-13.55,-0.40,0.0000,324,28.30
+Perfect Plan - All Rise (2018) TR24,Perfect Plan,indep,12,6.00,6.72,-14.00,-4.50,0.0000,0,7.80
+Perfect Plan - All Rise (2018) TR24,Perfect Plan,orig,12,6.00,6.72,-6.45,-0.00,0.0000,732167,0.00
+Perfect Plan - All Rise (2018) TR24,Perfect Plan,ours,12,11.00,12.91,-13.55,-0.40,0.0000,324,14.08
+Perfect Plan - Heart Of A Lion (2025) TR24,Perfect Plan,indep,11,5.00,6.09,-14.00,-6.50,0.0000,0,8.60
+Perfect Plan - Heart Of A Lion (2025) TR24,Perfect Plan,orig,11,5.00,6.09,-5.70,-0.10,0.0000,825247,0.00
+Perfect Plan - Heart Of A Lion (2025) TR24,Perfect Plan,ours,11,11.00,12.51,-12.90,-0.50,0.0000,216,14.28
+Perfect Plan - Time For A Miracle (2020) TR24,Perfect Plan,indep,12,7.00,8.80,-14.00,-4.00,0.0000,0,6.20
+Perfect Plan - Time For A Miracle (2020) TR24,Perfect Plan,orig,12,7.00,8.80,-8.40,2.10,0.0024,173835,0.00
+Perfect Plan - Time For A Miracle (2020) TR24,Perfect Plan,ours,12,12.00,14.27,-15.20,-0.50,0.0000,174,13.73
+Ross The Boss - Born Of Fire (2020),Ross The Boss,indep,12,6.00,6.75,-14.00,-6.20,0.0000,0,7.90
+Ross The Boss - Born Of Fire (2020),Ross The Boss,orig,12,6.00,6.75,-6.70,0.10,0.0000,559825,0.00
+Ross The Boss - Born Of Fire (2020),Ross The Boss,ours,12,9.00,13.23,-13.95,-0.50,0.0000,639,13.14
+Whom Gods Destroy - Insanium (2024) TR24,Whom Gods Destroy,indep,9,6.00,6.94,-14.00,-3.40,0.0000,0,7.70
+Whom Gods Destroy - Insanium (2024) TR24,Whom Gods Destroy,orig,9,6.00,6.94,-6.80,3.70,0.0000,547932,0.00
+Whom Gods Destroy - Insanium (2024) TR24,Whom Gods Destroy,ours,9,11.00,12.83,-14.10,-0.50,0.0000,57,14.06
