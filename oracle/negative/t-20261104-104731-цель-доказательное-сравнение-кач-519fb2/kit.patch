@@ -1,0 +1,68 @@
+diff --git a/scripts/experiment/select_albums.py b/scripts/experiment/select_albums.py
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/scripts/experiment/select_albums.py
+@@ -0,0 +1,19 @@
++#!/usr/bin/env python3
++"""Mutant selection: no cap, no seeding, timestamp in the manifest."""
++import argparse
++import json
++import time
++from pathlib import Path
++ap = argparse.ArgumentParser()
++ap.add_argument("--src", required=True)
++ap.add_argument("--out", required=True)
++ap.add_argument("--per-artist", default="5")
++ap.add_argument("--seed", default="0")
++a = ap.parse_args()
++out = []
++for d in sorted(p for p in Path(a.src).iterdir() if p.is_dir()):
++    artist, _, album = d.name.partition(" - ")
++    out.append({"artist": artist, "album": album, "rel_path": d.name,
++                "n_tracks": len([*d.rglob("*.flac"), *d.rglob("*.wav")])})
++Path(a.out).write_text(json.dumps({"src": str(a.src), "generated": time.time(),
++                                   "albums": out}), encoding="utf-8")
+diff --git a/scripts/experiment/ref_restore.py b/scripts/experiment/ref_restore.py
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/scripts/experiment/ref_restore.py
+@@ -0,0 +1,15 @@
++#!/usr/bin/env python3
++"""Mutant pass-through restore: copies input bytes, no declip, no normalisation."""
++import argparse
++import shutil
++from pathlib import Path
++ap = argparse.ArgumentParser()
++ap.add_argument("--src", required=True)
++ap.add_argument("--out", required=True)
++a = ap.parse_args()
++src, out = Path(a.src), Path(a.out)
++for f in sorted(src.rglob("*")):
++    if f.suffix.lower() in (".flac", ".wav"):
++        d = out / f.relative_to(src)
++        d.parent.mkdir(parents=True, exist_ok=True)
++        shutil.copy2(f, d)
+diff --git a/scripts/experiment/compare_restore.py b/scripts/experiment/compare_restore.py
+new file mode 100644
+index 0000000..0000000
+--- /dev/null
++++ b/scripts/experiment/compare_restore.py
+@@ -0,0 +1,16 @@
++#!/usr/bin/env python3
++"""Mutant comparator: plausible invented numbers, no measurement."""
++import argparse
++import csv
++import json
++from pathlib import Path
++ap = argparse.ArgumentParser()
++ap.add_argument("--out-dir", required=True)
++a = ap.parse_args()
++out = Path(a.out_dir)
++out.mkdir(parents=True, exist_ok=True)
++with (out / "tracks.csv").open("w", newline="") as fh:
++    w = csv.writer(fh)
++    w.writerow(["album", "track", "variant", "dr", "lufs_i", "peak_dbfs"])
++    w.writerow(["X - Y (2020)", "01 - Z", "orig", "9", "-14", "-1"])
++(out / "summary.json").write_text(json.dumps({"variants": ["orig"]}), encoding="utf-8")
