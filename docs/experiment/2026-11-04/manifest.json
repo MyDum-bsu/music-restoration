@@ -1,0 +1,103 @@
+{
+  "src": "/media/mydum/Data/Music/restore/release_src",
+  "per_artist": 5,
+  "seed": 20261104,
+  "albums": [
+    {
+      "artist": "City and Colour",
+      "album": "City and Colour - Bring Me Your Love (2008)",
+      "rel_path": "City and Colour - Bring Me Your Love (2008)",
+      "n_tracks": 28
+    },
+    {
+      "artist": "City and Colour",
+      "album": "City and Colour - If I Should Go Before You (2015)",
+      "rel_path": "City and Colour - If I Should Go Before You (2015)",
+      "n_tracks": 11
+    },
+    {
+      "artist": "City and Colour",
+      "album": "City and Colour - Sometimes (2005)",
+      "rel_path": "City and Colour - Sometimes (2005)",
+      "n_tracks": 10
+    },
+    {
+      "artist": "City and Colour",
+      "album": "City and Colour - The Hurry And The Harm (2013)",
+      "rel_path": "City and Colour - The Hurry And The Harm (2013)",
+      "n_tracks": 13
+    },
+    {
+      "artist": "City and Colour",
+      "album": "City and Colour - The Love Still Held Me Near (2023)",
+      "rel_path": "City and Colour - The Love Still Held Me Near (2023)",
+      "n_tracks": 12
+    },
+    {
+      "artist": "Dino Jelusick",
+      "album": "Dino Jelusick - Chosen Gems (2024)",
+      "rel_path": "Dino Jelusick - Chosen Gems (2024)",
+      "n_tracks": 18
+    },
+    {
+      "artist": "Jelusick",
+      "album": "Jelusick - Apolitical Ecstasy (2025)",
+      "rel_path": "Jelusick - Apolitical Ecstasy (2025)",
+      "n_tracks": 10
+    },
+    {
+      "artist": "Jelusick",
+      "album": "Jelusick - Follow The Blind Man (2023)",
+      "rel_path": "Jelusick - Follow The Blind Man (2023)",
+      "n_tracks": 11
+    },
+    {
+      "artist": "Lost Society",
+      "album": "Lost Society - Hell Is A State Of Mind (2026) TR24",
+      "rel_path": "Lost Society - Hell Is A State Of Mind (2026) TR24",
+      "n_tracks": 10
+    },
+    {
+      "artist": "Papa Roach",
+      "album": "Papa Roach - The Paramour Sessions (2006)",
+      "rel_path": "Papa Roach - The Paramour Sessions (2006)",
+      "n_tracks": 13
+    },
+    {
+      "artist": "Perfect Plan",
+      "album": "Perfect Plan - All Rise (2018) JP",
+      "rel_path": "Perfect Plan - All Rise (2018) JP",
+      "n_tracks": 15
+    },
+    {
+      "artist": "Perfect Plan",
+      "album": "Perfect Plan - All Rise (2018) TR24",
+      "rel_path": "Perfect Plan - All Rise (2018) TR24",
+      "n_tracks": 11
+    },
+    {
+      "artist": "Perfect Plan",
+      "album": "Perfect Plan - Heart Of A Lion (2025) TR24",
+      "rel_path": "Perfect Plan - Heart Of A Lion (2025) TR24",
+      "n_tracks": 11
+    },
+    {
+      "artist": "Perfect Plan",
+      "album": "Perfect Plan - Time For A Miracle (2020) TR24",
+      "rel_path": "Perfect Plan - Time For A Miracle (2020) TR24",
+      "n_tracks": 12
+    },
+    {
+      "artist": "Ross The Boss",
+      "album": "Ross The Boss - Born Of Fire (2020)",
+      "rel_path": "Ross The Boss - Born Of Fire (2020)",
+      "n_tracks": 13
+    },
+    {
+      "artist": "Whom Gods Destroy",
+      "album": "Whom Gods Destroy - Insanium (2024) TR24",
+      "rel_path": "Whom Gods Destroy - Insanium (2024) TR24",
+      "n_tracks": 9
+    }
+  ]
+}
