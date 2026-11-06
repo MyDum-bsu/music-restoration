@@ -17,3 +17,6 @@ node_modules/
 /dataset/
 .agent/
 .factory/
+
+# machine-local workspace config; config/workspace.example.json is the tracked template
+config/workspace.json

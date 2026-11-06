@@ -20,6 +20,21 @@ git clone <this repo> && cd music-restoration
 python3 -m pytest tests/ -q
 ```
 
+`python3 scripts/doctor.py` re-checks all of this locally at any time (no
+network): exit 0 — all green, 1 — a HARD check failed (the fix command is
+printed per package family), 2 — only WARN.
+
+### Platforms
+
+| platform | status | notes |
+|---|---|---|
+| Linux — Debian/Ubuntu/Mint (`apt`) | supported | `install.sh` and `doctor.py` print ready `sudo apt install …` commands |
+| Linux — Fedora/RHEL (`dnf`) | supported | same via `sudo dnf install …` |
+| Linux — Arch (`pacman`) | supported | same via `sudo pacman -S …` |
+| macOS (`brew`) | supported | system tools via brew; Python packages via `python3 -m pip install -r requirements.txt` — brew has no formulas for them |
+| Windows | WSL only | no native Windows support: package detection covers apt/dnf/pacman/brew only, so run everything inside WSL |
+| `phone-music` (MTP delivery) | Linux desktop with `gio` | `gio` is a WARN check in `doctor.py`; without it local work is unaffected, phone delivery is not. Android delivery over ADB (`adb`) also works on macOS |
+
 ## 2. Secrets: tracker cookies, UA, Transmission
 
 Nothing secret is stored in the repository. Secrets live in
@@ -30,6 +45,16 @@ Nothing secret is stored in the repository. Secrets live in
 | `rutracker_cookies.txt` | one `name=value` per line: `bb_session`, `bb_ssl`, `bb_t`, `cf_clearance` |
 | `rutracker_ua.txt` | the exact `User-Agent` of the browser those cookies came from |
 | `transmission_rpc.json` | `{"host": ..., "port": ..., "user": ..., "password": ...}` |
+
+Permissions are owner-only: `install.sh` creates the directory with `chmod
+700` and keeps every file in it at `chmod 600`. When adding files by hand,
+match that:
+
+```bash
+mkdir -p ~/.config/music-restoration/secrets
+chmod 700 ~/.config/music-restoration/secrets
+chmod 600 ~/.config/music-restoration/secrets/*
+```
 
 ## 3. `cf_clearance`: why it breaks and how to refresh it
 
@@ -106,3 +131,17 @@ python3 -m pytest tests/ -q
 CI runs the same command on every push and pull request
 (`.github/workflows/ci.yml`). Coding conventions are in
 [`CODING_STANDARDS.md`](../CODING_STANDARDS.md).
+
+## 7. Troubleshooting
+
+| symptom | cause | command |
+|---|---|---|
+| `doctor.py` exits 1, a tool row says `не найден в PATH` | a system tool is missing (ffmpeg, flac, shntool, cuetools…) | run the install command printed in the fix column, e.g. `sudo apt install ffmpeg flac shntool cuetools` |
+| `doctor.py` exits 1, `не импортируются: …` | Python packages missing | `python3 -m pip install -r requirements.txt` (or `./install.sh --venv`) |
+| `doctor.py` exits 1, `файл не найден: config/workspace.json` | workspace config not created yet | `./install.sh` creates it from `config/workspace.example.json`; or copy it yourself and set `data_root` |
+| `doctor.py` exits 1, `каталог не существует` / `нет прав на запись` for `data_root` | data root missing or unwritable | `mkdir -p <data_root> && chmod u+w <data_root>` |
+| `doctor.py` exits 1, `свободно … GiB из требуемых 1.00 GiB` | less than 1 GiB free on `data_root` | `df -h <data_root>` — free up space or point `data_root` elsewhere in the config |
+| tracker: `NotLoggedError` / `ChallengeError` on every request | cookies missing/expired, or `cf_clearance` bound to another IP/UA | `python3 scripts/rt_browser_refresh.py --check`, then refresh — section 3 above |
+| tracker: topic page ~1.5 KB, forum "temporarily disabled for maintenance" | rutracker maintenance stub, not an authorization failure | use a local `.torrent` from `~/Downloads` until maintenance ends |
+| `doctor.py` exits 2, `RPC 127.0.0.1:9091 не отвечает` | Transmission RPC is down | start `transmission-gtk` (or `transmission-daemon`), then `python3 -c "from rnext.transm import check; print(check())"` |
+| `doctor.py` exits 2, `gio не найден` | MTP delivery unavailable | install `gio` with the printed command (`sudo apt install libglib2.0-bin` on apt) |

@@ -17,6 +17,14 @@ ALBUM="<Artist> - <Album> (<year>)"        # release name
 
 ## Steps
 
+0. **Preflight.** Run `python3 scripts/doctor.py` — a local environment check,
+   no network (exit 0 — all green; 1 — a HARD check failed; 2 — only WARN).
+   **Exit 1 (HARD):** name the user the exact install command from the
+   doctor's "how to fix" column for their package family and stop. **Exit 2
+   (WARN):** pick the scenario — a local file is available → work without the
+   tracker, warning the user; otherwise the search scenario needs tracker
+   secrets (rutracker cookies, see the tracker skill and `docs/setup.md`) →
+   say so and stop.
 1. **Source.** A local path is given → that is the source. A link/name/"this"
    without a file → the **tracker** skill: `search` → `compare` → `fetch` with
    priority high into `$R/release_src/<ALBUM>`. Selection rule — lossless,
@@ -61,7 +69,7 @@ python3 $S/restore_per_track.py --src "<source>" \
 ## Hard rules
 
 - **The flash drive is the work area.** 40 GiB budget, state: `python3
-  $S/status_report.py`. Check free space before a big run; if dataset torrents
+  research/status_report.py`. Check free space before a big run; if dataset torrents
   are downloading, pause them via the Transmission RPC (filter by `downloadDir`
   inside `$R`) and resume them afterwards.
 - **Never touch torrents outside `$R`** — no pausing, no deletion.

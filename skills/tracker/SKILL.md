@@ -19,6 +19,25 @@ python3 $S compare 6499624 6517503 6795598   # comparison with a recommendation
 python3 $S fetch 6415449 --dir "Jelusick/Album [TR24]" --priority high
 ```
 
+## Requirements
+
+- A **rutracker account** — registration is invite-only. The client
+  authenticates with session cookies; the password itself is never stored
+  anywhere.
+- Cookies live in `~/.config/music-restoration/secrets/` (directory `700`,
+  files `600`; `./install.sh` bootstraps both). `rutracker_cookies.txt` holds
+  one `name=value` per line — empty lines and `#` comments are ignored.
+  Minimum set: `bb_session`, `bb_ssl`, `bb_t`, `cf_clearance`. Next to it,
+  `rutracker_ua.txt` — the exact `User-Agent` of the browser those cookies
+  came from (`cf_clearance` is bound to one IP + UA pair).
+- **No cookies → do not start a search.** The client fails with
+  `NotLoggedError` ("no cookies…") before any request goes out. Instead, tell
+  the user how to set it up: run `./install.sh` to bootstrap the secrets
+  directory, then `python3 scripts/rt_browser_refresh.py` to copy the cookies
+  from a Firefox profile — details in `docs/setup.md` (secrets and
+  `cf_clearance` sections). `scripts/doctor.py` reports the missing file as
+  WARN.
+
 ## Quality profiles
 
 | type | what gets parsed | what to look at |

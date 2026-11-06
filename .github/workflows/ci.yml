@@ -21,10 +21,47 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install package and dev extras
+      - name: Install system tools, package and dev extras
         run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg flac shntool cuetools
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
+
+      - name: Create a CI-local workspace config
+        # config/workspace.json is machine-local and gitignored (see
+        # .gitignore); CI builds its own from scratch so no machine-specific
+        # file is ever read from the repo. data_root points at RUNNER_TEMP.
+        run: |
+          mkdir -p "$RUNNER_TEMP/data_root"
+          python3 - <<'PY'
+          import json
+          import os
+
+          cfg = {
+              "data_root": os.path.join(os.environ["RUNNER_TEMP"], "data_root"),
+              "budget_bytes": 100_000_000_000,
+              "dirs": {},
+          }
+          with open("config/workspace.json", "w", encoding="utf-8") as fh:
+              json.dump(cfg, fh, indent=2)
+              fh.write("\n")
+          PY
+
+      - name: Preflight doctor
+        # rnext/doctor.py exit codes: 0 = all green, 1 = a HARD check failed,
+        # 2 = only WARN failures (machine-local by design: rutracker cookies,
+        # transmission RPC, gio/adb). CI fails the step on hard failures; a
+        # warn-only report (exit 2) is expected on a fresh runner.
+        continue-on-error: false
+        run: |
+          code=0
+          python3 scripts/doctor.py --json || code=$?
+          if [ "$code" -eq 2 ]; then
+            echo "doctor: hard checks all green, only machine-local WARNs (exit 2)"
+            exit 0
+          fi
+          exit "$code"
 
       - name: Run the test suite
         run: python -m pytest tests/ -q

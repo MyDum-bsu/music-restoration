@@ -1,4 +1,5 @@
 """Working area on a USB drive: unified paths and a strict 40 GiB limit (NTFS, files only)."""
+import os
 import subprocess
 from pathlib import Path
 
@@ -15,7 +16,14 @@ def repo_root() -> Path:
 
 def load_config() -> dict:
     cfg = repo_root() / "config" / "workspace.json"
+    if not cfg.is_file():
+        raise WorkspaceError(
+            "copy config/workspace.example.json to config/workspace.json and set data_root"
+        )
     conf = json.loads(cfg.read_text(encoding="utf-8"))
+    env_root = os.environ.get("RESTORE_DATA_ROOT")
+    if env_root:
+        conf["data_root"] = env_root
     root = Path(conf["data_root"])
     if not root.is_dir():
         raise WorkspaceError(f"data_root is missing: {root}")
