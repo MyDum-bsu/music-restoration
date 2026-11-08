@@ -110,7 +110,7 @@ optional overrides such as `MR_PHONE_DIR`.
 
 ```bash
 python3 scripts/audio_measure.py "album/"                  # what is this file, really
-python3 scripts/restore_per_track.py --src "album/" --out "out/album [restored]"
+python3 scripts/restore_safe.py --src "album/" --out "out/album [restored]"
 python3 scripts/qc_gates.py "out/album [restored]"/*.flac  # TP, clipping, spikes
 python3 scripts/qc_gates.py --orig "album/" "out/album [restored]"/01*.flac
 python3 scripts/finish_release.py --restored "out/album [restored]" --source "album/"
@@ -121,6 +121,12 @@ the applied gain becomes measurable and the spike gate FAILs only when the
 output has more click-like jumps than the source (a hot master already carries
 hundreds). A missing source take is an explicit failure, never a silent
 fallback to the absolute gate.
+
+Inspect every status in the safe runner's `report.json`: `processed_candidate`,
+`kept_original`, `qc_fallback_original`, or `error`. A copied original can retain
+its original high peak or other defects; external QC does not turn that copy
+into a repaired result. The legacy `restore_per_track.py` remains available for
+historical reproduction, but is no longer the preferred automatic path.
 
 ## 6. Checks before a pull request
 

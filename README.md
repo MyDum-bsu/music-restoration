@@ -1,86 +1,128 @@
 # music-restoration
 
-Say "restore this" to an agent with these skills, and it takes an album the
-whole way. It finds the best release on the tracker if you don't have the
-files, checks them for real lossless, restores every track, runs the quality
-gates, then tags the result, embeds cover art and lyrics, and puts the album
-in your collection with a DR report and spectrum charts.
+Agent skills and CLI tools for sourcing, measuring, restoring and delivering a
+music library. The preferred runner diagnoses supported hard clipping, chooses
+a defect-specific repair or conservative dynamics candidate, and keeps the
+original when processing is unsupported or fails its checks.
 
-The restoration is deterministic DSP: a 25 Hz high-pass, declipping when the
-master actually clips, per-band dynamics work, and a true-peak ceiling at
-−0.5 dBFS. Every track gets its own settings. The agent tries several
-restoration policies on it, keeps the one that hits the target, and
-re-processes the track if the result lands outside the window. Output is
-16/24-bit FLAC in the format of the source.
+**Version 2.2 changes the recommended workflow.** Use `restore_safe.py` for new
+automatic runs. `restore_per_track.py` remains a legacy comparison tool; its
+fixed crest target is not the default quality criterion. No unconditional HPF,
+loudness boost or learned EQ curve is applied by the safe path.
 
-## What a release looks like
+![Current and ideal restoration pipeline, in Russian](docs/assets/restoration-pipeline-ru.png)
 
-One track from Nickelback's "Everything Under the Sun" (2026, WEB 24/96),
-crushed to DR 5 by the master. Original in copper, restored in gold:
+[How it works and scientific sources — русский разбор](docs/restoration-method-ru.md)
+· [Validation and reproduction](docs/validation/README.md)
+· [Setup](docs/setup.md)
 
-![spectrum page](docs/spectra/10_Lift_Somebody_Up.png)
+## What is established
 
-The original rides full-scale for most of the song. The restored version keeps
-more than twice the crest factor and never touches the ceiling; the spectrogram
-gains air above 10 kHz without losing the low end. The GIF flips between the
-two spectrograms:
+- The final controlled matrix improved gain-aligned reconstruction on 30
+  hard-clipped cases: ten recordings at three degradation levels. All ten clean
+  controls were retained unchanged. These are artificial hard-clipping tests,
+  not 30 independent recordings or listener preferences.
+- On the first seven-recording holdout, the frozen sparse prototype improved
+  reconstruction but remained behind precomputed A-SPADE and SS-PEW results.
+  Our implementation is independent, not an exact A-SPADE port.
+- Better DR or closer summary metrics do not prove better sound. Superiority
+  to human remasters is not established by current listening data.
+- A FLAC container does not establish lossless ancestry. MP3-derived audio
+  stays lossy-derived after processing or conversion to FLAC.
 
-![spectrogram flip](docs/spectra/10_Lift_Somebody_Up.gif)
-
-Numbers for this track: DR 5 → 11, true peak +0.4 → −0.5 dBFS, zero added
-clipping, duration unchanged. Every release also ships `DR Report.txt`, the
-DR-meter table in the format restoration masters post in their topics.
-
-## Install
+## Quick start
 
 ```bash
 git clone https://github.com/MyDum-bsu/music-restoration.git
 cd music-restoration
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
 ./install.sh
+python3 scripts/doctor.py
 ```
 
-This checks dependencies (Python 3.10+, ffmpeg, flac, curl) and links the
-skills into `~/.agents/skills`.
+Python 3.10+ and external audio tools are required. The installer prints package
+commands for missing tools, links skills into `~/.agents/skills` and creates a
+local workspace config. `doctor` exit 1 means a required check failed; exit 2
+means only optional machine-local services are unavailable. Tracker and phone
+credentials are needed only for their stages; see [setup](docs/setup.md) and
+the skill's local-input guidance.
+
+Symlink installations receive the changed skill when the repository updates.
+Copy installations need `./install.sh --copy` again. Preserve locally edited
+skill copies before replacing them.
+
+## Restore and inspect
+
+```bash
+python3 scripts/audio_measure.py "album/"
+python3 scripts/restore_safe.py --src "album/" --out "out/album-candidate"
+```
+
+Input is a FLAC track or directory of FLAC tracks; output must be empty. Native
+mono/stereo channels and sample rate are preserved. Processed candidates are
+encoded as 24-bit FLAC, strictly decoded and checked again. Greater storage bit
+depth does not create source information. Other formats can first be decoded
+to FLAC with their provenance recorded; multichannel conversion is explicit.
+
+Read **every entry** in `report.json`:
+
+| Status | Meaning |
+|---|---|
+| `processed_candidate` | Accepted processing and encoded QC; listening remains unevaluated |
+| `kept_original` | Byte-for-byte copy; original defects or headroom may remain |
+| `qc_fallback_original` | Processing rejected; source copied with reasons recorded |
+| `error` | No accepted deliverable; CLI exits nonzero |
+
+Auto checks hard clipping before dynamics classification. `--mode declip`
+requests repair only; `--mode dynamics` selects the dynamics branch. Quiet/sparse
+and high-DR material normally stays unchanged in auto. See [release-restore](skills/release-restore/SKILL.md)
+for threshold overrides and limitations.
+
+After checking statuses, finish tags, covers, lyrics and collection delivery:
+
+```bash
+python3 scripts/finish_release.py --restored "out/album-candidate" \
+  --source "album/" --dest "collection/album-candidate"
+```
+
+Phone delivery is a separate requested stage; verify device-side hashes.
+Preserve the original source, provenance and processing report.
 
 ## Skills
 
-| skill | purpose |
+| Skill | Purpose |
 |---|---|
-| `music-care` | routes any music request to the right skill |
-| `release-restore` | "restore this": source, per-track restoration, QC, dressing, collection |
-| `audio-measure` | DR, LUFS, true peak, clipping, fake hi-res, lossy transcodes |
-| `tracker` | search, compare and download releases |
-| `add-lyrics` | lyrics into tags from genius.com with an lrclib fallback |
-| `phone-music` | phone library over MTP: inventory, lyrics, covers |
-| `split-flac-album` | split image+cue into tagged tracks |
+| `music-care` | Routes music requests |
+| `release-restore` | Sources, diagnoses, processes or retains, verifies and dresses a release |
+| `audio-measure` | DR, LUFS, true peak, clipping and authenticity clues |
+| `tracker` | Searches, compares and downloads releases |
+| `add-lyrics` | Embeds lyrics into tags |
+| `phone-music` | Audits and maintains a phone library |
+| `split-flac-album` | Splits image+cue into tagged tracks |
 
-Each skill is a thin wrapper over `scripts/`, so everything also works from
-the command line:
+Lossless routes include local downloads/rips, trackers, artist/label stores,
+Bandcamp, Qobuz, Presto and CDs. Recording identity, edition and the acquired
+file matter more than container labels. Catalog discovery and purchases are
+distinct states. See [source selection](skills/release-restore/references/sources.md).
 
-```bash
-python3 scripts/audio_measure.py "album/"                  # what are we dealing with
-python3 scripts/restore_per_track.py --src "album/" \
-        --out "out/album [restored]"                       # per-track restoration
-python3 scripts/finish_release.py --restored "out/album [restored]" \
-        --source "album/" --dest ~/Music/album\ [restored] # tags, cover, lyrics, reports
-```
+## Limitations and research
 
-## Configuration
+Repair targets supported repeated hard-clipping plateaus. Soft limiting,
+arbitrary saturation, codec loss and artistic intent remain different problems.
+Sparse repair can be slow; whole-track PCM memory grows with duration. Stereo
+and album-level perceptual evaluation remain open. Keep originals and failures
+visible in batch reports.
 
-- `config/workspace.json` — where releases and temp data live.
-- `~/.config/music-restoration/config.env` — optional overrides, see
-  `config.env.example`.
-- `~/.config/music-restoration/secrets/` — tracker cookies, Transmission RPC.
-
-`research/` holds the dataset and model experiments the pipeline was
-calibrated on. Nothing in the product depends on it.
-
-## Tests
+`research/` contains reproducible experiments; product modules do not import it.
+Historical spectrograms and DR reports are descriptive examples, not proof that
+missing frequency content was recovered or a human restorer was surpassed.
 
 ```bash
 python3 -m pytest tests/ -q
 ```
 
-## License
-
-MIT, see [LICENSE](LICENSE).
+Code and skills: MIT, see [LICENSE](LICENSE). Referenced research code and audio
+retain their own licenses; no external corpus audio or GPL implementation is
+redistributed here.

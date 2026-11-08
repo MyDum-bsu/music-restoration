@@ -1,0 +1,52 @@
+{
+  "dsp_commit": "1c8c34d",
+  "metric": "waveform SDR after optimal scalar gain alignment, no time shift; not standard SI-SDR",
+  "native_matrix": {
+    "cases": 40,
+    "clean_controls": 10,
+    "clean_kept": 10,
+    "clipped_cases": 30,
+    "positive_reconstructions": 30,
+    "errors": 0,
+    "severities": {
+      "7": {
+        "n_recordings": 10,
+        "median_delta_sdr_db": 9.509091463372897,
+        "min_delta_sdr_db": 4.844216370449491,
+        "max_delta_sdr_db": 16.236774500372377
+      },
+      "15": {
+        "n_recordings": 10,
+        "median_delta_sdr_db": 17.839375489708154,
+        "min_delta_sdr_db": 6.5325396661909,
+        "max_delta_sdr_db": 29.916109523924447
+      },
+      "20": {
+        "n_recordings": 10,
+        "median_delta_sdr_db": 18.81878945364617,
+        "min_delta_sdr_db": 6.098738503779678,
+        "max_delta_sdr_db": 29.14025126995369
+      }
+    }
+  },
+  "first_frozen_holdout": {
+    "calibration_recordings": 3,
+    "holdout_recordings": 7,
+    "input_sdr_db": 15,
+    "median_delta_sdr_db": 17.355823579156635,
+    "min_delta_sdr_db": 6.381246522657767,
+    "precomputed_reference_median_paired_lead_db": {
+      "aspade": 1.0972588062060815,
+      "SS_PEW": 3.1731762021942913
+    }
+  },
+  "expanded_matrix_is_new_independent_holdout": false,
+  "listening": {
+    "items": 4,
+    "stimuli": 12,
+    "contains_repeats": true,
+    "maximum_measured_lufs_spread": 0.0,
+    "meter_resolution_lu": 0.1,
+    "actual_listener_ratings": 0
+  }
+}

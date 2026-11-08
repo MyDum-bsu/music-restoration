@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 .venv/
 node_modules/
+*.egg-info/
 .DS_Store
 
 # secrets are never committed
@@ -15,6 +16,7 @@ node_modules/
 /out/
 /release_src/
 /dataset/
+/data/declipping/
 .agent/
 .factory/
 

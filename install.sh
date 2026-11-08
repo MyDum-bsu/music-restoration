@@ -295,7 +295,7 @@ done
 say
 if [[ $fail -eq 0 ]]; then
   say "All set. Restore an album:"
-  say "  python3 scripts/restore_one.py --src <dir-or-image.flac> --out <dir> --auto-policy --adaptive"
+  say "  python3 scripts/restore_safe.py --src <track-or-directory> --out <empty-directory>"
   say "Full release (tags/covers/lyrics/phone): skill release-restore."
 else
   say "Some dependencies are missing — fix them, then re-run ./install.sh"

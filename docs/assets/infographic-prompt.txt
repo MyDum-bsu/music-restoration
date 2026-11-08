@@ -1,0 +1,28 @@
+Image generation used the built-in imagegen tool. Final image is a reviewed illustration, not a measured waveform plot.
+
+Initial prompt:
+Use case: infographic-diagram.
+Create one beautiful, lucid editorial infographic IN RUSSIAN about this music restoration project. Landscape composition, approximately 2400 by 1600, generous whitespace, warm white background, dark navy ink, muted teal for implemented work, amber for research/ideal future. Precise Cyrillic typography, strong hierarchy, crisp arrows, minimal restrained audio-waveform line art. This is an explanatory image for a serious open-source research project, not a promotional dashboard.
+Main title verbatim: "Как работает реставрация музыки".
+Subtitle: "Источник → диагноз → выбор → проверка → выдача".
+
+UPPER TWO THIRDS: section label "СЕЙЧАС". A coherent flow from left to right. Left card "Источник" with small subtitle "Версия и происхождение"; arrow to "Строгий decode" with "Частота · каналы · длина"; arrow to a central routing hub "Что повреждено?".
+From that hub THREE clearly separated branches:
+1. "Hard clipping" → "Float AR / Sparse STFT"
+2. "Плотный мастер" → "Кандидаты динамики"
+3. "Нет подтверждённой пользы" → "Сохранить исходник"
+Merge the processed branches into "QC и FLAC" with "Полный трек → encode → decode". A failed-QC return arrow leads to "Сохранить исходник". Both accepted output and copied original lead to final right card "Выдача" with "Теги · коллекция · телефон". Phone icon is optional and tiny. Do not imply every file gets processed. No mandatory high-pass or EQ stage. The source waveform is preserved unless a justified operation passes its checks.
+
+LOWER THIRD: a separate aspirational lane with section label "ИДЕАЛЬНЫЙ ПАЙПЛАЙН". Five concise connected cards:
+"Лучшее издание" → "Точная модель дефекта" → "Реконструкция с оценкой уверенности" → "Независимые тесты и слепое прослушивание" → "Согласованный альбом".
+Add small amber subcaption "Исследовательская цель, а не готовая возможность".
+Bottom footer TWO concise sentences, exact text:
+"FLAC после MP3 остаётся lossy-derived."
+"Меньше ошибка ≠ лучше звучание."
+Do not add numerical claims, percentages, fabricated charts, paper citations, logos or watermarks. The illustration must remain legible and concise; no extra paragraphs. Every arrow must have a clear meaning. Current and ideal sections must look related but unmistakably distinct.
+
+First targeted correction:
+Edit this infographic precisely, preserving its excellent typography, colors, layout, all other wording and all other arrows. TWO changes only: (1) Remove the curved arrow that runs from the upper right of the card «Сохранить исходник» upward into «QC и FLAC». A byte-for-byte copied original bypasses encoding. Keep the separate direct path from «Сохранить исходник» to «Выдача», and keep the failed-QC arrow pointing into «Сохранить исходник». (2) Replace the bottom right sentence «Меньше ошибка ≠ лучше звучание.» with grammatically correct exact text «Точность реконструкции ≠ предпочтение слушателя.» using the same elegant style; make it fit comfortably. Do not change anything else. Keep a warm white opaque background.
+
+Final routing correction:
+Precise routing correction only to this infographic, keep every word and all design unchanged. The two paths at the bottom of the СЕЙЧАС section must be completely separate: (A) failure path: from bottom of QC и FLAC go down past the label не пройдено, then turn LEFT and end with an arrowhead pointing into the TOP edge of Сохранить исходник. (B) copied-file path: start from the BOTTOM edge of Сохранить исходник, go downward, then right across the empty bottom margin of the СЕЙЧАС panel, then upward into the BOTTOM edge of Выдача, with an upward arrowhead at Выдача. Add a tiny label копия along this lower path if it fits. These two routes must NOT share a line or junction. The current shared horizontal trunk with a left arrow at Сохранить исходник must be replaced by these distinct routes. Do not route a copied original into QC or encode/decode. Preserve all other arrows, labels, colors, typography and the lower ideal pipeline panel.

@@ -1,0 +1,1429 @@
+{
+  "source": "https://rajmic.github.io/declipping2020/",
+  "files": [
+    {
+      "path": "reference/original/a08_violin.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/original/a08_violin.wav",
+      "sha256": "40b0690bcceda001e59178e766ca6f1286eb740adcf365e85d488297489419af",
+      "bytes": 616386
+    },
+    {
+      "path": "reference/clipped/a08_violin_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a08_violin_15.wav",
+      "sha256": "94f4d0d0cd1cebbbf91aabdc6b067b37021524caedc85fec140ab2ac1d314214",
+      "bytes": 616386
+    },
+    {
+      "path": "reference/aspade/a08_violin_rec_aspade_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a08_violin_rec_aspade_15.wav",
+      "sha256": "bbb49000f3684ec359bc4d57b9e5dbfe6b7a5189fdec369f8cd7d3514a544d70",
+      "bytes": 616386
+    },
+    {
+      "path": "reference/SS_PEW/a08_violin_rec_SS_PEW_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a08_violin_rec_SS_PEW_15.wav",
+      "sha256": "d825d9d5a618b1f318b9c6be11154eeb16c29fcd979bd6f7b05c6f3e56b44303",
+      "bytes": 616386
+    },
+    {
+      "path": "reference/original/a16_clarinet.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/original/a16_clarinet.wav",
+      "sha256": "3fcb49148bb4c5c2b57e31585276a19b0c2d238649186d1e8b463bbd60b386aa",
+      "bytes": 584852
+    },
+    {
+      "path": "reference/clipped/a16_clarinet_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a16_clarinet_15.wav",
+      "sha256": "3ec52f2919ccecf16441c546734fe113ed76a784f380f834b8b811ec693a406e",
+      "bytes": 584852
+    },
+    {
+      "path": "reference/aspade/a16_clarinet_rec_aspade_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a16_clarinet_rec_aspade_15.wav",
+      "sha256": "c4e8ba59ee6040005f8baa79ecd2e4e3a2c3b0b0c52043af035c7bb655d07de0",
+      "bytes": 584852
+    },
+    {
+      "path": "reference/SS_PEW/a16_clarinet_rec_SS_PEW_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a16_clarinet_rec_SS_PEW_15.wav",
+      "sha256": "6340e400616898b7d006901664cb726cc9d99744e41510b7f4eb40e0a5184bdb",
+      "bytes": 584852
+    },
+    {
+      "path": "reference/original/a18_bassoon.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/original/a18_bassoon.wav",
+      "sha256": "c271020c97851d44c89718d78ca0c730ba42d2a08774a9d64e2ec09541abb9a9",
+      "bytes": 560074
+    },
+    {
+      "path": "reference/clipped/a18_bassoon_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a18_bassoon_15.wav",
+      "sha256": "ad81dd0f830572f12f76291ff4a43810f6197d24174b20a6867683b51eb15950",
+      "bytes": 560074
+    },
+    {
+      "path": "reference/aspade/a18_bassoon_rec_aspade_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a18_bassoon_rec_aspade_15.wav",
+      "sha256": "22cf1001dc945b02b7f92a3e4faea627e467a7822e92b906d1866ede5fcf67be",
+      "bytes": 560074
+    },
+    {
+      "path": "reference/SS_PEW/a18_bassoon_rec_SS_PEW_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a18_bassoon_rec_SS_PEW_15.wav",
+      "sha256": "a98feb98c3be1be0d6b728ee07f6cf91b4352e1a97604330a912aa5270137a74",
+      "bytes": 560074
+    },
+    {
+      "path": "reference/original/a25_harp.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/original/a25_harp.wav",
+      "sha256": "5fe962baaeb4a152f3c38e8ade9cee28b2717b0c27a757efa3d20f72dda4407a",
+      "bytes": 507008
+    },
+    {
+      "path": "reference/clipped/a25_harp_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a25_harp_15.wav",
+      "sha256": "7477e4a0a7427a86ff16eaf1e003dde939f10abaf9a9fa31d1af24b69e178c1b",
+      "bytes": 507008
+    },
+    {
+      "path": "reference/aspade/a25_harp_rec_aspade_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a25_harp_rec_aspade_15.wav",
+      "sha256": "d8e494f1553607fac9db7c324af35f921bd78dc0ccaa40199de16432711b8e69",
+      "bytes": 507008
+    },
+    {
+      "path": "reference/SS_PEW/a25_harp_rec_SS_PEW_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a25_harp_rec_SS_PEW_15.wav",
+      "sha256": "a7898be16cf75db3aa8c10b34cb3b9a189e6a3c058834417cff696811e62f500",
+      "bytes": 507008
+    },
+    {
+      "path": "reference/original/a35_glockenspiel.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/original/a35_glockenspiel.wav",
+      "sha256": "42ccfb65f66871d2a3d2935e3476a4c557ed948646c42ceb872a17c24449a9a9",
+      "bytes": 743524
+    },
+    {
+      "path": "reference/clipped/a35_glockenspiel_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a35_glockenspiel_15.wav",
+      "sha256": "60673305c6f0ae80ec0f0bf49f6cf22b0f5b8c32c79e1ca34c78355ffe4ee9a5",
+      "bytes": 743524
+    },
+    {
+      "path": "reference/aspade/a35_glockenspiel_rec_aspade_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a35_glockenspiel_rec_aspade_15.wav",
+      "sha256": "503e00aa4163d19b1886cbc556ba075c54ad2808880a0bd98730c0cec212fe51",
+      "bytes": 743524
+    },
+    {
+      "path": "reference/SS_PEW/a35_glockenspiel_rec_SS_PEW_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a35_glockenspiel_rec_SS_PEW_15.wav",
+      "sha256": "81092f0e64da620d27fc82932e44c310129c7815b3e29c4fc4dafb80668682aa",
+      "bytes": 743524
+    },
+    {
+      "path": "reference/original/a41_celesta.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/original/a41_celesta.wav",
+      "sha256": "2a583687034b28939a4bcbcfa501d60f803b932922fa1e9bbb4d9c4883c08192",
+      "bytes": 610738
+    },
+    {
+      "path": "reference/clipped/a41_celesta_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a41_celesta_15.wav",
+      "sha256": "1926d48219810c511a9593cf008492064b8142b886a4763c49b72c93afd78856",
+      "bytes": 610738
+    },
+    {
+      "path": "reference/aspade/a41_celesta_rec_aspade_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a41_celesta_rec_aspade_15.wav",
+      "sha256": "89d73031e6b54650a7d3cafc29627db477c55c99e8fc380423d6761bfd29f651",
+      "bytes": 610738
+    },
+    {
+      "path": "reference/SS_PEW/a41_celesta_rec_SS_PEW_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a41_celesta_rec_SS_PEW_15.wav",
+      "sha256": "d37199f74d166915159fb6108aa76e7a4b70fb205853b2989aa5275043c9d02d",
+      "bytes": 610738
+    },
+    {
+      "path": "reference/original/a42_accordion.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/original/a42_accordion.wav",
+      "sha256": "6edcc5d70495392399ea7c2b996142b15c1e3dd9718b21f78f070b7d0e66acb6",
+      "bytes": 684136
+    },
+    {
+      "path": "reference/clipped/a42_accordion_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a42_accordion_15.wav",
+      "sha256": "55cf611383d5e1bd945e8ab5c340b5077f0adde94a85293927e11b1cfb45cc91",
+      "bytes": 684136
+    },
+    {
+      "path": "reference/aspade/a42_accordion_rec_aspade_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a42_accordion_rec_aspade_15.wav",
+      "sha256": "03cb9e9c0c71910fb13d9235850936f8a9eac71af8c31a64f7043132c72699a1",
+      "bytes": 684136
+    },
+    {
+      "path": "reference/SS_PEW/a42_accordion_rec_SS_PEW_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a42_accordion_rec_SS_PEW_15.wav",
+      "sha256": "d2e03af5843b7036b204a1b63a97ff357efd3c0a397f10d82d73f6b85998c033",
+      "bytes": 684136
+    },
+    {
+      "path": "reference/original/a58_guitar_sarasate.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/original/a58_guitar_sarasate.wav",
+      "sha256": "7d6c4ab12546bcdbbde6dcc3afe4a6d4f5e4a4ce7b06121573a751cceea6367f",
+      "bytes": 586874
+    },
+    {
+      "path": "reference/clipped/a58_guitar_sarasate_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a58_guitar_sarasate_15.wav",
+      "sha256": "75128eaa30ba53472aba15f1df0bb8ef5e5db17e36f8ee633452c25b1396647d",
+      "bytes": 586874
+    },
+    {
+      "path": "reference/aspade/a58_guitar_sarasate_rec_aspade_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a58_guitar_sarasate_rec_aspade_15.wav",
+      "sha256": "d3efc71defe9a266fef55a1f5f766401619320fd88ef3c8fe5e8d149063420e6",
+      "bytes": 586874
+    },
+    {
+      "path": "reference/SS_PEW/a58_guitar_sarasate_rec_SS_PEW_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a58_guitar_sarasate_rec_SS_PEW_15.wav",
+      "sha256": "0b3cb3e3e38f1673f61dfc421d9ccbd936566d83d63c34a8a4a36d008765fbe0",
+      "bytes": 586874
+    },
+    {
+      "path": "reference/original/a60_piano_schubert.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/original/a60_piano_schubert.wav",
+      "sha256": "4f6b3f5fa8f327901b38bef90257c34b23c8e3a70e777823d6b2b7890426c095",
+      "bytes": 531330
+    },
+    {
+      "path": "reference/clipped/a60_piano_schubert_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a60_piano_schubert_15.wav",
+      "sha256": "e2942f65b4eca966852be1a0b02d0fface8d9695cdb0a0823120e0eb081a50ef",
+      "bytes": 531330
+    },
+    {
+      "path": "reference/aspade/a60_piano_schubert_rec_aspade_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a60_piano_schubert_rec_aspade_15.wav",
+      "sha256": "169a621342fa3b98c278f1968ac99c5ace2a23c91f15101bba03c9490fccf180",
+      "bytes": 531330
+    },
+    {
+      "path": "reference/SS_PEW/a60_piano_schubert_rec_SS_PEW_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a60_piano_schubert_rec_SS_PEW_15.wav",
+      "sha256": "54c57247c1aea3ce180c449a5b29e279edc8b416b2fa122f6e34959a3518552f",
+      "bytes": 531330
+    },
+    {
+      "path": "reference/original/a66_wind_ensemble_stravinsky.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/original/a66_wind_ensemble_stravinsky.wav",
+      "sha256": "13810355ee3e45d9bedeebf6c0a63d91264a8510a80b5b9c8029f292a4d68b61",
+      "bytes": 499544
+    },
+    {
+      "path": "reference/clipped/a66_wind_ensemble_stravinsky_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a66_wind_ensemble_stravinsky_15.wav",
+      "sha256": "12190e132d80cf9d7d854ab169f39194ba7d05547a73f6e1d1ff92e2d0c74b95",
+      "bytes": 499544
+    },
+    {
+      "path": "reference/aspade/a66_wind_ensemble_stravinsky_rec_aspade_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a66_wind_ensemble_stravinsky_rec_aspade_15.wav",
+      "sha256": "cef060ee46dd9062db8c0b56d0969a581976390b915a07ed0a7694d315ce8c53",
+      "bytes": 499544
+    },
+    {
+      "path": "reference/SS_PEW/a66_wind_ensemble_stravinsky_rec_SS_PEW_15.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a66_wind_ensemble_stravinsky_rec_SS_PEW_15.wav",
+      "sha256": "b9754aadc00bf32d42c4c50e1b699c89687893345a34cf3dd107fbe21aea07d6",
+      "bytes": 499544
+    },
+    {
+      "path": "reference/clipped/a08_violin_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a08_violin_07.wav",
+      "sha256": "d7ffcf94827fb1264a74572ceaefac4817206ea1df5a787d303113879f3dac8a",
+      "bytes": 616386
+    },
+    {
+      "path": "reference/clipped/a08_violin_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a08_violin_20.wav",
+      "sha256": "1dff094836f798d7123981c288050272d8104c94347d90964edcea9cfa925bd3",
+      "bytes": 616386
+    },
+    {
+      "path": "reference/aspade/a08_violin_rec_aspade_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a08_violin_rec_aspade_07.wav",
+      "sha256": "fbb2eb1de08ef949af012eb32055918b41f1d3bb56af88a3f5a49afa443caf50",
+      "bytes": 616386
+    },
+    {
+      "path": "reference/aspade/a08_violin_rec_aspade_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a08_violin_rec_aspade_20.wav",
+      "sha256": "5aca884cd2ed5ec1ca6d6e88d6bd339f0c41bfa674fbc507a8c3da01aa36b6f2",
+      "bytes": 616386
+    },
+    {
+      "path": "reference/SS_PEW/a08_violin_rec_SS_PEW_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a08_violin_rec_SS_PEW_07.wav",
+      "sha256": "1f96715e84ed916cb20145a993d3a2862f7174a21d271aeffca9c4f110aaf003",
+      "bytes": 616386
+    },
+    {
+      "path": "reference/SS_PEW/a08_violin_rec_SS_PEW_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a08_violin_rec_SS_PEW_20.wav",
+      "sha256": "fc059498e4143842946d70d0a853e16df85edcb75440b07f9f1c3289769a974f",
+      "bytes": 616386
+    },
+    {
+      "path": "reference/clipped/a16_clarinet_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a16_clarinet_07.wav",
+      "sha256": "63a7dabd54b584d117952988b99f35152d0254a4dc4a3086fc4669aa8ee379e7",
+      "bytes": 584852
+    },
+    {
+      "path": "reference/clipped/a16_clarinet_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a16_clarinet_20.wav",
+      "sha256": "a438e4795db8130e31cf71d226d90e81876fe51a48cd91efeed708fc786fea1d",
+      "bytes": 584852
+    },
+    {
+      "path": "reference/aspade/a16_clarinet_rec_aspade_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a16_clarinet_rec_aspade_07.wav",
+      "sha256": "c6b59d2c58124d9f1fa4eaf070df6c7fd9410e46b4794f05de904a7eba46fe48",
+      "bytes": 584852
+    },
+    {
+      "path": "reference/aspade/a16_clarinet_rec_aspade_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a16_clarinet_rec_aspade_20.wav",
+      "sha256": "8c6e9a5fb428aff09a45ccda618f6a5ecbd5cf36fe9165e7063a469e91496b57",
+      "bytes": 584852
+    },
+    {
+      "path": "reference/SS_PEW/a16_clarinet_rec_SS_PEW_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a16_clarinet_rec_SS_PEW_07.wav",
+      "sha256": "ba3e4b9ae46b29a3ca36d40ab94b8e030ddf5b889d7a630946237aab8af3d49f",
+      "bytes": 584852
+    },
+    {
+      "path": "reference/SS_PEW/a16_clarinet_rec_SS_PEW_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a16_clarinet_rec_SS_PEW_20.wav",
+      "sha256": "6847f697571b2ae3e0ced6edb017de52d4a5a6ad58b1adb0d06c6f053be9dfec",
+      "bytes": 584852
+    },
+    {
+      "path": "reference/clipped/a18_bassoon_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a18_bassoon_07.wav",
+      "sha256": "8dac45e010bfbc6ec3f6d0f84dc88bd41b5b7ede8bce83892afbab6e89dd34ae",
+      "bytes": 560074
+    },
+    {
+      "path": "reference/clipped/a18_bassoon_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a18_bassoon_20.wav",
+      "sha256": "55e8c4f7e9a0c13e26729dd33878d1763c1db73f739abb5dbfa6edd2e5f3c79a",
+      "bytes": 560074
+    },
+    {
+      "path": "reference/aspade/a18_bassoon_rec_aspade_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a18_bassoon_rec_aspade_07.wav",
+      "sha256": "a425f6ccec1010480ce9f1e25eed52e2b8994b7ed880bef0f21f109bc90ca70c",
+      "bytes": 560074
+    },
+    {
+      "path": "reference/aspade/a18_bassoon_rec_aspade_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a18_bassoon_rec_aspade_20.wav",
+      "sha256": "10b23d99ce769b7a51ae67eacff03786c96caa1b49a7ec5cbe3f4df19ea98ea0",
+      "bytes": 560074
+    },
+    {
+      "path": "reference/SS_PEW/a18_bassoon_rec_SS_PEW_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a18_bassoon_rec_SS_PEW_07.wav",
+      "sha256": "f15f3a1d21ecc582a511f9f20f00d3f6caa11d0881bc406db9381b68b0ca7834",
+      "bytes": 560074
+    },
+    {
+      "path": "reference/SS_PEW/a18_bassoon_rec_SS_PEW_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a18_bassoon_rec_SS_PEW_20.wav",
+      "sha256": "550c210306fbbb9ff6363e7392f723342e412c287e779d51b369aa2bde3a65b2",
+      "bytes": 560074
+    },
+    {
+      "path": "reference/clipped/a25_harp_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a25_harp_07.wav",
+      "sha256": "34fbf04986f8b4a6ee2fe6e59078f5d1e4e6aa8b59284f3944126f95b78b0508",
+      "bytes": 507008
+    },
+    {
+      "path": "reference/clipped/a25_harp_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a25_harp_20.wav",
+      "sha256": "e6349a6dff4c57be79ed1a5d271627a1d127711ed49d3713a8813e39287a625d",
+      "bytes": 507008
+    },
+    {
+      "path": "reference/aspade/a25_harp_rec_aspade_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a25_harp_rec_aspade_07.wav",
+      "sha256": "09810634c50a9a723aaefce21329fc87a112228f53e55fee9a5e6a1983f157cc",
+      "bytes": 507008
+    },
+    {
+      "path": "reference/aspade/a25_harp_rec_aspade_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a25_harp_rec_aspade_20.wav",
+      "sha256": "009f11a07e1bf81a26679e5a1eb6a2b8525dfef87eaff96fdcaa23bdbe845e00",
+      "bytes": 507008
+    },
+    {
+      "path": "reference/SS_PEW/a25_harp_rec_SS_PEW_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a25_harp_rec_SS_PEW_07.wav",
+      "sha256": "a353d3723f7a95cd0e2552d91fb8d258039498a726e2bb8741d8d2e31e8f7287",
+      "bytes": 507008
+    },
+    {
+      "path": "reference/SS_PEW/a25_harp_rec_SS_PEW_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a25_harp_rec_SS_PEW_20.wav",
+      "sha256": "d3f57bf604d0ec5c96237c61d1b1edf1a9e8781264e23470e8741055f55997aa",
+      "bytes": 507008
+    },
+    {
+      "path": "reference/clipped/a35_glockenspiel_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a35_glockenspiel_07.wav",
+      "sha256": "f6841530318c9a5fe45097f2d3cb9b96350aa37ea6122e0d27d6fdde16f9f4a1",
+      "bytes": 743524
+    },
+    {
+      "path": "reference/clipped/a35_glockenspiel_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a35_glockenspiel_20.wav",
+      "sha256": "b20662f657b4c1ebe7068b6dc2188b573182dbf66d44ba8e280b8ee5b38f3883",
+      "bytes": 743524
+    },
+    {
+      "path": "reference/aspade/a35_glockenspiel_rec_aspade_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a35_glockenspiel_rec_aspade_07.wav",
+      "sha256": "a0743823de7486992f9ca92c9f7b1971298e77ec633462b501477f328bf6f0e7",
+      "bytes": 743524
+    },
+    {
+      "path": "reference/aspade/a35_glockenspiel_rec_aspade_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a35_glockenspiel_rec_aspade_20.wav",
+      "sha256": "0b29d3e901bcd74145228ef9f2c99b339973cc1653f7c88cc0a252ec86140e7e",
+      "bytes": 743524
+    },
+    {
+      "path": "reference/SS_PEW/a35_glockenspiel_rec_SS_PEW_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a35_glockenspiel_rec_SS_PEW_07.wav",
+      "sha256": "12eea4e2838208ff443cf82aca9957b4f628e352c7760f6402f9ba38ceb6ac1c",
+      "bytes": 743524
+    },
+    {
+      "path": "reference/SS_PEW/a35_glockenspiel_rec_SS_PEW_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a35_glockenspiel_rec_SS_PEW_20.wav",
+      "sha256": "efffbd4c600a6f3f1619d941dc6abbb1effa80ef18c4beb3d2556073fcff2e31",
+      "bytes": 743524
+    },
+    {
+      "path": "reference/clipped/a41_celesta_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a41_celesta_07.wav",
+      "sha256": "98cbe4d5520ad654858c8d0a6796f4669252091dbe5e637d3583e3331e22a9d5",
+      "bytes": 610738
+    },
+    {
+      "path": "reference/clipped/a41_celesta_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a41_celesta_20.wav",
+      "sha256": "e2aab082296d3ed1c295b349b1dec275b195e1521d942872ed94f4fed70d1282",
+      "bytes": 610738
+    },
+    {
+      "path": "reference/aspade/a41_celesta_rec_aspade_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a41_celesta_rec_aspade_07.wav",
+      "sha256": "f11555c07534466faa31d2d73ac5e217ae19577635a80c0d7dcf15e76eca607a",
+      "bytes": 610738
+    },
+    {
+      "path": "reference/aspade/a41_celesta_rec_aspade_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a41_celesta_rec_aspade_20.wav",
+      "sha256": "e55acdb4c65f414e5fddeca8b330bcf24a861e4094d52943bb3869620c83a586",
+      "bytes": 610738
+    },
+    {
+      "path": "reference/SS_PEW/a41_celesta_rec_SS_PEW_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a41_celesta_rec_SS_PEW_07.wav",
+      "sha256": "b1a43346bc0c58d37c2e17053f79c90ee8e4c9a1ea8e13a35c3b96735314e35e",
+      "bytes": 610738
+    },
+    {
+      "path": "reference/SS_PEW/a41_celesta_rec_SS_PEW_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a41_celesta_rec_SS_PEW_20.wav",
+      "sha256": "326b9c7674b856c1470b2bfa6369cf988de139bd7a6bda8b6bdaa4080d0be231",
+      "bytes": 610738
+    },
+    {
+      "path": "reference/clipped/a42_accordion_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a42_accordion_07.wav",
+      "sha256": "7a1327e0537fd8376e2f0980b94935cec716432f05c5a99c820e92a666bbb6b9",
+      "bytes": 684136
+    },
+    {
+      "path": "reference/clipped/a42_accordion_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a42_accordion_20.wav",
+      "sha256": "e61477a685266f41b0913e9976003fe0725a21e75af9180f7077a20c8ee7311d",
+      "bytes": 684136
+    },
+    {
+      "path": "reference/aspade/a42_accordion_rec_aspade_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a42_accordion_rec_aspade_07.wav",
+      "sha256": "29e42bbdd1a1ed4056a44cda56f957cb7c8c1d0ea47f6953f56525d6a1c83ad2",
+      "bytes": 684136
+    },
+    {
+      "path": "reference/aspade/a42_accordion_rec_aspade_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a42_accordion_rec_aspade_20.wav",
+      "sha256": "3162ae164455d2c9387d7ddee6b501fa0cda4f5f37fa32009b2be0ef7724c4b8",
+      "bytes": 684136
+    },
+    {
+      "path": "reference/SS_PEW/a42_accordion_rec_SS_PEW_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a42_accordion_rec_SS_PEW_07.wav",
+      "sha256": "d26dcd930c7079c8529c858588597b47293d780f69d45cb1ce9ee4f22683a43b",
+      "bytes": 684136
+    },
+    {
+      "path": "reference/SS_PEW/a42_accordion_rec_SS_PEW_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a42_accordion_rec_SS_PEW_20.wav",
+      "sha256": "22b5884d76d46e69df3bf47054d63485b2268270a84f1a0cee480a5a44f0468a",
+      "bytes": 684136
+    },
+    {
+      "path": "reference/clipped/a58_guitar_sarasate_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a58_guitar_sarasate_07.wav",
+      "sha256": "41c35c756f2420026fb7870012e47dcd065089536923c5e8f7e54016db8c177f",
+      "bytes": 586874
+    },
+    {
+      "path": "reference/clipped/a58_guitar_sarasate_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a58_guitar_sarasate_20.wav",
+      "sha256": "ff99c867c3fb0475bca88671f899970c6ab2bf50360b689ef972e3acb7958ad4",
+      "bytes": 586874
+    },
+    {
+      "path": "reference/aspade/a58_guitar_sarasate_rec_aspade_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a58_guitar_sarasate_rec_aspade_07.wav",
+      "sha256": "940d313413f2aa6e849e018ef80c96276351a08441329543c6cc5b91b1b28bd3",
+      "bytes": 586874
+    },
+    {
+      "path": "reference/aspade/a58_guitar_sarasate_rec_aspade_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a58_guitar_sarasate_rec_aspade_20.wav",
+      "sha256": "ab5101b014e00fbb088f06fe21dd99c41221a6d612213919c168e6dab873ce19",
+      "bytes": 586874
+    },
+    {
+      "path": "reference/SS_PEW/a58_guitar_sarasate_rec_SS_PEW_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a58_guitar_sarasate_rec_SS_PEW_07.wav",
+      "sha256": "972130412b47f07585273dce10d49cd94481e2a8747ec2209e0245b6e71b92df",
+      "bytes": 586874
+    },
+    {
+      "path": "reference/SS_PEW/a58_guitar_sarasate_rec_SS_PEW_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a58_guitar_sarasate_rec_SS_PEW_20.wav",
+      "sha256": "841613470e43c7e58a51949b509d44860cea0557e8b59f0c982b8d19b65be5ec",
+      "bytes": 586874
+    },
+    {
+      "path": "reference/clipped/a60_piano_schubert_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a60_piano_schubert_07.wav",
+      "sha256": "dcf1bfa436289c3d79e824ccd4fcf6104abcccbd77b7c8ad3731ea5f92da46ba",
+      "bytes": 531330
+    },
+    {
+      "path": "reference/clipped/a60_piano_schubert_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a60_piano_schubert_20.wav",
+      "sha256": "2a94e6e34ee73cb92abb86495359bd4a88b64bba2ae8c2b4c653e7d1e7dffe61",
+      "bytes": 531330
+    },
+    {
+      "path": "reference/aspade/a60_piano_schubert_rec_aspade_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a60_piano_schubert_rec_aspade_07.wav",
+      "sha256": "8b387afe8cbd9bc160a0a9c75aa3da6ad906edf5192660ea403548187d5ef140",
+      "bytes": 531330
+    },
+    {
+      "path": "reference/aspade/a60_piano_schubert_rec_aspade_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a60_piano_schubert_rec_aspade_20.wav",
+      "sha256": "25f9ea35a0fd02c7e7cb8f47a19bf6176f34f7fb7403bf8b2f39aa566cbb183a",
+      "bytes": 531330
+    },
+    {
+      "path": "reference/SS_PEW/a60_piano_schubert_rec_SS_PEW_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a60_piano_schubert_rec_SS_PEW_07.wav",
+      "sha256": "c2319c0cfa2a266690c00bfaaf102f359af9b30205c2e01f036923289a0ac5a6",
+      "bytes": 531330
+    },
+    {
+      "path": "reference/SS_PEW/a60_piano_schubert_rec_SS_PEW_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a60_piano_schubert_rec_SS_PEW_20.wav",
+      "sha256": "b105999e3abd76fbea2cc726c208be5e76d350cd113c01f8c8813baaa09ee7b8",
+      "bytes": 531330
+    },
+    {
+      "path": "reference/clipped/a66_wind_ensemble_stravinsky_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a66_wind_ensemble_stravinsky_07.wav",
+      "sha256": "ed41e0f29a7d0673bc43fe7008214e089b040b9f2511b8116f3d362c9e4819fb",
+      "bytes": 499544
+    },
+    {
+      "path": "reference/clipped/a66_wind_ensemble_stravinsky_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/clipped/a66_wind_ensemble_stravinsky_20.wav",
+      "sha256": "57066fda583372b0f1a7ac16f940a965211d64c27a8791683eb5a76048858dcd",
+      "bytes": 499544
+    },
+    {
+      "path": "reference/aspade/a66_wind_ensemble_stravinsky_rec_aspade_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a66_wind_ensemble_stravinsky_rec_aspade_07.wav",
+      "sha256": "463d8f946e2483d743852731d8d3c849c0fb0e694af7e819e0db36054840fb31",
+      "bytes": 499544
+    },
+    {
+      "path": "reference/aspade/a66_wind_ensemble_stravinsky_rec_aspade_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/aspade/a66_wind_ensemble_stravinsky_rec_aspade_20.wav",
+      "sha256": "9e64fb012370243ea705b661687439fd55c101bb89473a0a59c538dffe5d6a66",
+      "bytes": 499544
+    },
+    {
+      "path": "reference/SS_PEW/a66_wind_ensemble_stravinsky_rec_SS_PEW_07.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a66_wind_ensemble_stravinsky_rec_SS_PEW_07.wav",
+      "sha256": "242d27369659999428213ce58dfa241898f2eff8edabd0fbfacb0c24bd33868b",
+      "bytes": 499544
+    },
+    {
+      "path": "reference/SS_PEW/a66_wind_ensemble_stravinsky_rec_SS_PEW_20.wav",
+      "url": "https://rajmic.github.io/declipping2020/sounds/SS_PEW/a66_wind_ensemble_stravinsky_rec_SS_PEW_20.wav",
+      "sha256": "e5bf84fc6b578fc18337ae15a1fa4850916aa5b751f3c1821d40879fb6bacc41",
+      "bytes": 499544
+    }
+  ],
+  "schema_version": 1,
+  "protocol": "Frozen parameters; 15 dB prototypes were calibrated on three recordings then evaluated on seven. 7/20 dB conditions are additional stress tests; same corpus is reused for integration. Exact paths/hashes prevent variant substitution.",
+  "cases": [
+    {
+      "id": "a08_violin_clean",
+      "split": "clean_control",
+      "kind": "clean_control",
+      "clean": {
+        "path": "reference/original/a08_violin.wav",
+        "sha256": "40b0690bcceda001e59178e766ca6f1286eb740adcf365e85d488297489419af"
+      },
+      "degraded": {
+        "path": "reference/original/a08_violin.wav",
+        "sha256": "40b0690bcceda001e59178e766ca6f1286eb740adcf365e85d488297489419af"
+      }
+    },
+    {
+      "id": "a16_clarinet_clean",
+      "split": "clean_control",
+      "kind": "clean_control",
+      "clean": {
+        "path": "reference/original/a16_clarinet.wav",
+        "sha256": "3fcb49148bb4c5c2b57e31585276a19b0c2d238649186d1e8b463bbd60b386aa"
+      },
+      "degraded": {
+        "path": "reference/original/a16_clarinet.wav",
+        "sha256": "3fcb49148bb4c5c2b57e31585276a19b0c2d238649186d1e8b463bbd60b386aa"
+      }
+    },
+    {
+      "id": "a25_harp_clean",
+      "split": "clean_control",
+      "kind": "clean_control",
+      "clean": {
+        "path": "reference/original/a25_harp.wav",
+        "sha256": "5fe962baaeb4a152f3c38e8ade9cee28b2717b0c27a757efa3d20f72dda4407a"
+      },
+      "degraded": {
+        "path": "reference/original/a25_harp.wav",
+        "sha256": "5fe962baaeb4a152f3c38e8ade9cee28b2717b0c27a757efa3d20f72dda4407a"
+      }
+    },
+    {
+      "id": "a18_bassoon_clean",
+      "split": "clean_control",
+      "kind": "clean_control",
+      "clean": {
+        "path": "reference/original/a18_bassoon.wav",
+        "sha256": "c271020c97851d44c89718d78ca0c730ba42d2a08774a9d64e2ec09541abb9a9"
+      },
+      "degraded": {
+        "path": "reference/original/a18_bassoon.wav",
+        "sha256": "c271020c97851d44c89718d78ca0c730ba42d2a08774a9d64e2ec09541abb9a9"
+      }
+    },
+    {
+      "id": "a35_glockenspiel_clean",
+      "split": "clean_control",
+      "kind": "clean_control",
+      "clean": {
+        "path": "reference/original/a35_glockenspiel.wav",
+        "sha256": "42ccfb65f66871d2a3d2935e3476a4c557ed948646c42ceb872a17c24449a9a9"
+      },
+      "degraded": {
+        "path": "reference/original/a35_glockenspiel.wav",
+        "sha256": "42ccfb65f66871d2a3d2935e3476a4c557ed948646c42ceb872a17c24449a9a9"
+      }
+    },
+    {
+      "id": "a41_celesta_clean",
+      "split": "clean_control",
+      "kind": "clean_control",
+      "clean": {
+        "path": "reference/original/a41_celesta.wav",
+        "sha256": "2a583687034b28939a4bcbcfa501d60f803b932922fa1e9bbb4d9c4883c08192"
+      },
+      "degraded": {
+        "path": "reference/original/a41_celesta.wav",
+        "sha256": "2a583687034b28939a4bcbcfa501d60f803b932922fa1e9bbb4d9c4883c08192"
+      }
+    },
+    {
+      "id": "a42_accordion_clean",
+      "split": "clean_control",
+      "kind": "clean_control",
+      "clean": {
+        "path": "reference/original/a42_accordion.wav",
+        "sha256": "6edcc5d70495392399ea7c2b996142b15c1e3dd9718b21f78f070b7d0e66acb6"
+      },
+      "degraded": {
+        "path": "reference/original/a42_accordion.wav",
+        "sha256": "6edcc5d70495392399ea7c2b996142b15c1e3dd9718b21f78f070b7d0e66acb6"
+      }
+    },
+    {
+      "id": "a58_guitar_sarasate_clean",
+      "split": "clean_control",
+      "kind": "clean_control",
+      "clean": {
+        "path": "reference/original/a58_guitar_sarasate.wav",
+        "sha256": "7d6c4ab12546bcdbbde6dcc3afe4a6d4f5e4a4ce7b06121573a751cceea6367f"
+      },
+      "degraded": {
+        "path": "reference/original/a58_guitar_sarasate.wav",
+        "sha256": "7d6c4ab12546bcdbbde6dcc3afe4a6d4f5e4a4ce7b06121573a751cceea6367f"
+      }
+    },
+    {
+      "id": "a60_piano_schubert_clean",
+      "split": "clean_control",
+      "kind": "clean_control",
+      "clean": {
+        "path": "reference/original/a60_piano_schubert.wav",
+        "sha256": "4f6b3f5fa8f327901b38bef90257c34b23c8e3a70e777823d6b2b7890426c095"
+      },
+      "degraded": {
+        "path": "reference/original/a60_piano_schubert.wav",
+        "sha256": "4f6b3f5fa8f327901b38bef90257c34b23c8e3a70e777823d6b2b7890426c095"
+      }
+    },
+    {
+      "id": "a66_wind_ensemble_stravinsky_clean",
+      "split": "clean_control",
+      "kind": "clean_control",
+      "clean": {
+        "path": "reference/original/a66_wind_ensemble_stravinsky.wav",
+        "sha256": "13810355ee3e45d9bedeebf6c0a63d91264a8510a80b5b9c8029f292a4d68b61"
+      },
+      "degraded": {
+        "path": "reference/original/a66_wind_ensemble_stravinsky.wav",
+        "sha256": "13810355ee3e45d9bedeebf6c0a63d91264a8510a80b5b9c8029f292a4d68b61"
+      }
+    },
+    {
+      "id": "a08_violin_sdr07",
+      "split": "calibration",
+      "clean": {
+        "path": "reference/original/a08_violin.wav",
+        "sha256": "40b0690bcceda001e59178e766ca6f1286eb740adcf365e85d488297489419af"
+      },
+      "degraded": {
+        "path": "reference/clipped/a08_violin_07.wav",
+        "sha256": "d7ffcf94827fb1264a74572ceaefac4817206ea1df5a787d303113879f3dac8a"
+      },
+      "expected_input_sdr_db": 7,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a08_violin_rec_aspade_07.wav",
+          "sha256": "fbb2eb1de08ef949af012eb32055918b41f1d3bb56af88a3f5a49afa443caf50"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a08_violin_rec_SS_PEW_07.wav",
+          "sha256": "1f96715e84ed916cb20145a993d3a2862f7174a21d271aeffca9c4f110aaf003"
+        }
+      }
+    },
+    {
+      "id": "a08_violin_sdr15",
+      "split": "calibration",
+      "clean": {
+        "path": "reference/original/a08_violin.wav",
+        "sha256": "40b0690bcceda001e59178e766ca6f1286eb740adcf365e85d488297489419af"
+      },
+      "degraded": {
+        "path": "reference/clipped/a08_violin_15.wav",
+        "sha256": "94f4d0d0cd1cebbbf91aabdc6b067b37021524caedc85fec140ab2ac1d314214"
+      },
+      "expected_input_sdr_db": 15,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a08_violin_rec_aspade_15.wav",
+          "sha256": "bbb49000f3684ec359bc4d57b9e5dbfe6b7a5189fdec369f8cd7d3514a544d70"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a08_violin_rec_SS_PEW_15.wav",
+          "sha256": "d825d9d5a618b1f318b9c6be11154eeb16c29fcd979bd6f7b05c6f3e56b44303"
+        }
+      }
+    },
+    {
+      "id": "a08_violin_sdr20",
+      "split": "calibration",
+      "clean": {
+        "path": "reference/original/a08_violin.wav",
+        "sha256": "40b0690bcceda001e59178e766ca6f1286eb740adcf365e85d488297489419af"
+      },
+      "degraded": {
+        "path": "reference/clipped/a08_violin_20.wav",
+        "sha256": "1dff094836f798d7123981c288050272d8104c94347d90964edcea9cfa925bd3"
+      },
+      "expected_input_sdr_db": 20,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a08_violin_rec_aspade_20.wav",
+          "sha256": "5aca884cd2ed5ec1ca6d6e88d6bd339f0c41bfa674fbc507a8c3da01aa36b6f2"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a08_violin_rec_SS_PEW_20.wav",
+          "sha256": "fc059498e4143842946d70d0a853e16df85edcb75440b07f9f1c3289769a974f"
+        }
+      }
+    },
+    {
+      "id": "a16_clarinet_sdr07",
+      "split": "calibration",
+      "clean": {
+        "path": "reference/original/a16_clarinet.wav",
+        "sha256": "3fcb49148bb4c5c2b57e31585276a19b0c2d238649186d1e8b463bbd60b386aa"
+      },
+      "degraded": {
+        "path": "reference/clipped/a16_clarinet_07.wav",
+        "sha256": "63a7dabd54b584d117952988b99f35152d0254a4dc4a3086fc4669aa8ee379e7"
+      },
+      "expected_input_sdr_db": 7,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a16_clarinet_rec_aspade_07.wav",
+          "sha256": "c6b59d2c58124d9f1fa4eaf070df6c7fd9410e46b4794f05de904a7eba46fe48"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a16_clarinet_rec_SS_PEW_07.wav",
+          "sha256": "ba3e4b9ae46b29a3ca36d40ab94b8e030ddf5b889d7a630946237aab8af3d49f"
+        }
+      }
+    },
+    {
+      "id": "a16_clarinet_sdr15",
+      "split": "calibration",
+      "clean": {
+        "path": "reference/original/a16_clarinet.wav",
+        "sha256": "3fcb49148bb4c5c2b57e31585276a19b0c2d238649186d1e8b463bbd60b386aa"
+      },
+      "degraded": {
+        "path": "reference/clipped/a16_clarinet_15.wav",
+        "sha256": "3ec52f2919ccecf16441c546734fe113ed76a784f380f834b8b811ec693a406e"
+      },
+      "expected_input_sdr_db": 15,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a16_clarinet_rec_aspade_15.wav",
+          "sha256": "c4e8ba59ee6040005f8baa79ecd2e4e3a2c3b0b0c52043af035c7bb655d07de0"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a16_clarinet_rec_SS_PEW_15.wav",
+          "sha256": "6340e400616898b7d006901664cb726cc9d99744e41510b7f4eb40e0a5184bdb"
+        }
+      }
+    },
+    {
+      "id": "a16_clarinet_sdr20",
+      "split": "calibration",
+      "clean": {
+        "path": "reference/original/a16_clarinet.wav",
+        "sha256": "3fcb49148bb4c5c2b57e31585276a19b0c2d238649186d1e8b463bbd60b386aa"
+      },
+      "degraded": {
+        "path": "reference/clipped/a16_clarinet_20.wav",
+        "sha256": "a438e4795db8130e31cf71d226d90e81876fe51a48cd91efeed708fc786fea1d"
+      },
+      "expected_input_sdr_db": 20,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a16_clarinet_rec_aspade_20.wav",
+          "sha256": "8c6e9a5fb428aff09a45ccda618f6a5ecbd5cf36fe9165e7063a469e91496b57"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a16_clarinet_rec_SS_PEW_20.wav",
+          "sha256": "6847f697571b2ae3e0ced6edb017de52d4a5a6ad58b1adb0d06c6f053be9dfec"
+        }
+      }
+    },
+    {
+      "id": "a25_harp_sdr07",
+      "split": "calibration",
+      "clean": {
+        "path": "reference/original/a25_harp.wav",
+        "sha256": "5fe962baaeb4a152f3c38e8ade9cee28b2717b0c27a757efa3d20f72dda4407a"
+      },
+      "degraded": {
+        "path": "reference/clipped/a25_harp_07.wav",
+        "sha256": "34fbf04986f8b4a6ee2fe6e59078f5d1e4e6aa8b59284f3944126f95b78b0508"
+      },
+      "expected_input_sdr_db": 7,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a25_harp_rec_aspade_07.wav",
+          "sha256": "09810634c50a9a723aaefce21329fc87a112228f53e55fee9a5e6a1983f157cc"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a25_harp_rec_SS_PEW_07.wav",
+          "sha256": "a353d3723f7a95cd0e2552d91fb8d258039498a726e2bb8741d8d2e31e8f7287"
+        }
+      }
+    },
+    {
+      "id": "a25_harp_sdr15",
+      "split": "calibration",
+      "clean": {
+        "path": "reference/original/a25_harp.wav",
+        "sha256": "5fe962baaeb4a152f3c38e8ade9cee28b2717b0c27a757efa3d20f72dda4407a"
+      },
+      "degraded": {
+        "path": "reference/clipped/a25_harp_15.wav",
+        "sha256": "7477e4a0a7427a86ff16eaf1e003dde939f10abaf9a9fa31d1af24b69e178c1b"
+      },
+      "expected_input_sdr_db": 15,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a25_harp_rec_aspade_15.wav",
+          "sha256": "d8e494f1553607fac9db7c324af35f921bd78dc0ccaa40199de16432711b8e69"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a25_harp_rec_SS_PEW_15.wav",
+          "sha256": "a7898be16cf75db3aa8c10b34cb3b9a189e6a3c058834417cff696811e62f500"
+        }
+      }
+    },
+    {
+      "id": "a25_harp_sdr20",
+      "split": "calibration",
+      "clean": {
+        "path": "reference/original/a25_harp.wav",
+        "sha256": "5fe962baaeb4a152f3c38e8ade9cee28b2717b0c27a757efa3d20f72dda4407a"
+      },
+      "degraded": {
+        "path": "reference/clipped/a25_harp_20.wav",
+        "sha256": "e6349a6dff4c57be79ed1a5d271627a1d127711ed49d3713a8813e39287a625d"
+      },
+      "expected_input_sdr_db": 20,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a25_harp_rec_aspade_20.wav",
+          "sha256": "009f11a07e1bf81a26679e5a1eb6a2b8525dfef87eaff96fdcaa23bdbe845e00"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a25_harp_rec_SS_PEW_20.wav",
+          "sha256": "d3f57bf604d0ec5c96237c61d1b1edf1a9e8781264e23470e8741055f55997aa"
+        }
+      }
+    },
+    {
+      "id": "a18_bassoon_sdr07",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a18_bassoon.wav",
+        "sha256": "c271020c97851d44c89718d78ca0c730ba42d2a08774a9d64e2ec09541abb9a9"
+      },
+      "degraded": {
+        "path": "reference/clipped/a18_bassoon_07.wav",
+        "sha256": "8dac45e010bfbc6ec3f6d0f84dc88bd41b5b7ede8bce83892afbab6e89dd34ae"
+      },
+      "expected_input_sdr_db": 7,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a18_bassoon_rec_aspade_07.wav",
+          "sha256": "a425f6ccec1010480ce9f1e25eed52e2b8994b7ed880bef0f21f109bc90ca70c"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a18_bassoon_rec_SS_PEW_07.wav",
+          "sha256": "f15f3a1d21ecc582a511f9f20f00d3f6caa11d0881bc406db9381b68b0ca7834"
+        }
+      }
+    },
+    {
+      "id": "a18_bassoon_sdr15",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a18_bassoon.wav",
+        "sha256": "c271020c97851d44c89718d78ca0c730ba42d2a08774a9d64e2ec09541abb9a9"
+      },
+      "degraded": {
+        "path": "reference/clipped/a18_bassoon_15.wav",
+        "sha256": "ad81dd0f830572f12f76291ff4a43810f6197d24174b20a6867683b51eb15950"
+      },
+      "expected_input_sdr_db": 15,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a18_bassoon_rec_aspade_15.wav",
+          "sha256": "22cf1001dc945b02b7f92a3e4faea627e467a7822e92b906d1866ede5fcf67be"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a18_bassoon_rec_SS_PEW_15.wav",
+          "sha256": "a98feb98c3be1be0d6b728ee07f6cf91b4352e1a97604330a912aa5270137a74"
+        }
+      }
+    },
+    {
+      "id": "a18_bassoon_sdr20",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a18_bassoon.wav",
+        "sha256": "c271020c97851d44c89718d78ca0c730ba42d2a08774a9d64e2ec09541abb9a9"
+      },
+      "degraded": {
+        "path": "reference/clipped/a18_bassoon_20.wav",
+        "sha256": "55e8c4f7e9a0c13e26729dd33878d1763c1db73f739abb5dbfa6edd2e5f3c79a"
+      },
+      "expected_input_sdr_db": 20,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a18_bassoon_rec_aspade_20.wav",
+          "sha256": "10b23d99ce769b7a51ae67eacff03786c96caa1b49a7ec5cbe3f4df19ea98ea0"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a18_bassoon_rec_SS_PEW_20.wav",
+          "sha256": "550c210306fbbb9ff6363e7392f723342e412c287e779d51b369aa2bde3a65b2"
+        }
+      }
+    },
+    {
+      "id": "a35_glockenspiel_sdr07",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a35_glockenspiel.wav",
+        "sha256": "42ccfb65f66871d2a3d2935e3476a4c557ed948646c42ceb872a17c24449a9a9"
+      },
+      "degraded": {
+        "path": "reference/clipped/a35_glockenspiel_07.wav",
+        "sha256": "f6841530318c9a5fe45097f2d3cb9b96350aa37ea6122e0d27d6fdde16f9f4a1"
+      },
+      "expected_input_sdr_db": 7,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a35_glockenspiel_rec_aspade_07.wav",
+          "sha256": "a0743823de7486992f9ca92c9f7b1971298e77ec633462b501477f328bf6f0e7"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a35_glockenspiel_rec_SS_PEW_07.wav",
+          "sha256": "12eea4e2838208ff443cf82aca9957b4f628e352c7760f6402f9ba38ceb6ac1c"
+        }
+      }
+    },
+    {
+      "id": "a35_glockenspiel_sdr15",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a35_glockenspiel.wav",
+        "sha256": "42ccfb65f66871d2a3d2935e3476a4c557ed948646c42ceb872a17c24449a9a9"
+      },
+      "degraded": {
+        "path": "reference/clipped/a35_glockenspiel_15.wav",
+        "sha256": "60673305c6f0ae80ec0f0bf49f6cf22b0f5b8c32c79e1ca34c78355ffe4ee9a5"
+      },
+      "expected_input_sdr_db": 15,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a35_glockenspiel_rec_aspade_15.wav",
+          "sha256": "503e00aa4163d19b1886cbc556ba075c54ad2808880a0bd98730c0cec212fe51"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a35_glockenspiel_rec_SS_PEW_15.wav",
+          "sha256": "81092f0e64da620d27fc82932e44c310129c7815b3e29c4fc4dafb80668682aa"
+        }
+      }
+    },
+    {
+      "id": "a35_glockenspiel_sdr20",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a35_glockenspiel.wav",
+        "sha256": "42ccfb65f66871d2a3d2935e3476a4c557ed948646c42ceb872a17c24449a9a9"
+      },
+      "degraded": {
+        "path": "reference/clipped/a35_glockenspiel_20.wav",
+        "sha256": "b20662f657b4c1ebe7068b6dc2188b573182dbf66d44ba8e280b8ee5b38f3883"
+      },
+      "expected_input_sdr_db": 20,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a35_glockenspiel_rec_aspade_20.wav",
+          "sha256": "0b29d3e901bcd74145228ef9f2c99b339973cc1653f7c88cc0a252ec86140e7e"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a35_glockenspiel_rec_SS_PEW_20.wav",
+          "sha256": "efffbd4c600a6f3f1619d941dc6abbb1effa80ef18c4beb3d2556073fcff2e31"
+        }
+      }
+    },
+    {
+      "id": "a41_celesta_sdr07",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a41_celesta.wav",
+        "sha256": "2a583687034b28939a4bcbcfa501d60f803b932922fa1e9bbb4d9c4883c08192"
+      },
+      "degraded": {
+        "path": "reference/clipped/a41_celesta_07.wav",
+        "sha256": "98cbe4d5520ad654858c8d0a6796f4669252091dbe5e637d3583e3331e22a9d5"
+      },
+      "expected_input_sdr_db": 7,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a41_celesta_rec_aspade_07.wav",
+          "sha256": "f11555c07534466faa31d2d73ac5e217ae19577635a80c0d7dcf15e76eca607a"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a41_celesta_rec_SS_PEW_07.wav",
+          "sha256": "b1a43346bc0c58d37c2e17053f79c90ee8e4c9a1ea8e13a35c3b96735314e35e"
+        }
+      }
+    },
+    {
+      "id": "a41_celesta_sdr15",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a41_celesta.wav",
+        "sha256": "2a583687034b28939a4bcbcfa501d60f803b932922fa1e9bbb4d9c4883c08192"
+      },
+      "degraded": {
+        "path": "reference/clipped/a41_celesta_15.wav",
+        "sha256": "1926d48219810c511a9593cf008492064b8142b886a4763c49b72c93afd78856"
+      },
+      "expected_input_sdr_db": 15,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a41_celesta_rec_aspade_15.wav",
+          "sha256": "89d73031e6b54650a7d3cafc29627db477c55c99e8fc380423d6761bfd29f651"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a41_celesta_rec_SS_PEW_15.wav",
+          "sha256": "d37199f74d166915159fb6108aa76e7a4b70fb205853b2989aa5275043c9d02d"
+        }
+      }
+    },
+    {
+      "id": "a41_celesta_sdr20",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a41_celesta.wav",
+        "sha256": "2a583687034b28939a4bcbcfa501d60f803b932922fa1e9bbb4d9c4883c08192"
+      },
+      "degraded": {
+        "path": "reference/clipped/a41_celesta_20.wav",
+        "sha256": "e2aab082296d3ed1c295b349b1dec275b195e1521d942872ed94f4fed70d1282"
+      },
+      "expected_input_sdr_db": 20,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a41_celesta_rec_aspade_20.wav",
+          "sha256": "e55acdb4c65f414e5fddeca8b330bcf24a861e4094d52943bb3869620c83a586"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a41_celesta_rec_SS_PEW_20.wav",
+          "sha256": "326b9c7674b856c1470b2bfa6369cf988de139bd7a6bda8b6bdaa4080d0be231"
+        }
+      }
+    },
+    {
+      "id": "a42_accordion_sdr07",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a42_accordion.wav",
+        "sha256": "6edcc5d70495392399ea7c2b996142b15c1e3dd9718b21f78f070b7d0e66acb6"
+      },
+      "degraded": {
+        "path": "reference/clipped/a42_accordion_07.wav",
+        "sha256": "7a1327e0537fd8376e2f0980b94935cec716432f05c5a99c820e92a666bbb6b9"
+      },
+      "expected_input_sdr_db": 7,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a42_accordion_rec_aspade_07.wav",
+          "sha256": "29e42bbdd1a1ed4056a44cda56f957cb7c8c1d0ea47f6953f56525d6a1c83ad2"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a42_accordion_rec_SS_PEW_07.wav",
+          "sha256": "d26dcd930c7079c8529c858588597b47293d780f69d45cb1ce9ee4f22683a43b"
+        }
+      }
+    },
+    {
+      "id": "a42_accordion_sdr15",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a42_accordion.wav",
+        "sha256": "6edcc5d70495392399ea7c2b996142b15c1e3dd9718b21f78f070b7d0e66acb6"
+      },
+      "degraded": {
+        "path": "reference/clipped/a42_accordion_15.wav",
+        "sha256": "55cf611383d5e1bd945e8ab5c340b5077f0adde94a85293927e11b1cfb45cc91"
+      },
+      "expected_input_sdr_db": 15,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a42_accordion_rec_aspade_15.wav",
+          "sha256": "03cb9e9c0c71910fb13d9235850936f8a9eac71af8c31a64f7043132c72699a1"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a42_accordion_rec_SS_PEW_15.wav",
+          "sha256": "d2e03af5843b7036b204a1b63a97ff357efd3c0a397f10d82d73f6b85998c033"
+        }
+      }
+    },
+    {
+      "id": "a42_accordion_sdr20",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a42_accordion.wav",
+        "sha256": "6edcc5d70495392399ea7c2b996142b15c1e3dd9718b21f78f070b7d0e66acb6"
+      },
+      "degraded": {
+        "path": "reference/clipped/a42_accordion_20.wav",
+        "sha256": "e61477a685266f41b0913e9976003fe0725a21e75af9180f7077a20c8ee7311d"
+      },
+      "expected_input_sdr_db": 20,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a42_accordion_rec_aspade_20.wav",
+          "sha256": "3162ae164455d2c9387d7ddee6b501fa0cda4f5f37fa32009b2be0ef7724c4b8"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a42_accordion_rec_SS_PEW_20.wav",
+          "sha256": "22b5884d76d46e69df3bf47054d63485b2268270a84f1a0cee480a5a44f0468a"
+        }
+      }
+    },
+    {
+      "id": "a58_guitar_sarasate_sdr07",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a58_guitar_sarasate.wav",
+        "sha256": "7d6c4ab12546bcdbbde6dcc3afe4a6d4f5e4a4ce7b06121573a751cceea6367f"
+      },
+      "degraded": {
+        "path": "reference/clipped/a58_guitar_sarasate_07.wav",
+        "sha256": "41c35c756f2420026fb7870012e47dcd065089536923c5e8f7e54016db8c177f"
+      },
+      "expected_input_sdr_db": 7,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a58_guitar_sarasate_rec_aspade_07.wav",
+          "sha256": "940d313413f2aa6e849e018ef80c96276351a08441329543c6cc5b91b1b28bd3"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a58_guitar_sarasate_rec_SS_PEW_07.wav",
+          "sha256": "972130412b47f07585273dce10d49cd94481e2a8747ec2209e0245b6e71b92df"
+        }
+      }
+    },
+    {
+      "id": "a58_guitar_sarasate_sdr15",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a58_guitar_sarasate.wav",
+        "sha256": "7d6c4ab12546bcdbbde6dcc3afe4a6d4f5e4a4ce7b06121573a751cceea6367f"
+      },
+      "degraded": {
+        "path": "reference/clipped/a58_guitar_sarasate_15.wav",
+        "sha256": "75128eaa30ba53472aba15f1df0bb8ef5e5db17e36f8ee633452c25b1396647d"
+      },
+      "expected_input_sdr_db": 15,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a58_guitar_sarasate_rec_aspade_15.wav",
+          "sha256": "d3efc71defe9a266fef55a1f5f766401619320fd88ef3c8fe5e8d149063420e6"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a58_guitar_sarasate_rec_SS_PEW_15.wav",
+          "sha256": "0b3cb3e3e38f1673f61dfc421d9ccbd936566d83d63c34a8a4a36d008765fbe0"
+        }
+      }
+    },
+    {
+      "id": "a58_guitar_sarasate_sdr20",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a58_guitar_sarasate.wav",
+        "sha256": "7d6c4ab12546bcdbbde6dcc3afe4a6d4f5e4a4ce7b06121573a751cceea6367f"
+      },
+      "degraded": {
+        "path": "reference/clipped/a58_guitar_sarasate_20.wav",
+        "sha256": "ff99c867c3fb0475bca88671f899970c6ab2bf50360b689ef972e3acb7958ad4"
+      },
+      "expected_input_sdr_db": 20,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a58_guitar_sarasate_rec_aspade_20.wav",
+          "sha256": "ab5101b014e00fbb088f06fe21dd99c41221a6d612213919c168e6dab873ce19"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a58_guitar_sarasate_rec_SS_PEW_20.wav",
+          "sha256": "841613470e43c7e58a51949b509d44860cea0557e8b59f0c982b8d19b65be5ec"
+        }
+      }
+    },
+    {
+      "id": "a60_piano_schubert_sdr07",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a60_piano_schubert.wav",
+        "sha256": "4f6b3f5fa8f327901b38bef90257c34b23c8e3a70e777823d6b2b7890426c095"
+      },
+      "degraded": {
+        "path": "reference/clipped/a60_piano_schubert_07.wav",
+        "sha256": "dcf1bfa436289c3d79e824ccd4fcf6104abcccbd77b7c8ad3731ea5f92da46ba"
+      },
+      "expected_input_sdr_db": 7,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a60_piano_schubert_rec_aspade_07.wav",
+          "sha256": "8b387afe8cbd9bc160a0a9c75aa3da6ad906edf5192660ea403548187d5ef140"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a60_piano_schubert_rec_SS_PEW_07.wav",
+          "sha256": "c2319c0cfa2a266690c00bfaaf102f359af9b30205c2e01f036923289a0ac5a6"
+        }
+      }
+    },
+    {
+      "id": "a60_piano_schubert_sdr15",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a60_piano_schubert.wav",
+        "sha256": "4f6b3f5fa8f327901b38bef90257c34b23c8e3a70e777823d6b2b7890426c095"
+      },
+      "degraded": {
+        "path": "reference/clipped/a60_piano_schubert_15.wav",
+        "sha256": "e2942f65b4eca966852be1a0b02d0fface8d9695cdb0a0823120e0eb081a50ef"
+      },
+      "expected_input_sdr_db": 15,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a60_piano_schubert_rec_aspade_15.wav",
+          "sha256": "169a621342fa3b98c278f1968ac99c5ace2a23c91f15101bba03c9490fccf180"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a60_piano_schubert_rec_SS_PEW_15.wav",
+          "sha256": "54c57247c1aea3ce180c449a5b29e279edc8b416b2fa122f6e34959a3518552f"
+        }
+      }
+    },
+    {
+      "id": "a60_piano_schubert_sdr20",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a60_piano_schubert.wav",
+        "sha256": "4f6b3f5fa8f327901b38bef90257c34b23c8e3a70e777823d6b2b7890426c095"
+      },
+      "degraded": {
+        "path": "reference/clipped/a60_piano_schubert_20.wav",
+        "sha256": "2a94e6e34ee73cb92abb86495359bd4a88b64bba2ae8c2b4c653e7d1e7dffe61"
+      },
+      "expected_input_sdr_db": 20,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a60_piano_schubert_rec_aspade_20.wav",
+          "sha256": "25f9ea35a0fd02c7e7cb8f47a19bf6176f34f7fb7403bf8b2f39aa566cbb183a"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a60_piano_schubert_rec_SS_PEW_20.wav",
+          "sha256": "b105999e3abd76fbea2cc726c208be5e76d350cd113c01f8c8813baaa09ee7b8"
+        }
+      }
+    },
+    {
+      "id": "a66_wind_ensemble_stravinsky_sdr07",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a66_wind_ensemble_stravinsky.wav",
+        "sha256": "13810355ee3e45d9bedeebf6c0a63d91264a8510a80b5b9c8029f292a4d68b61"
+      },
+      "degraded": {
+        "path": "reference/clipped/a66_wind_ensemble_stravinsky_07.wav",
+        "sha256": "ed41e0f29a7d0673bc43fe7008214e089b040b9f2511b8116f3d362c9e4819fb"
+      },
+      "expected_input_sdr_db": 7,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a66_wind_ensemble_stravinsky_rec_aspade_07.wav",
+          "sha256": "463d8f946e2483d743852731d8d3c849c0fb0e694af7e819e0db36054840fb31"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a66_wind_ensemble_stravinsky_rec_SS_PEW_07.wav",
+          "sha256": "242d27369659999428213ce58dfa241898f2eff8edabd0fbfacb0c24bd33868b"
+        }
+      }
+    },
+    {
+      "id": "a66_wind_ensemble_stravinsky_sdr15",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a66_wind_ensemble_stravinsky.wav",
+        "sha256": "13810355ee3e45d9bedeebf6c0a63d91264a8510a80b5b9c8029f292a4d68b61"
+      },
+      "degraded": {
+        "path": "reference/clipped/a66_wind_ensemble_stravinsky_15.wav",
+        "sha256": "12190e132d80cf9d7d854ab169f39194ba7d05547a73f6e1d1ff92e2d0c74b95"
+      },
+      "expected_input_sdr_db": 15,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a66_wind_ensemble_stravinsky_rec_aspade_15.wav",
+          "sha256": "cef060ee46dd9062db8c0b56d0969a581976390b915a07ed0a7694d315ce8c53"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a66_wind_ensemble_stravinsky_rec_SS_PEW_15.wav",
+          "sha256": "b9754aadc00bf32d42c4c50e1b699c89687893345a34cf3dd107fbe21aea07d6"
+        }
+      }
+    },
+    {
+      "id": "a66_wind_ensemble_stravinsky_sdr20",
+      "split": "holdout",
+      "clean": {
+        "path": "reference/original/a66_wind_ensemble_stravinsky.wav",
+        "sha256": "13810355ee3e45d9bedeebf6c0a63d91264a8510a80b5b9c8029f292a4d68b61"
+      },
+      "degraded": {
+        "path": "reference/clipped/a66_wind_ensemble_stravinsky_20.wav",
+        "sha256": "57066fda583372b0f1a7ac16f940a965211d64c27a8791683eb5a76048858dcd"
+      },
+      "expected_input_sdr_db": 20,
+      "references": {
+        "aspade": {
+          "path": "reference/aspade/a66_wind_ensemble_stravinsky_rec_aspade_20.wav",
+          "sha256": "9e64fb012370243ea705b661687439fd55c101bb89473a0a59c538dffe5d6a66"
+        },
+        "SS_PEW": {
+          "path": "reference/SS_PEW/a66_wind_ensemble_stravinsky_rec_SS_PEW_20.wav",
+          "sha256": "e5bf84fc6b578fc18337ae15a1fa4850916aa5b751f3c1821d40879fb6bacc41"
+        }
+      }
+    }
+  ]
+}
