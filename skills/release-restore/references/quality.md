@@ -10,7 +10,7 @@ Shape comparison uses source bands within 60 dB of the strongest band and center
 
 The score is a selection aid. The copied-original statuses intentionally preserve source bits and can retain defects. Read violations and listening_verdict rather than inferring a repaired file from the FLAC extension. Source codec provenance must be tracked outside the processing decision.
 
-The integer AR declipper repairs only changed full-scale samples; other source samples keep their original precision before HPF/contour. It is not a general inverse for soft limiting or codec losses. Its performance on a sine is insufficient evidence for complex music.
+For detected hard clipping the runner now uses the separate [defect-specific repair branch](declip.md). The historical integer AR routine is excluded from new dynamics candidates; repairing only full-scale int16 samples and clamping reconstructed peaks is insufficient for this task. Its old sine test was not evidence of good performance on complex music.
 
 ## Legacy comparison
 

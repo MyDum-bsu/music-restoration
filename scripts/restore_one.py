@@ -59,8 +59,10 @@ def encode_flac(y: np.ndarray, sr: int, out_path: Path, tmp_wav: Path,
     import wave
     if bits not in (16, 24):
         raise ValueError(f"unsupported bits: {bits}")
+    if y.ndim != 2 or y.shape[1] not in (1, 2):
+        raise ValueError("encoder expects mono/stereo PCM [samples, channels]")
     with wave.open(str(tmp_wav), "wb") as w:
-        w.setnchannels(2)
+        w.setnchannels(y.shape[1])
         w.setsampwidth(bits // 8)
         w.setframerate(sr)
         if bits == 24:

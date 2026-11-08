@@ -62,11 +62,16 @@ def test_matched_level_boundary_artifact_fails():
 
 
 @pytest.mark.parametrize('value', [np.nan, np.inf, -np.inf])
-def test_nonfinite_audio_rejected(value):
+@pytest.mark.parametrize('processor', ['measure','sparse_repair'])
+def test_nonfinite_audio_rejected(value,processor):
     x = np.ones((20, 2), dtype='float32')
     x[5, 0] = value
     with pytest.raises(ValueError, match='finite'):
-        measure(x, 44100)
+        if processor=='measure':
+            measure(x, 44100)
+        else:
+            from rnext.dsp.sparse import repair_clipping
+            repair_clipping(x,44100,np.zeros(x.shape,dtype=bool))
 
 
 def test_strict_decode_rejects_corrupt_input(tmp_path):
@@ -109,11 +114,11 @@ def test_encoded_roundtrip_and_failed_encoder_fallback(tmp_path, monkeypatch, re
     x=np.column_stack([.1*np.sin(2*np.pi*440*t)]*2).astype('float32')
     source,dest=tmp_path/'source.flac',tmp_path/'output.flac'
     write_24(x,sr,source,1)
-    def proposed(pcm,rate):
+    def proposed(pcm,rate,**options):
         y=pcm*.5
         return y, {'status':'processed_candidate','orig':measure(pcm,rate),
                    'rest':measure(y,rate),'plan':{'target':1.},'violations':[]}
-    monkeypatch.setattr(runner,'select_track',proposed)
+    monkeypatch.setattr(runner,'select_restoration',proposed)
     if reject_encoded:
         monkeypatch.setattr(runner,'output_violations',lambda *args: ['encoded_qc_failed'])
     report=runner.process(source,dest)

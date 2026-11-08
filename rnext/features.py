@@ -14,7 +14,7 @@ AUDIO_MIN = 1e-10
 def ffprobe_audio(path: str) -> dict:
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-select_streams", "a:0", "-show_entries",
-         "stream=sample_rate,channels,bits_per_raw_sample:format=duration",
+         "stream=sample_rate,channels,bits_per_raw_sample,bits_per_sample:format=duration",
          "-of", "json", str(path)],
         capture_output=True, text=True, check=True).stdout
     import json
@@ -39,8 +39,10 @@ def decode_s16(path: str, start_s: float | None = None, dur_s: float | None = No
 
 
 def decode_f32(path: str, start_s: float | None = None, dur_s: float | None = None,
-               strict: bool = False) -> tuple[np.ndarray, int]:
-    """Decode to float32 [-1, 1) (stereo). One decode per run — for DSP math."""
+               strict: bool = False, channels: int | None = 2) -> tuple[np.ndarray, int]:
+    """Decode float32 PCM; default stereo, channels=None preserves native channels."""
+    native = ffprobe_audio(path) if channels is None else None
+    output_channels = native["ch"] if native is not None else channels
     cmd = ["ffmpeg", "-v", "error", "-err_detect", "explode" if strict else "ignore_err"]
     if strict:
         cmd += ["-xerror"]
@@ -48,12 +50,12 @@ def decode_f32(path: str, start_s: float | None = None, dur_s: float | None = No
         cmd += ["-ss", f"{start_s:.6f}"]
     if dur_s is not None:
         cmd += ["-t", f"{dur_s:.6f}"]
-    cmd += ["-i", str(path), "-map", "0:a:0", "-ac", "2", "-c:a", "pcm_f32le", "-f", "f32le", "-"]
+    cmd += ["-i", str(path), "-map", "0:a:0", "-ac", str(output_channels), "-c:a", "pcm_f32le", "-f", "f32le", "-"]
     raw = subprocess.run(cmd, capture_output=True, check=True)
     if strict and (raw.stderr.strip() or not raw.stdout):
         raise ValueError(f"strict decode failed: {path}: {raw.stderr.decode(errors='replace')[:500]}")
-    x = np.frombuffer(raw.stdout, dtype=np.float32).reshape(-1, 2)
-    return x, ffprobe_audio(path)["sr"]
+    x = np.frombuffer(raw.stdout, dtype=np.float32).reshape(-1, output_channels)
+    return x, (native or ffprobe_audio(path))["sr"]
 
 
 # ---------------------------------------------------------------- numbering
@@ -72,7 +74,7 @@ def tt_dr(x: np.ndarray, fs: int):
     # segment was empty and np.max crashed on a zero-size array.
     seg_cnt = max(1, int(math.ceil(n / block)))
     if n < block:
-        return 0, 0.0, (0, 0), -100.0, -100.0
+        return 0, 0.0, tuple(0 for _ in range(ch)), -100.0, -100.0
     rms = np.zeros((seg_cnt, ch))
     peaks = np.zeros((seg_cnt, ch))
     for i in range(seg_cnt):
@@ -94,7 +96,7 @@ def tt_dr(x: np.ndarray, fs: int):
     db_peak = 20.0 * math.log10(max(float(np.max(peaks)), 1e-10) / full_scale)
     db_rms = 20.0 * math.log10(
         max(float(np.mean(dr_rms(x.astype(np.float64)))), 1e-10) / full_scale)
-    return dr, float(np.mean(ch_dr)), (round(float(ch_dr[0]), 1), round(float(ch_dr[1]), 1)), db_peak, db_rms
+    return dr, float(np.mean(ch_dr)), tuple(round(float(v), 1) for v in ch_dr), db_peak, db_rms
 
 
 def crest_db(x: np.ndarray) -> float:

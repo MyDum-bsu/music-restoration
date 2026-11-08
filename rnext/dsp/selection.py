@@ -10,8 +10,8 @@ from rnext.dsp.pipeline import Policy, restore_track
 
 
 def measure(x, sr):
-    if x.ndim != 2 or x.shape[1] != 2 or not x.size or not np.isfinite(x).all():
-        raise ValueError("expected nonempty finite stereo PCM")
+    if x.ndim != 2 or x.shape[1] not in (1, 2) or not x.size or not np.isfinite(x).all():
+        raise ValueError("expected nonempty finite mono/stereo PCM")
     dr, exact, _, peak, rms = F.tt_dr(x, sr)
     bands = np.asarray(F.band_rms_db(x, sr))
     return {"dr": int(dr), "dr_exact": float(exact), "crest_db": F.crest_db(x),
@@ -22,14 +22,15 @@ def measure(x, sr):
             "shape": (bands - bands.mean()).tolist()}
 
 
-def material_plan(m, duration):
+def material_plan(m, duration, allow_sparse=False):
     """Class-table priors; quiet/high-DR material retains an identity candidate."""
     if duration < 6 or m["rms_tt"] < -70:
         return {"class": "short_or_silent", "target": 0.0}
     if m["dr"] >= 11:
         return {"class": "healthy", "target": 0.0}
     if m["rms_tt"] <= -13:
-        return {"class": "sparse", "target": .8}
+        return {"class": "sparse", "target": .8 if allow_sparse else 0.,
+                "reason": "quiet sparse material needs an explicit dynamics request"}
     return {"class": "crushed" if m["dr"] <= 7 else "mid",
             "target": 5.3 if m["dr"] <= 7 else 2.3}
 
@@ -40,7 +41,7 @@ def candidate_policies(plan):
     if plan["target"] == 0:
         return out
     # Rumble removal needs a diagnosis; avoid filtering every clean master.
-    base = Policy(auto_policy=False, hpf_hz=0., normalize_tp=False, target_tp_dbfs=-1.0)
+    base = Policy(auto_policy=False, hpf_hz=0., declip=False, normalize_tp=False, target_tp_dbfs=-1.0)
     out["gentle"] = replace(base, k=.75, gain_min_db=-4., gain_max_db=4.)
     out["moderate"] = replace(base, k=.5, gain_min_db=-6., gain_max_db=6.)
     out["adaptive"] = replace(base, mode="expand", adaptive=True,
@@ -91,9 +92,9 @@ def output_violations(x, y, sr, orig, measured):
     return errors
 
 
-def select_track(x, sr):
+def select_track(x, sr, allow_sparse=False):
     orig = measure(x, sr)
-    plan = material_plan(orig, len(x) / sr)
+    plan = material_plan(orig, len(x) / sr, allow_sparse=allow_sparse)
     policies = candidate_policies(plan)
     # Spread windows across the track; include short files without seeking past EOF.
     length = min(len(x), 15 * sr)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Restore stereo FLAC with an identity candidate, strict decode and encoded QC."""
+"""Restore mono/stereo FLAC with strict decode and encoded QC."""
 import argparse
 import hashlib
 import json
@@ -7,27 +7,47 @@ from pathlib import Path
 import shutil
 import sys
 
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from rnext import features as F
-from rnext.dsp.selection import select_track, measure, output_violations, compare
+from rnext.dsp.selection import measure, output_violations, compare
+from rnext.dsp.repair import select_restoration
 from scripts.restore_per_track import write_24
 
 
-def process(source, dest):
+def _encoded_qc(x, y, dest, report, source_sr):
+    decoded, out_sr = F.decode_f32(str(dest), strict=True, channels=None)
+    encoded = measure(decoded, out_sr)
+    if report.get("mode") == "declip":
+        # Repair may legitimately change source-relative spectrum/DR. Verify
+        # that encoding preserved the accepted waveform, not those proxies.
+        errors = []
+        if decoded.shape != y.shape:
+            errors.append("sample_count_or_channels_changed")
+        elif float(np.max(np.abs(decoded - y))) > 2. / 8388608:
+            errors.append("encoded_waveform_differs_from_accepted_repair")
+        if encoded["tp_dbfs"] > -.95 or encoded["clip_samples"]:
+            errors.append("encoded_peak_or_clipping_failure")
+    else:
+        errors = output_violations(x, decoded, out_sr, report["orig"], encoded)
+    if out_sr != source_sr:
+        errors.append("sample_rate_changed")
+    return encoded, errors
+
+
+def process(source, dest, mode="auto", clip_threshold=None):
     info = F.ffprobe_audio(str(source))
-    if info["ch"] != 2:
-        raise ValueError("stereo input required; channel conversion must be explicit")
-    x, sr = F.decode_f32(str(source), strict=True)
+    if info["ch"] not in (1, 2):
+        raise ValueError("mono/stereo input required; multichannel conversion must be explicit")
+    x, sr = F.decode_f32(str(source), strict=True, channels=None)
     if abs(len(x) / sr - info["dur"]) > max(1e-5, 2 / sr):
         raise ValueError("decoded duration differs from container")
-    y, report = select_track(x, sr)
+    y, report = select_restoration(x, sr, mode=mode, bits=info["bps"] or 24,
+                                  clip_threshold=clip_threshold)
     if report["status"] == "processed_candidate":
         write_24(y, sr, dest, 0)
-        decoded, out_sr = F.decode_f32(str(dest), strict=True)
-        encoded = measure(decoded, out_sr)
-        errors = output_violations(x, decoded, out_sr, report["orig"], encoded)
-        if out_sr != sr:
-            errors.append("sample_rate_changed")
+        encoded, errors = _encoded_qc(x, y, dest, report, sr)
         report["encoded_metrics"] = encoded
         if errors:
             report["violations"] += errors
@@ -51,6 +71,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--src", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--mode", choices=("auto", "dynamics", "declip"), default="auto")
+    ap.add_argument("--clip-threshold", type=float, help="explicit symmetric hard-clip level in PCM units")
     args = ap.parse_args()
     src, out = Path(args.src), Path(args.out)
     files = [src] if src.is_file() else sorted(src.glob("*.flac"))
@@ -62,7 +84,8 @@ def main():
     rows = []
     for source in files:
         try:
-            row = process(source, out / source.name)
+            row = process(source, out / source.name, mode=args.mode,
+                          clip_threshold=args.clip_threshold)
         except Exception as exc:
             row = {"source": str(source), "status": "error", "error": str(exc)}
         rows.append(row)

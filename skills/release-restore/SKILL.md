@@ -17,19 +17,25 @@ For a name/link without local audio, search via tracker and the additional catal
 
 ## Process and verify
 
-Preferred conservative path for stereo FLAC:
+Preferred conservative path for mono/stereo FLAC:
 
 ```bash
 python3 scripts/restore_safe.py --src "<file-or-track-directory>" --out "<empty-output-directory>"
 ```
 
-The runner strictly decodes, selects identity/gentle/moderate/adaptive candidates on spread excerpts, evaluates the full track, writes 24-bit PCM FLAC for processed candidates, then decodes and checks that encoded result. It retains the source sample rate. HPF is off unless separately justified; an adaptive variant also tests equal bass expansion. It rejects implicit channel conversion. ALAC/WAV can first be losslessly decoded to FLAC with the native rate/channels preserved; keep the original file and provenance. MP3/AAC inputs may be decoded for processing when that is the chosen source, but remain **lossy-derived**.
+Auto mode first checks for repeated extreme plateaus, including a small cluster of quantization/dither levels. For supported hard clipping it uses a float AR proposal only when reliable-context prediction and forward/backward agreement are strong; otherwise it uses consistent sparse reconstruction. Reliable (unmasked) samples stay fixed before a documented common headroom gain. Read [declip.md](references/declip.md) for this branch, its measured evidence, resource use and limitations.
+
+Without that pattern, auto mode retains quiet/sparse and high-DR material; denser material gets identity/gentle/moderate/adaptive dynamics selection on spread excerpts and full-result verification. `--mode declip` requests repair only (no supported pattern → keep original); `--mode dynamics` explicitly allows dynamics candidates for sparse material too. `--clip-threshold <PCM-level>` is an explicit symmetric mask override, not an automatic estimate or quality control; use it only with evidence of that clipping level.
+
+The runner strictly decodes, writes 24-bit PCM FLAC for processed candidates, then decodes and checks that encoded result. It retains the source sample rate. HPF is off unless separately justified; an adaptive dynamics variant also tests equal bass expansion. The legacy integer declipper is excluded from these dynamics candidates. The runner rejects implicit channel conversion. ALAC/WAV can first be losslessly decoded to FLAC with the native rate/channels preserved; keep the original file and provenance. MP3/AAC inputs may be decoded for processing when that is the chosen source, but remain **lossy-derived**.
 
 Inspect `report.json` for EVERY input:
 - `processed_candidate`: full-track safeguards and encoded QC passed; perceptual quality remains unevaluated.
 - `kept_original`: source copied byte-for-byte; original defects/headroom may remain.
 - `qc_fallback_original`: attempted processing rejected, source copied, violations recorded.
 - `error`: no deliverable accepted for this track; command returns nonzero.
+
+For declipping, inspect `clip_diagnosis`, chosen method, raw sample consistency, `repair.output_gain_db` and encoded-waveform checks. The dynamics score is descriptive for this branch: genuine repair need not reach a DR target or preserve the distorted source's spectrum. Detection identifies a plateau pattern; artistic intent cannot be inferred from PCM alone.
 
 Finish only after file count and all statuses agree with the requested tracklist. Retry errors in a new empty directory. Fallback is an explicit outcome, not a successful repair. Keep report.json beside the deliverables. The runner's score is a heuristic; claims about restored sound require listening evidence.
 
