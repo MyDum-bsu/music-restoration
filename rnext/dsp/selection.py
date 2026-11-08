@@ -52,7 +52,13 @@ def candidate_policies(plan):
 def compare(m, orig, target):
     delta = m["crest_db"] - orig["crest_db"]
     delta_dr = m["dr_exact"] - orig["dr_exact"]
-    shape = float(np.sqrt(np.mean((np.asarray(m["shape"]) - orig["shape"]) ** 2)))
+    shape_in = np.asarray(orig["shape"])
+    active = shape_in >= shape_in.max() - 60.
+    change = (np.asarray(m["shape"]) - shape_in)[active]
+    # Quantization noise in empty bands is not a tonal change. Re-center on
+    # source-active bands so unrelated noise floors cannot alter the gain reference.
+    change -= change.mean()
+    shape = float(np.sqrt(np.mean(change ** 2)))
     # A single boundary peak can raise global crest while local dynamics stay
     # unchanged. Use block-based TT DR for the objective; report crest separately.
     return {"delta_crest": delta, "delta_dr": delta_dr, "shape_rms": shape,

@@ -6,6 +6,8 @@
 
 Three 15-second windows spread over the track compare identity, gentle/moderate flatten and adaptive expand. Band shape is centered to remove uniform gain. The objective uses block-based TT DR change, not a single global peak; targets are provisional. The full output must preserve length and finite PCM, true peak ≤−1 dBFS (0.05 dB numerical tolerance), no clipped output or additional large sample jumps, band-shape RMS ≤1.5 dB, TT DR loss ≤0.25 dB and boundary peak growth ≤3 dB at matched RMS (first/last 50 ms). It must improve its full-track proxy score over identity. These thresholds are conservative engineering safeguards, not validated audibility thresholds. Encoded FLAC is decoded and rechecked. No automatic upward peak normalization or learned EQ curve is applied.
 
+Shape comparison uses source bands within 60 dB of the strongest band and centers the gain difference over those active bands. This excludes effectively empty bands where a change of dither/noise floor would otherwise look like a large timbre change. This engineering mask also needs validation on quiet, narrow-band and unusual recordings.
+
 The score is a selection aid. The copied-original statuses intentionally preserve source bits and can retain defects. Read violations and listening_verdict rather than inferring a repaired file from the FLAC extension. Source codec provenance must be tracked outside the processing decision.
 
 The integer AR declipper repairs only changed full-scale samples; other source samples keep their original precision before HPF/contour. It is not a general inverse for soft limiting or codec losses. Its performance on a sine is insufficient evidence for complex music.

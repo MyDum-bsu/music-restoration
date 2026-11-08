@@ -100,6 +100,36 @@ def test_runner_keeps_short_source_byte_for_byte(tmp_path):
     assert source.read_bytes()==dest.read_bytes()
 
 
+@pytest.mark.parametrize('reject_encoded', [False, True])
+def test_encoded_roundtrip_and_failed_encoder_fallback(tmp_path, monkeypatch, reject_encoded):
+    from scripts.restore_per_track import write_24
+    from scripts import restore_safe as runner
+    sr=44100
+    t=np.arange(sr)/sr
+    x=np.column_stack([.1*np.sin(2*np.pi*440*t)]*2).astype('float32')
+    source,dest=tmp_path/'source.flac',tmp_path/'output.flac'
+    write_24(x,sr,source,1)
+    def proposed(pcm,rate):
+        y=pcm*.5
+        return y, {'status':'processed_candidate','orig':measure(pcm,rate),
+                   'rest':measure(y,rate),'plan':{'target':1.},'violations':[]}
+    monkeypatch.setattr(runner,'select_track',proposed)
+    if reject_encoded:
+        monkeypatch.setattr(runner,'output_violations',lambda *args: ['encoded_qc_failed'])
+    report=runner.process(source,dest)
+    if reject_encoded:
+        assert report['status']=='qc_fallback_original'
+        assert source.read_bytes()==dest.read_bytes()
+        assert report['rest']==report['orig']
+    else:
+        assert report['status']=='processed_candidate', report['violations']
+        decoded,rate=F.decode_f32(str(dest),strict=True)
+        original,_=F.decode_f32(str(source),strict=True)
+        assert rate==sr and decoded.shape==original.shape
+        np.testing.assert_allclose(decoded, original*.5, atol=3/8388608, rtol=0)
+        assert F.ffprobe_audio(str(dest))['bps']==24
+
+
 def test_listening_pack_uses_one_common_peak_safe_loudness(monkeypatch):
     from scripts import listen_pack as pack
     from pathlib import Path
