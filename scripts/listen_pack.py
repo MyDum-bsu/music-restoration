@@ -17,6 +17,7 @@ Pack layout:
   python3 scripts/listen_pack.py --key 5220623/rel2 --ours-dir out/silver-side-up
 """
 import argparse
+import hashlib
 import json
 import random
 import re
@@ -28,7 +29,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import dataset_extract as DX  # noqa: E402
 from rnext import features as F  # noqa: E402
 from rnext import workspace  # noqa: E402
 
@@ -47,18 +47,34 @@ def gain_to_lufs(src: Path, dst: Path, target_lufs: float) -> dict:
     i = info.get("lufs")
     if i is None:
         # loudness not measurable (silence) — just copy
-        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-c:a", "flac", str(dst)],
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-map", "0:a:0", "-c:a", "flac", "-frame_size", "4096", str(dst)],
                        check=True)
         return {"lufs": None, "gain_db": 0.0}
     peak = info.get("tp_peak_dbfs")
     gain = target_lufs - float(i)
     if peak is not None and peak + gain > -1.0:
         gain = -1.0 - float(peak)          # don't push into clipping
-    cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(src),
-           "-af", f"volume={gain:.2f}dB", "-c:a", "flac", "-compression_level", "5", str(dst)]
+    cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(src), "-map", "0:a:0",
+           "-af", f"volume={gain:.2f}dB", "-c:a", "flac", "-frame_size", "4096", "-compression_level", "5", str(dst)]
     subprocess.run(cmd, check=True)
+    actual = F.lufs(str(dst))
+    if actual.get("lufs") is None or abs(actual["lufs"] - target_lufs) > .2:
+        raise ValueError(f"loudness matching failed for {dst}: {actual}")
     return {"lufs": round(float(i), 2), "gain_db": round(gain, 2),
-            "peak_dbfs": round(peak, 2) if peak is not None else None}
+            "peak_dbfs": round(peak, 2) if peak is not None else None,
+            "measured_lufs": actual["lufs"]}
+
+
+def common_lufs(variants: dict[str, Path], requested: float) -> float:
+    """Choose ONE feasible loudness so no variant is separately peak-clamped."""
+    feasible = [requested]
+    for path in variants.values():
+        info = F.lufs(str(path))
+        loudness, peak = info.get("lufs"), info.get("tp_peak_dbfs")
+        if loudness is None or peak is None:
+            raise ValueError(f"unmeasurable listening variant: {path}")
+        feasible.append(float(loudness) - 1.1 - float(peak))
+    return min(feasible)
 
 
 def pair_excerpts(key: str) -> list[tuple[str, str, Path, Path]]:
@@ -95,6 +111,12 @@ def ours_file(ours_dir: Path | None, key: str, track: int, title: str = "") -> P
 
 def build_item(item_id: str, variants: dict[str, Path], out_dir: Path, target_lufs: float,
                rng: random.Random, note: str = "") -> dict:
+    if not 2 <= len(variants) <= len(LABELS):
+        raise ValueError("a listening item needs 2 to 4 variants")
+    durations = [F.ffprobe_audio(str(path))["dur"] for path in variants.values()]
+    if max(durations) - min(durations) > .002:
+        raise ValueError("listening variants need equal-duration, aligned excerpts; a whole track cannot replace an excerpt")
+    target_lufs = common_lufs(variants, target_lufs)
     order = list(variants.keys())
     rng.shuffle(order)                      # blind layout
     labels = {}
@@ -105,7 +127,8 @@ def build_item(item_id: str, variants: dict[str, Path], out_dir: Path, target_lu
         norm = gain_to_lufs(src, dst, target_lufs)
         labels[label] = name
         files[label] = {"file": f"audio/{dst.name}", **norm}
-    return {"id": item_id, "labels": labels, "files": files, "note": note}
+    return {"id": item_id, "labels": labels, "files": files, "note": note,
+            "matched_lufs": target_lufs}
 
 
 def main() -> int:
@@ -145,13 +168,14 @@ def main() -> int:
             ours = ours_file(Path(args.ours_dir) if args.ours_dir else None, key, track_no)
             if ours:
                 variants["ours"] = ours
-            it = build_item(item_id, variants, out / "audio", args.target_lufs, rng,
+            unique_id = hashlib.sha256(key.encode()).hexdigest()[:12] + "_" + item_id
+            it = build_item(unique_id, variants, out / "audio", args.target_lufs, rng,
                             note=f"{meta.get('artist')} — {meta.get('album')} ({tag})")
             it["key"] = key
             it["artist"] = meta.get("artist")
             it["album"] = meta.get("album")
             items.append(it)
-            print(f"  {key} {item_id}: variants {it['labels']}")
+            print(f"  {key} {item_id}: {len(it['files'])} blind variants")
 
     pack = {
         "name": out.name,

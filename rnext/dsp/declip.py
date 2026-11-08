@@ -58,7 +58,7 @@ def declip_track(x16: np.ndarray) -> tuple[np.ndarray, int]:
     y = x16.copy()
     n_fills = 0
     for ch in (0, 1):
-        xi = np.abs(x16[:, ch])
+        xi = np.abs(x16[:, ch].astype(np.int32))
         runs = _extract_runs(xi >= CLIP_THRESH)
         for s0, e0 in runs:
             L = e0 - s0
@@ -84,5 +84,5 @@ def declip_track(x16: np.ndarray) -> tuple[np.ndarray, int]:
 
 
 def clip_positions(x16: np.ndarray) -> int:
-    clipped = np.abs(x16) >= CLIP_THRESH
+    clipped = np.abs(x16.astype(np.int32)) >= CLIP_THRESH
     return int(clipped.sum())

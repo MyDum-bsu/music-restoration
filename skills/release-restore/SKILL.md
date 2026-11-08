@@ -1,101 +1,46 @@
 ---
 name: release-restore
-description: "Full agent cycle for music restoration — from \"restore this\" with no file on disk to a finished album in the collection: finds the release, downloads the best quality, measures, restores track-by-track, applies tags/cover/lyrics, generates a master-style DR report with spectra, and reports. Use when the user says \"restore\", \"raise the DR\", \"save this crushed master\", \"make a release\", \"prepare the album for listening\", gives a path/link/album name to restore, or asks to take downloaded music all the way to the collection. Do NOT use for measurements without restoration (audio-measure), searching/downloading without restoring (tracker), phone library care (phone-music), or project status (restore-status)."
+description: Restore musical tracks or albums from local files or discovered releases, with source provenance, conservative candidate selection, encoded QC, metadata and collection delivery.
 ---
 
-# release-restore: "restore this" — from search to collection
+# Restore a release
 
-One scenario covers everything: the user may not have the file — then the
-source is found and downloaded. If the file exists, the search step is skipped.
+Work from the music-restoration repository root. Read [quality.md](references/quality.md) when choosing or evaluating processing; read [sources.md](references/sources.md) when obtaining audio or replacing lossy sources.
 
-```bash
-S=scripts                                  # run from the repository root
-R="$(python3 -c 'from rnext import workspace; print(workspace.data_root())')"
-                                           # work drive: config/workspace.json
-ALBUM="<Artist> - <Album> (<year>)"        # release name
-```
+## Source and workspace
 
-## Steps
+Run `python3 scripts/doctor.py`. A failed tracker check affects network sourcing; use local inputs when their required decoder/encoder dependencies work. Resolve paths with `rnext.workspace`; inspect the mounted filesystem and free space before a batch. Use a dedicated experiment/output directory and reserve space for the largest decoded track and temporary output. Keep originals and provenance. Local music conventions and a task's explicit disk authorization override historic 40 GiB/flash assumptions.
 
-0. **Preflight.** Run `python3 scripts/doctor.py` — a local environment check,
-   no network (exit 0 — all green; 1 — a HARD check failed; 2 — only WARN).
-   **Exit 1 (HARD):** name the user the exact install command from the
-   doctor's "how to fix" column for their package family and stop. **Exit 2
-   (WARN):** pick the scenario — a local file is available → work without the
-   tracker, warning the user; otherwise the search scenario needs tracker
-   secrets (rutracker cookies, see the tracker skill and `docs/setup.md`) →
-   say so and stop.
-1. **Source.** A local path is given → that is the source. A link/name/"this"
-   without a file → the **tracker** skill: `search` → `compare` → `fetch` with
-   priority high into `$R/release_src/<ALBUM>`. Selection rule — lossless,
-   digital master over vinyl, published DR in the topic, image+cue is fine.
-   Wait for the download to reach 100% (poll RPC every 30–60 s), then verify
-   the files with `audio_measure.py`.
-2. **Verify the source.** `python3 $S/audio_measure.py "<source>"` — DR, LUFS,
-   TP, clipping, fake hi-res, lossy transcode. If TT DR ≥ 11 (healthy), no
-   restoration is needed: say so and stop (or only do the dressing-up step if
-   asked).
-3. **Split.** image+cue → the **split-flac-album** skill; move the image into
-   `_image/`, otherwise it goes into processing as a "single track".
-4. **Restore (per-track by default):**
+For a name/link without local audio, search via tracker and the additional catalogs in sources.md. Completion means the correct recording/version is downloaded and verified, not merely queued. For image+cue, use split-flac-album and keep the image outside the track directory. Record source URL/topic, edition, codec, hash and any lossy ancestry.
+
+`python3 scripts/audio_measure.py "<source>"` gives diagnostic DR/LUFS/TP and spectral hints. A quiet or high-DR track can still contain damage. Prefer keeping it unchanged unless a particular defect justifies processing. A spectral cutoff alone cannot prove lossy ancestry or fake hi-res.
+
+## Process and verify
+
+Preferred conservative path for stereo FLAC:
 
 ```bash
-python3 $S/restore_per_track.py --src "<source>" \
-    --out "$R/release/$ALBUM [restored per-track]" \
-    [--baseline "<previous version, if any>"]
+python3 scripts/restore_safe.py --src "<file-or-track-directory>" --out "<empty-output-directory>"
 ```
 
-   The script sweeps `flatten`/`expand` candidates on an excerpt of every
-   track, scores them by Δcrest/timbre, runs the winner on the FULL track,
-   catches a Δcrest outside the 5.0–7.5 dB window and re-processes the track
-   with neighboring parameters, then writes `per_track_report.json` and
-   `PER_TRACK_REPORT.md`. One track or a quick pass — `restore_one.py` (see
-   references/quality.md).
-5. **QC.** `python3 $S/qc_gates.py --orig "<source>" "$OUT"/*.flac` — TP,
-   clipping, sample spikes (12/12 OK is the norm). Then `audio_measure.py` on
-   the result: DR up, LUFS down (expected), no clipping.
-6. **Dressing.** `python3 $S/finish_release.py --restored "$OUT" --source
-   "<source>" --dest "$HOME/Music/$ALBUM [restored per-track]"` — tags, cover,
-   lyrics, collection copy. It finishes with `DR Report.txt` — the DR-meter
-   table in the same format masters post in their release topics (parsed by
-   `rnext.rttopic.parse_dr_table`), plus `spectra/` — per-track PNG pages
-   (waveform, spectrograms, average spectrum, crest over time) and animated
-   GIFs alternating original/restored.
-7. **Delivery.** Phone connected and requested → `python3 $S/phone_sync.py
-   --album "<dir>" --rel "<Artist>/<ALBUM>"`. Report to the user: DR/LUFS
-   before→after, TP, QC verdict, paths, and a reminder to compare at matched
-   loudness.
+The runner strictly decodes, selects identity/gentle/moderate/adaptive candidates on spread excerpts, evaluates the full track, writes 24-bit PCM FLAC for processed candidates, then decodes and checks that encoded result. It retains the source sample rate. HPF is off unless separately justified; an adaptive variant also tests equal bass expansion. It rejects implicit channel conversion. ALAC/WAV can first be losslessly decoded to FLAC with the native rate/channels preserved; keep the original file and provenance. MP3/AAC inputs may be decoded for processing when that is the chosen source, but remain **lossy-derived**.
 
-## Hard rules
+Inspect `report.json` for EVERY input:
+- `processed_candidate`: full-track safeguards and encoded QC passed; perceptual quality remains unevaluated.
+- `kept_original`: source copied byte-for-byte; original defects/headroom may remain.
+- `qc_fallback_original`: attempted processing rejected, source copied, violations recorded.
+- `error`: no deliverable accepted for this track; command returns nonzero.
 
-- **The flash drive is the work area.** 40 GiB budget, state: `python3
-  research/status_report.py`. Check free space before a big run; if dataset torrents
-  are downloading, pause them via the Transmission RPC (filter by `downloadDir`
-  inside `$R`) and resume them afterwards.
-- **Never touch torrents outside `$R`** — no pausing, no deletion.
-- **Transmission RPC down** → start `transmission-gtk`, wait 5 s, re-check with
-  `rnext.transm.check()`.
-- **Memory:** 96 kHz needs ~2 GB per track — `restore_per_track.py` works
-  sequentially, keep `restore_one.py` at `--jobs 1`.
-- **`restore_one.py` writes bare FLAC** — tags/cover/lyrics only via
-  `finish_release.py` (lyrics via the add-lyrics skill).
-- **Copy, never move** into the collection; `$R/release` keeps the working
-  version with the reports.
-- **Compare at matched loudness**: the restoration is 4–6 LU quieter than the
-  original — that is the price of dynamics, not "worse quality".
+Finish only after file count and all statuses agree with the requested tracklist. Retry errors in a new empty directory. Fallback is an explicit outcome, not a successful repair. Keep report.json beside the deliverables. The runner's score is a heuristic; claims about restored sound require listening evidence.
 
-## Pitfalls
+`restore_per_track.py` is the legacy +6.3 dB sweep for reproducibility or an explicitly chosen comparison. It is not the preferred automatic delivery path. It has short-track/reporting limitations; see quality.md. `restore_one.py` is a manual research tool.
 
-- **Fake hi-res** (cutoff < 0.9×22 kHz at 96 kHz): do not downsample without a
-  reason — keep the source container so the A/B stays honest.
-- **metaflac drops multiline lyrics** and **adds** PICTURE blocks instead of
-  replacing — `finish_release.py` already handles this via mutagen; do not
-  work around it by hand.
-- **Covers**: cover songs' lyrics are the lyrics of the originals; if the
-  original artists are nowhere to be found — ask, do not guess. Instrumentals
-  with no lyrics are normal.
-- **No front cover among the scans** — a booklet spread is usually the front in
-  the right half; crop it and show the user.
-- **`/home` disk space** before copying into the collection: `df -h /home`.
+For an independent external audit, `qc_gates.py --orig <src-directory> <outputs>` checks peak/clipping/sample jumps. That tool matches by track-number prefix and is not the safe runner's status authority. Use explicitly paired files and matching duration/rate; a copied original can honestly retain a high true peak.
 
-Details on modes, parameters and quality criteria — `references/quality.md`.
+## Dress and deliver
+
+After checking statuses, use `finish_release.py --restored "<output>" --source "<source-directory>" --dest "<collection-destination>"` for tags, covers, lyrics, DR report and spectra. For a single-file input, pass its parent as source. Recheck tags and track counts after dressing. Copy into the collection, preserve source and report. Use add-lyrics/phone-music for their respective stages.
+
+On requested phone delivery, use phone_sync.py or the project's established replace-in-place path. Verify device-side hashes and rescan the player. Replacing an existing song should preserve its exact path where the user wants player history retained.
+
+Report source provenance (lossless/lossy-derived/unverified), processed/kept/fallback/error counts, before/after measurements, encoded QC and listening status. An increase in DR or a smaller distance to another restorer's metrics does not establish superiority to that restorer.

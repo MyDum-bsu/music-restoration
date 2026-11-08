@@ -152,7 +152,7 @@ def analyse(path: Path, quick: bool = False) -> dict:
     out.update(dr=dr, dr_exact=round(float(drx), 2), crest_tt=round(peak - rms, 2),
                peak_dbfs=round(peak, 2), rms_db=round(rms, 2), sr_actual=sr)
     x16 = np.clip(np.round(x * 32768.0), -32768, 32767).astype(np.int16)
-    clipped = int(np.sum(np.abs(x16) >= 32767))
+    clipped = int(np.sum(np.abs(x16.astype(np.int32)) >= 32767))
     out["clipped_samples"] = clipped
     out["clipped_pct"] = round(100.0 * clipped / max(x16.size, 1), 4)
     if not quick:
@@ -177,7 +177,7 @@ def verdict(r: dict) -> list[str]:
     if r.get("error"):
         return ["unreadable"]
     if r.get("fake_hires"):
-        v.append("FAKE HI-RES")
+        v.append("hi-res bandwidth suspect (verify provenance)")
     if r.get("lossy_suspect"):
         v.append("lossy transcode suspected")
     if r.get("clipped_pct", 0) > 0.05:

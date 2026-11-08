@@ -187,13 +187,7 @@ def restore_track(x: np.ndarray, sr: int, pol: Policy | None = None,
     contour_on = pol.contour_enabled and dx["contour_on"]
     eq_on = bool(pol.eq_bands_db) and dx["eq_on"]
 
-    if dx.get("hpf_on", True):
-        hz = pol.eq_match_hpf_hz if pol.eq_match else pol.hpf_hz
-        y = hpf25(x, sr, hz)
-    else:
-        y = x.copy()
-    stages["hpf"] = y.copy() if keep_arrays else True
-
+    y = x.copy()
     need_declip = None
     if pol.declip:
         x16 = np.column_stack([
@@ -201,9 +195,19 @@ def restore_track(x: np.ndarray, sr: int, pol: Policy | None = None,
             np.clip(x[:, 1] * 32767.5, -32768, 32767).astype(np.int16)])
         if declip.clip_positions(x16) > 0:
             y16, n = declip.declip_track(x16)
-            y = (y16.astype(np.float64) / 32768.0).astype(np.float32)
+            # The integer declipper is a repair proposal for clipped samples.
+            # Preserve the source's precision everywhere else (including 24-bit
+            # audio), and apply HPF afterwards so repair cannot discard it.
+            changed = y16 != x16
+            y[changed] = y16[changed].astype(np.float32) / 32768.0
             need_declip = n
         stages["declip"] = (y.copy() if keep_arrays else True, need_declip)
+
+    if dx.get("hpf_on", True):
+        hz = pol.eq_match_hpf_hz if pol.eq_match else pol.hpf_hz
+        if hz > 0:
+            y = hpf25(y, sr, hz)
+    stages["hpf"] = y.copy() if keep_arrays else True
 
     if eq_on:
         y = dsp_eq.apply_eq(y, sr, pol.eq_bands_db, frame=pol.frame)

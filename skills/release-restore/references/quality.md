@@ -1,73 +1,44 @@
-# Restoration quality: modes, parameters, criteria
+# Processing and evaluation
 
-## Two contour modes
+## What the conservative runner decides
 
-- **`expand`** (per-band): raises the band level above a smoothed body by a
-  factor `r`. Target — Δcrest (default +4.6, from the corpus model when
-  available). Gives large DR but touches timbre harder (band delta 1.1–1.5 dB
-  RMS) and boosts transients.
-- **`flatten`** (per-band, slow modulation around an anchor, `k<1`): quiet
-  sections go up, loud ones down, then TP normalization. On crushed masters it
-  gives **larger DR with less timbre damage** — depth is limited by
-  `--gain-cap` (dB). Verified on a heavily crushed modern album (DR 5–7):
-  `flatten k=0.5 cap=8` reached DR 10 at a band delta of 0.92 dB versus
-  DR 8 / 1.09 dB for `expand`.
+`restore_safe.py` uses full-source TT DR/RMS to assign a working class: short/silent and DR≥11 retain identity; sparse uses a small target, mid and crushed use stronger class priors. These are heuristics (0/0.8/2.3/5.3 dB), not desired DR numbers or demonstrated perceptual optima. High-DR material with an identified defect needs a separate, explicitly evaluated repair.
 
-## Why per-track instead of one setting for the album
+Three 15-second windows spread over the track compare identity, gentle/moderate flatten and adaptive expand. Band shape is centered to remove uniform gain. The objective uses block-based TT DR change, not a single global peak; targets are provisional. The full output must preserve length and finite PCM, true peak ≤−1 dBFS (0.05 dB numerical tolerance), no clipped output or additional large sample jumps, band-shape RMS ≤1.5 dB, TT DR loss ≤0.25 dB and boundary peak growth ≤3 dB at matched RMS (first/last 50 ms). It must improve its full-track proxy score over identity. These thresholds are conservative engineering safeguards, not validated audibility thresholds. Encoded FLAC is decoded and rechecked. No automatic upward peak normalization or learned EQ curve is applied.
 
-Tracks inside an album differ wildly (quiet ballad vs crushed rocker), and
-**excerpt metrics do not always predict the full track**: a track with wide
-sections can land its full-track Δcrest outside the window. That is why
-`restore_per_track.py` measures the full result after the winner runs and, if
-Δcrest leaves the 5.0–7.5 dB window, retries neighboring caps/targets on the
-FULL track and keeps the best by score. Score: |Δcrest − 6.3| + 0.8·(timbre
-error) + penalties for under- (<5 dB), over- (>7.5 dB) expansion and DR>12.
+The score is a selection aid. The copied-original statuses intentionally preserve source bits and can retain defects. Read violations and listening_verdict rather than inferring a repaired file from the FLAC extension. Source codec provenance must be tracked outside the processing decision.
 
-## Target numbers
+The integer AR declipper repairs only changed full-scale samples; other source samples keep their original precision before HPF/contour. It is not a general inverse for soft limiting or codec losses. Its performance on a sine is insufficient evidence for complex music.
 
-- Δcrest ≈ +6.3 dB — "slightly above reference masters" (their typical shift
-  is +4.4…+6). More risks unnatural dynamics.
-- DR ≤ 12 — higher only on explicit request.
-- Timbre (band delta, RMS) — the lower the more transparent; ≤1.4 dB is good.
-- True contour gain step ≤ 8 dB/frame (checked against the gain matrix).
-- TP ≤ −0.5 dBFS, clipping 0, sample spikes 0 — mandatory gates (`qc_gates.py`).
+## Legacy comparison
 
-## Fake hi-res
+`restore_per_track.py` sweeps flatten/expand toward a fixed +6.3 dB crest lift and a 5…7.5 dB window, retries full-track neighbors and writes reports. Its flatten policies disable diagnosis. It has no identity candidate. The advertised baseline is reported after selection, not used as an enforced nonregression constraint. Its gain_check uses a hard-coded start of 30 seconds and can fail on short inputs. Its Markdown summary does not replace actual QC.
 
-If the spectral cutoff is < ~20 kHz inside a 96 kHz container — it is an
-upsample with no ultrasonic content. Keep the source container (no
-resampling): the file stays compatible and the before/after comparison stays
-honest. Downsample only on an explicit request (16/44.1 for a phone/car).
+Keep it for historical reproduction and comparison; record the commit, input hashes, CLI and any benchmark-only adaptation (e.g. changing the hard-coded probe start for a short excerpt). Do not call a patched baseline an untouched historical run.
 
-## Listening comparison
+## Measure different questions separately
 
-The restoration is 4–6 LU quieter than the original. Without loudness
-matching the louder original always wins a blind test — match in the player
-(ReplayGain/loudness) or build a pack with `scripts/listen_pack.py
---ours-dir ...` (variants are LUFS-aligned, blind A/B/C layout).
+- Integrity: successful strict decode; exact frames/channels/sample rate; finite PCM; hash and provenance.
+- Output constraints: true peak, clipping, introduced discontinuities, stereo behavior, quiet tails and track boundaries.
+- Processing effect: gain-independent band-shape change, crest/DR distribution, transient and time-varying gain behavior. DR/crest are correlated and do not independently vote for quality.
+- Known-clean tests: apply a documented synthetic clipping/compression operator to a clean source; compare reconstruction error with gain/time aligned. Retain an untouched clean control and identity baseline.
+- Real recordings: original, candidate and a named restorer's version, using identical passages and loudness. A restorer is a preference reference, not known ground truth.
 
-## Visual report (like masters post on the tracker)
+Low high-frequency content cannot prove lossy encoding or fake hi-res. Mark spectral findings as suspected and inspect provenance. Preserve native rate by default; a storage conversion requires its own rationale.
 
-`scripts/dr_report.py` writes the classic DR-meter text table (`Analyzed:`,
-per-track DR/Peak/RMS/duration rows, `Official DR value` computed by pooling
-blocks of all tracks, exactly like the meter) — the same format parsed from
-master topics by `rnext.rttopic.parse_dr_table`, ready to paste into a release
-topic.
+## Listening protocol
 
-`scripts/spectrum_report.py --orig <src> --restored <rest> --out <dir>` adds
-the pictures masters attach: per-track PNG pages (waveform envelope, original
-vs restored spectrograms on one absolute dB scale, normalized average
-spectrum, short-term crest over time) and an animated GIF alternating the two
-spectrograms. Default selection: first, middle and last track; `--tracks`
-overrides. Style presets: `--style espresso` (default; black & gold, Source
-Serif Pro + JetBrains Mono), `cognac`, `noir`. Track numbers carry no leading
-zeros ("9. Creatures in Heaven").
+`scripts/listen_pack.py` builds existing-dataset packs. Its build_item helper can package explicitly paired local excerpts. It chooses ONE peak-safe achievable loudness for all variants, applies only scalar gain, then measures the encoded files (tolerance 0.2 LU). A silent/unmeasurable variant cannot support a valid loudness comparison.
 
-## Useful artifacts
+Use identical passage boundaries; check alignment, speed, sample rate and channels before making waveform comparisons. Randomized A/B labels are blind during playback but pack.json contains the answer map for the player; an evaluator must not inspect that map before voting. Strip metadata that reveals identity when exporting stimuli.
 
-- `per_track_report.json` — every candidate and metric per track.
-- `PER_TRACK_REPORT.md` — album summary.
-- `restore_report.jsonl` (from `restore_one.py`) — before/after per track.
-- `_measure.json` (from `audio_measure.py --json`) — independent DR/LUFS/TP.
-- `DR Report.txt` — master-style DR-meter table.
-- `spectra/*.png`, `spectra/*.gif` — visual comparison pages.
+ABX tests audibility, not preference. Ask preference and artifact questions separately, randomize order, include repeats/hidden controls and save ratings. Use multiple excerpts, albums, genres and listeners. For formal small-impairment evaluations consult [ITU-R BS.1116](https://www.itu.int/rec/R-REC-BS.1116-3-201502-I/en). An informal A/B pack is not automatically a standards-conformant test.
+
+Promote a sound-changing algorithm only after a frozen evaluation set shows benefit against both identity and the strongest prior pipeline, with uncertainty and failure cases reported. Split by recording/album/artist and author; eliminate duplicates and training leakage. Five handpicked regressions establish specific fixes, not broad superiority. Keep objective safeguards separate from subjective preference.
+
+## Outputs
+
+- report.json from restore_safe: source hash/format, policy, window scores, full and encoded metrics, fallback/error reasons, listening status.
+- Legacy per_track_report.json: candidates and measurements from the old sweep.
+- DR Report.txt and spectra: generated by finish_release; useful descriptions, not proof of superiority.
+- Listening pack plus ratings: retained with the experiment manifest, code version and exact excerpts.

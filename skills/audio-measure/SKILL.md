@@ -35,17 +35,21 @@ including `hf_floor_db`).
 
 - **`lossy_suspect` is a flag to verify, not a verdict.** A dark or heavily
   limited master also gives a low cutoff, but no "wall" (the floor above the
-  cutoff stays at −30…−40 dB). False positives are ruled out precisely by the
-  floor. Verified on a control transcode: lossless source −35 dB (clean),
-  MP3 192k → FLAC −84 dB (caught).
+  cutoff stays at −30…−40 dB). Even a sharp wall can originate in filtering or
+  mastering; the floor does not rule out false positives. Verify acquisition
+  provenance and the release edition. A control transcode demonstrates one
+  detectable case, not general authenticity detection.
 - **DR ≤ 6 — "heavily crushed"**, 7–9 — dense, ≥11 — healthy. This is not a
-  "bad/good" judgement, but an indication of whether restoration is needed.
+  "bad/good" judgement. Use it as one clue alongside specific audible defects.
 - **TP > 0 dBFS does not mean the file clips**: these are intersample peaks,
-  audible as harshness. Our restoration brings TP to −0.5 dB.
-- **`--quick` skips the spectrum and LUFS** — for large libraries; DR and
+  potentially relevant to playback headroom. TP alone cannot establish audible
+  harshness. The conservative runner uses a −1 dBFS ceiling on processed outputs.
+- **`--quick` skips the spectrum** — for large libraries; DR and
   clipping are always computed.
-- Long files are decoded for the first 90 s (DR on the fragment) — enough for
-  albums, and for "check this specific track" too.
+- DR and spectrum use only the first 90 seconds. This can miss later defects
+  and is not full-track acceptance. restore_safe performs full decode/QC.
+- `fake_hires` is a bandwidth suspicion flag, not proof of an upsample. Low
+  ultrasonic content alone cannot establish the history of a recording.
 
 ## Pitfalls
 

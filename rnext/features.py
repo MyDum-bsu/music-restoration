@@ -38,15 +38,20 @@ def decode_s16(path: str, start_s: float | None = None, dur_s: float | None = No
     return x, ffprobe_audio(path)["sr"]
 
 
-def decode_f32(path: str, start_s: float | None = None, dur_s: float | None = None) -> tuple[np.ndarray, int]:
+def decode_f32(path: str, start_s: float | None = None, dur_s: float | None = None,
+               strict: bool = False) -> tuple[np.ndarray, int]:
     """Decode to float32 [-1, 1) (stereo). One decode per run — for DSP math."""
-    cmd = ["ffmpeg", "-v", "error", "-err_detect", "ignore_err"]
+    cmd = ["ffmpeg", "-v", "error", "-err_detect", "explode" if strict else "ignore_err"]
+    if strict:
+        cmd += ["-xerror"]
     if start_s is not None:
         cmd += ["-ss", f"{start_s:.6f}"]
     if dur_s is not None:
         cmd += ["-t", f"{dur_s:.6f}"]
     cmd += ["-i", str(path), "-map", "0:a:0", "-ac", "2", "-c:a", "pcm_f32le", "-f", "f32le", "-"]
     raw = subprocess.run(cmd, capture_output=True, check=True)
+    if strict and (raw.stderr.strip() or not raw.stdout):
+        raise ValueError(f"strict decode failed: {path}: {raw.stderr.decode(errors='replace')[:500]}")
     x = np.frombuffer(raw.stdout, dtype=np.float32).reshape(-1, 2)
     return x, ffprobe_audio(path)["sr"]
 
@@ -104,7 +109,7 @@ def crest_db(x: np.ndarray) -> float:
 def clip_stats(x16: np.ndarray) -> dict:
     out = {}
     for c, name in enumerate(("L", "R")):
-        xi = np.abs(x16[:, c])
+        xi = np.abs(x16[:, c].astype(np.int32))
         clipped = xi >= 32767
         n_clipped = int(np.sum(clipped))
         runs = int(np.sum(clipped[1:] & ~clipped[:-1]) + (1 if clipped[0] else 0))
@@ -130,7 +135,7 @@ def clip_geometry(x16: np.ndarray) -> dict:
     """
     out = {}
     for c, name in enumerate(("L", "R")):
-        xi = np.abs(x16[:, c])
+        xi = np.abs(x16[:, c].astype(np.int32))
         clipped = xi >= 32767
         d = np.diff(clipped.astype(np.int8))
         starts = np.where(d == 1)[0] + 1
