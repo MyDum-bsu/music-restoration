@@ -1,0 +1,26 @@
+Translate this finished infographic into FULL ENGLISH, preserving the beautiful exact layout, colors, hierarchy, card positions, illustrations and ALL arrows including the separate failed-QC and copy routes. Replace EVERY Russian/Cyrillic word in the image. There must be ZERO Cyrillic characters anywhere. All image text must be English, with correct natural grammar and legible line wrapping. Do not redesign or add claims.
+
+Use these exact labels:
+Title: "How music restoration works"
+Subtitle: "Source → diagnosis → selection → verification → delivery"
+Upper section: "CURRENT PIPELINE"
+Source card: "Source" / "Edition & provenance"
+Decode card: "Strict decode" / "Rate · channels · length"
+Routing hub: "What is damaged?"
+Top branch: "Hard clipping" → "Float AR / Sparse STFT"
+Middle branch: "Compressed master" → "Dynamics candidates"
+Bottom branch: "No verified benefit" → "Keep original"
+QC card: "QC & FLAC" / "Full track → encode → decode"
+Accepted route: "passed"
+Failed route: "failed"
+Copied-original route: "copy"
+Delivery card: "Delivery" / "Tags · library · phone"
+
+Lower section: "IDEAL PIPELINE"
+Five cards: "Best edition" → "Accurate degradation model" → "Reconstruction with uncertainty estimates" → "Independent tests & blind listening" → "Consistent album"
+Lower caption: "Research vision · not fully implemented"
+
+Footer left: "FLAC converted from MP3 remains lossy-derived."
+Footer right: "Reconstruction accuracy ≠ listener preference."
+
+Keep separate routing: failed QC points INTO Keep original; a distinct line starts at the bottom of Keep original and points UP into Delivery. Keep original must bypass encode/decode. Keep the opaque warm white background. Ensure no Russian remains, even in small labels.

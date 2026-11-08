@@ -5,12 +5,28 @@ music library. The preferred runner diagnoses supported hard clipping, chooses
 a defect-specific repair or conservative dynamics candidate, and keeps the
 original when processing is unsupported or fails its checks.
 
+## See the processing
+
+A report for **“Lift Somebody Up”**: the source in copper, processed output in
+gold. Waveform, spectrograms, average spectrum and local dynamics share one page.
+
+![Lift Somebody Up: original and processed waveform, spectra and local dynamics](docs/spectra/10_Lift_Somebody_Up.png)
+
+The animation flips between the original and processed spectrograms:
+
+![Animated original and processed spectrogram comparison](docs/spectra/10_Lift_Somebody_Up.gif)
+
+Both spectrograms use the same color scale. This is a saved dynamics-processing
+example; the current safe runner evaluates each track and may retain its source.
+
+## Current workflow
+
 **Version 2.2 changes the recommended workflow.** Use `restore_safe.py` for new
 automatic runs. `restore_per_track.py` remains a legacy comparison tool; its
 fixed crest target is not the default quality criterion. No unconditional HPF,
 loudness boost or learned EQ curve is applied by the safe path.
 
-![Current and ideal restoration pipeline, in Russian](docs/assets/restoration-pipeline-ru.png)
+![Current and ideal music restoration pipeline](docs/assets/restoration-pipeline.png)
 
 [How it works and scientific sources — русский разбор](docs/restoration-method-ru.md)
 · [Validation and reproduction](docs/validation/README.md)
