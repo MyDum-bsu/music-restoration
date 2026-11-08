@@ -2,7 +2,7 @@
 
 ## What the conservative runner decides
 
-`restore_safe.py` uses full-source TT DR/RMS to assign a working class: short/silent and DR≥11 retain identity; sparse uses a small target, mid and crushed use stronger class priors. These are heuristics (0/0.8/2.3/5.3 dB), not desired DR numbers or demonstrated perceptual optima. High-DR material with an identified defect needs a separate, explicitly evaluated repair.
+The dynamics branch of `restore_safe.py` uses full-source TT DR/RMS to assign a working class: short/silent, quiet/sparse and DR≥11 retain identity in auto mode; an explicit `--mode dynamics` allows a small target for sparse material too. Mid and crushed material use stronger class priors. These are heuristics (0/0.8/2.3/5.3 dB), not desired DR numbers or demonstrated perceptual optima. Auto mode checks for supported hard clipping before this classification, so high DR does not suppress an identified clipping repair.
 
 Three 15-second windows spread over the track compare identity, gentle/moderate flatten and adaptive expand. Band shape is centered to remove uniform gain. The objective uses block-based TT DR change, not a single global peak; targets are provisional. The full output must preserve length and finite PCM, true peak ≤−1 dBFS (0.05 dB numerical tolerance), no clipped output or additional large sample jumps, band-shape RMS ≤1.5 dB, TT DR loss ≤0.25 dB and boundary peak growth ≤3 dB at matched RMS (first/last 50 ms). It must improve its full-track proxy score over identity. These thresholds are conservative engineering safeguards, not validated audibility thresholds. Encoded FLAC is decoded and rechecked. No automatic upward peak normalization or learned EQ curve is applied.
 
