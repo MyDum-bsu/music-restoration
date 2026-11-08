@@ -47,14 +47,14 @@ def gain_to_lufs(src: Path, dst: Path, target_lufs: float) -> dict:
     i = info.get("lufs")
     if i is None:
         # loudness not measurable (silence) — just copy
-        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-map", "0:a:0", "-c:a", "flac", "-frame_size", "4096", str(dst)],
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), "-map", "0:a:0", "-map_metadata", "-1", "-c:a", "flac", "-frame_size", "4096", str(dst)],
                        check=True)
         return {"lufs": None, "gain_db": 0.0}
     peak = info.get("tp_peak_dbfs")
     gain = target_lufs - float(i)
     if peak is not None and peak + gain > -1.0:
         gain = -1.0 - float(peak)          # don't push into clipping
-    cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(src), "-map", "0:a:0",
+    cmd = ["ffmpeg", "-v", "error", "-y", "-i", str(src), "-map", "0:a:0", "-map_metadata", "-1",
            "-af", f"volume={gain:.2f}dB", "-c:a", "flac", "-frame_size", "4096", "-compression_level", "5", str(dst)]
     subprocess.run(cmd, check=True)
     actual = F.lufs(str(dst))
