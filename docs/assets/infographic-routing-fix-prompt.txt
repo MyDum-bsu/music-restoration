@@ -1,0 +1,5 @@
+Make ONE precise correction to this finished dark English flowchart. Remove ONLY the duplicated UPPER copper loop in the failed-QC route: the line that rises from the junction near x=1008,y=572 to y=499, runs left above the Keep original card, and ends with a downward arrowhead on the TOP edge of that card. Erase that entire upper loop and its arrowhead cleanly into the original dark background.
+
+KEEP the single simple failed route: QC & FLAC → downward through "failed" → one left-pointing elbow arrow INTO THE RIGHT EDGE of "Keep original" at about y=570. The failure route must have exactly ONE arrowhead entering Keep original, on its right edge, and NO line above the card. KEEP the separate copy route from the BOTTOM of Keep original across the bottom margin and upward into Delivery.
+
+Change nothing else. Preserve every English word, letter, serif font, copper/gold espresso palette, icons, cards, all other arrows, full composition, margins and opaque background. Do not translate, redraw, add or remove any other content.
