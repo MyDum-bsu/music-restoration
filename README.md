@@ -26,7 +26,7 @@ automatic runs. `restore_per_track.py` remains a legacy comparison tool; its
 fixed crest target is not the default quality criterion. No unconditional HPF,
 loudness boost or learned EQ curve is applied by the safe path.
 
-![Current and ideal music restoration pipeline](docs/assets/restoration-pipeline.png)
+![Music restoration pipeline](docs/assets/restoration-pipeline.png)
 
 [How it works and scientific sources — русский разбор](docs/restoration-method-ru.md)
 · [Validation and reproduction](docs/validation/README.md)

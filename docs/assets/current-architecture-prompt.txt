@@ -1,0 +1,35 @@
+Create a NEW polished architecture infographic for the GitHub README of the open-source project MUSIC RESTORATION. Show ONLY THE CURRENT IMPLEMENTED PIPELINE, never an ideal/future system. Full English text, zero Cyrillic. Premium restrained technical editorial design, refined serif typography, large readable labels, generous spacing, simple precise icons. Landscape canvas approximately 1800x1000. Rich espresso background #0B0A08, ivory #F1EADC text, copper #B0713E main flow, gold #F2C94C accepted-output accents, subtle dark-brown cards. No white areas, blue, turquoise, neon or glossy 3D. Visually harmonious with dark copper-and-gold spectrogram reports.
+
+Title: "Music restoration"
+Short subtitle: "From release to library"
+
+One clear left-to-right working pipeline with SIX main modules, numbered subtly 01–06:
+01 "Source"
+   "Local files"
+   "Stores & trackers"
+02 "Inspect"
+   "Edition & provenance"
+   "Strict decode"
+   "Rate · channels · length"
+03 "Restore" — a WIDER grouped module with two compact stacked algorithm tiles:
+   "Hard clipping" / "Float AR / Sparse STFT"
+   "Dynamics selection" / "Identity + gentle / adaptive candidates"
+04 "Verify"
+   "Full-track checks"
+   "FLAC → decode"
+05 "Finish"
+   "Tags · covers · lyrics"
+   "DR & spectra reports"
+06 "Deliver"
+   "Library · phone"
+   "Hash verification"
+
+Connect main modules with exactly one clean forward arrow each. Label Verify → Finish "pass".
+
+Below modules 03 and 04, add ONE small fallback card "Keep original" with "Byte-for-byte copy".
+Restore → Keep original is labeled "unchanged".
+Verify → Keep original is labeled "fail", and has EXACTLY ONE left/down elbow arrow entering Keep original. Do not duplicate this route or add an upper loop.
+Keep original → Finish uses a separate lower bypass route labeled "copy", clearly bypassing Verify/encoding and merging only at Finish.
+There must be no crossing arrows, ambiguous shared junctions, duplicated arrowheads, loops, or arrow into Inspect from the bypass.
+
+Communicate algorithm details through those compact labels, not long prose. No IDEAL PIPELINE section, research roadmap, caveat footer, comparisons, performance numbers, charts, equations, benchmarks, file paths, CLI commands, extra legends or promotional quality claims. This should feel like a coherent, elegant product architecture plate: clear working modules and an obvious safe bypass, not a busy academic flowchart. All text must be sharp and spelled correctly. Opaque dark background.
