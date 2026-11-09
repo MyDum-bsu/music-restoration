@@ -52,6 +52,8 @@ def process(source, dest, mode="auto", clip_threshold=None):
         if errors:
             report["violations"] += errors
             report["status"] = "qc_fallback_original"
+            report["restoration_state"] = "encoded_candidate_rejected"
+            report["needs_review"] = True
             report["rest"] = report["orig"]
             report["comparison"] = compare(report["orig"], report["orig"], report["plan"]["target"])
     if report["status"] != "processed_candidate":
