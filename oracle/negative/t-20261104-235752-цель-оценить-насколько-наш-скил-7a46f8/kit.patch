@@ -1,0 +1,52 @@
+Mutants for t-20261104-235752-цель-оценить-насколько-наш-скил-7a46f8.
+Apply from the repository root: git apply -p1 < kit.patch
+Expected: the oracle suite turns red on all mutants.
+
+1. verdict() — comparison inverted.
+2. pick_releases() — seeds>=3 filter dropped and Random() unseeded.
+3. measure_side() — no measurement.
+
+diff --git a/scripts/eval_vs_masters.py b/scripts/eval_vs_masters.py
+new file mode 100644
+--- /dev/null
++++ b/scripts/eval_vs_masters.py
+@@ -0,0 +1,39 @@
++#!/usr/bin/env python3
++"""MUTANT negative control: deliberately broken eval contracts."""
++import random
++import re
++
++SIDES = ("orig", "ours", "master")
++TOL = 0.05
++DISCO_RE = re.compile(r"(дискограф)", re.IGNORECASE)
++
++
++def verdict(abs_ours, abs_orig, tol=TOL):
++    """MUTANT: inverted comparison."""
++    if abs_ours > abs_orig * (1.0 + tol):
++        return "better"
++    if abs_ours < abs_orig * (1.0 - tol):
++        return "worse"
++    return "comparable"
++
++
++def overall_verdict(per_metric):
++    better = sum(1 for v in per_metric.values() if v == "better")
++    worse = sum(1 for v in per_metric.values() if v == "worse")
++    if better > worse:
++        return "better"
++    if worse > better:
++        return "worse"
++    return "comparable"
++
++
++def pick_releases(records, seed, per_master=5):
++    """MUTANT: no seeds>=3 filter, unseeded RNG, no single-album preference."""
++    rnd = random.Random()
++    picks = rnd.sample(records, min(per_master, len(records)))
++    return sorted(picks, key=lambda r: int(r["topic_id"]))
++
++
++def measure_side(path):
++    """MUTANT: no measurement at all."""
++    return {}
