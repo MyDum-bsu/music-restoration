@@ -74,13 +74,27 @@ def connected() -> bool:
     return bool(devices())
 
 
+def mdns_endpoint() -> str | None:
+    """Current wireless-debug endpoint from mDNS (the port changes per session)."""
+    r = _run(["mdns", "services"])
+    for line in r.stdout.splitlines():
+        if "_adb-tls-connect._tcp" in line:
+            parts = line.split()
+            if parts:
+                return parts[-1]
+    return None
+
+
 def ensure_connected() -> bool:
-    """True when a device is online; try the saved endpoint once if not."""
+    """True when a device is online; try the saved endpoint, then mDNS discovery."""
     if connected():
         return True
     ep = saved_endpoint()
-    if ep:
-        connect(ep)
+    if ep and connect(ep)[0] and connected():
+        return True
+    ep2 = mdns_endpoint()
+    if ep2 and connect(ep2)[0]:
+        save_endpoint(ep2)
         return connected()
     return False
 
