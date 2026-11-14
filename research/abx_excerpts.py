@@ -77,7 +77,6 @@ def main() -> int:
                 y16 = np.clip(np.round(y * 32768.0), -32768, 32767).astype(np.int16)
                 name = out_dir / f"t{tn:02d}_s{seg_i}_{tag}.flac"
                 encode_flac(y16, sy, name, out_dir / "__tmp.wav")
-                marks[f"s{seg_i}:{tag}"] = {"file": name.name, "is_ours": tag == "A" and ours_is_a or (tag == "A" and not ours_is_a)}
                 marks[f"s{seg_i}:{tag}"] = {"file": name.name, "is_ours": (src == o_f)}
         amap[f"t{tn:02d}"] = {"title": cue[tn - 1]["title"], "segments": marks}
 

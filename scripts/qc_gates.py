@@ -7,7 +7,7 @@ Checks:
   3. TEMPORAL-SMOOTHNESS: the effective out−in per-band step is INFORMATIONAL,
      not a verdict: on transients it is honestly large. The true contour gain
      is checked via the gains matrix from the pipeline (restore_track keep_arrays=True);
-  4. absolute "jaggedness": no single amplitude jumps > 0.9 between adjacent
+  4. absolute "jaggedness": no single amplitude jumps > 0.95 between adjacent
      samples (click-like garbage from pipeline bugs). With --orig the gate is
      relative: FAIL only when the output has MORE such jumps than the source
      take (a hot master already carries hundreds).

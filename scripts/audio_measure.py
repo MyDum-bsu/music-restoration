@@ -191,7 +191,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("paths", nargs="+")
     ap.add_argument("--json", default="")
-    ap.add_argument("--quick", action="store_true", help="no spectrum or LUFS")
+    ap.add_argument("--quick", action="store_true",
+                    help="skip the spectral check (LUFS still runs)")
     ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
 
