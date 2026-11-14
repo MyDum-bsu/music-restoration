@@ -66,6 +66,10 @@ LIMITATIONS = [
     "Metrics are engineering proxies: they prove output constraints and "
     "dynamics/spectrum shifts, not listening preference; blind listening "
     "(scripts/listen_pack.py) is a separate loop.",
+    "Sample-jump counts are headroom information: the verdict fails only on "
+    "growth versus the source. A master legitimately keeps hotter transients "
+    "at the same loudness; punch retention (crest change) is scale-invariant, "
+    "so it reads the same at any matched loudness.",
     "band_shift_db mixes level change with tonal change; read it as an "
     "indicator, not a measurement of timbre.",
     "The verdict ladder compares against the source take, not against a "
@@ -242,6 +246,7 @@ def measure_pair(matched, runner_report) -> list[dict]:
             "src": src_m, "res": res_m,
             "band_shift_db": float(np.mean(bands_res - bands_src)),
             "band_delta_mean_db": float(np.mean(np.abs(bands_res - bands_src))),
+            "punch_retention_db": float(res_m["crest_db"]) - float(src_m["crest_db"]),
             "status": "unknown", "needs_review": False, "restoration_state": "unknown",
         }
         runner = runner_report.get(res_path.name)
@@ -295,6 +300,8 @@ def build_summary(rows: list[dict], matched_via: dict[str, int], skipped: list[d
             "dr_change_median": float(statistics.median(dr_changes)),
             "crest_change_median": float(statistics.median(crest_changes)),
             "band_shift_db_mean": float(np.mean([r["band_shift_db"] for r in rows])),
+            "punch_retention_median": float(statistics.median(
+                [r["punch_retention_db"] for r in rows])),
             "tp_at_ceiling": sum(1 for r in rows
                                  if r["res"]["true_peak_db"] > tp_ceiling - TP_AT_CEILING_TOL),
             "dr_regression_tracks": sum(1 for r in rows
@@ -313,7 +320,7 @@ TRACK_COLUMNS = ("track", "dr14_orig", "dr14_ours", "crest_db_orig", "crest_db_o
                  "lufs_orig", "lufs_ours", "true_peak_db_orig", "true_peak_db_ours",
                  "clip_samples_orig", "clip_samples_ours",
                  "spikes_over_09_orig", "spikes_over_09_ours",
-                 "band_shift_db", "band_delta_mean_db")
+                 "band_shift_db", "band_delta_mean_db", "punch_retention_db")
 VERDICT_COLUMNS = ("track", "verdict", "reason", "comparability",
                    "status", "needs_review", "restoration_state")
 
@@ -380,6 +387,11 @@ def render_report(summary: dict, rows: list[dict], src: Path, restored: Path) ->
         lines.append(f"- Spectrum shifted {direction} by "
                      f"{abs(sys_i['band_shift_db_mean']):.1f} dB on average "
                      "(indicator, mixes level with tone).")
+    if abs(sys_i["punch_retention_median"]) >= 1.0:
+        sign = "+" if sys_i["punch_retention_median"] > 0 else ""
+        lines.append(f"- Punch retention: crest {sign}"
+                     f"{sys_i['punch_retention_median']:.1f} dB (scale-invariant — "
+                     "the same at any matched loudness).")
     if sys_i["clipped_ours_sum"] > sys_i["clipped_orig_sum"]:
         lines.append("- The restoration ADDED clipping — treat as a defect.")
     if sys_i["spikes_ours_sum"] > sys_i["spikes_orig_sum"]:
@@ -449,6 +461,7 @@ def main(argv: list[str] | None = None) -> int:
             "spikes_over_09_ours": str(int(r["res"]["spikes_over_09"])),
             "band_shift_db": fmt(r["band_shift_db"]),
             "band_delta_mean_db": fmt(r["band_delta_mean_db"]),
+            "punch_retention_db": fmt(r["punch_retention_db"]),
         } for r in rows]
         verdict_rows = [{
             "track": r["track"], "verdict": r["verdict"], "reason": r["reason"],

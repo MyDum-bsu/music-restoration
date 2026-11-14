@@ -1,12 +1,19 @@
 """Conservative candidate selection; metrics are safeguards, not listening scores."""
 from dataclasses import replace
 import json
+import statistics
 
 import numpy as np
 
 from rnext import features as F
 from rnext.dsp.contour import true_peak_dbfs
 from rnext.dsp.pipeline import Policy, restore_track
+
+
+# Output ceiling per material class. A ceiling only attenuates; quiet/sparse
+# material keeps a lower one (masters varied -1.65 on Serj, -4.3..-7.8 on
+# quiet tracks), dense loud material may use the loudest safe ceiling.
+TP_CEILING_BY_CLASS = {"sparse": -1.5, "crushed": -0.3, "mid": -0.5}
 
 
 def measure(x, sr):
@@ -22,17 +29,47 @@ def measure(x, sr):
             "shape": (bands - bands.mean()).tolist()}
 
 
-def material_plan(m, duration, allow_sparse=False):
-    """Class-table priors; quiet/high-DR material retains an identity candidate."""
+def material_plan(m, duration, allow_sparse=False, release_target=None):
+    """Class-table priors; quiet/high-DR material retains an identity candidate.
+
+    release_target (when given) replaces the per-track 5.3/2.3 constants for
+    crushed/mid material: the target comes from the release's own
+    least-compressed tracks instead of a universal prior.
+    """
     if duration < 6 or m["rms_tt"] < -70:
-        return {"class": "short_or_silent", "target": 0.0}
+        return {"class": "short_or_silent", "target": 0.0, "tp_ceiling": None}
     if m["dr"] >= 11:
-        return {"class": "healthy", "target": 0.0}
+        return {"class": "healthy", "target": 0.0, "tp_ceiling": None}
     if m["rms_tt"] <= -13:
         return {"class": "sparse", "target": .8 if allow_sparse else 0.,
+                "tp_ceiling": TP_CEILING_BY_CLASS["sparse"],
                 "reason": "quiet sparse material needs an explicit dynamics request"}
-    return {"class": "crushed" if m["dr"] <= 7 else "mid",
-            "target": 5.3 if m["dr"] <= 7 else 2.3}
+    crushed = m["dr"] <= 7
+    default_target = 5.3 if crushed else 2.3
+    return {"class": "crushed" if crushed else "mid",
+            "target": release_target if release_target is not None else default_target,
+            "tp_ceiling": TP_CEILING_BY_CLASS["crushed" if crushed else "mid"]}
+
+
+def release_target(measures):
+    """Dynamics target from the release's own least-compressed third.
+
+    The first eval run showed one universal prior undershooting (Judas Priest,
+    -0.94 DR vs master) and overshooting (Junkie XL, +1.60) at the same time.
+    A release whose healthy tracks sit above its crushed median carries the
+    answer in its own material: the gap between the least-compressed third's
+    median DR and the release median, capped to the conservative [0.8, 5.3]
+    range of the class table.  A uniform release (gap < 0.5) says nothing and
+    returns None so the class-table priors apply.
+    """
+    drs = [int(m["dr"]) for m in measures]
+    if len(drs) < 3:
+        return None
+    top = sorted(drs)[-max(1, len(drs) // 3):]
+    gap = statistics.median(top) - statistics.median(drs)
+    if gap < 0.5:
+        return None
+    return float(round(min(max(gap, 0.8), 5.3), 1))
 
 
 def candidate_policies(plan):
@@ -41,7 +78,9 @@ def candidate_policies(plan):
     if plan["target"] == 0:
         return out
     # Rumble removal needs a diagnosis; avoid filtering every clean master.
-    base = Policy(auto_policy=False, hpf_hz=0., declip=False, normalize_tp=False, target_tp_dbfs=-1.0)
+    ceiling = plan.get("tp_ceiling")
+    base = Policy(auto_policy=False, hpf_hz=0., declip=False, normalize_tp=False,
+                  target_tp_dbfs=-1.0 if ceiling is None else float(ceiling))
     out["gentle"] = replace(base, k=.75, gain_min_db=-4., gain_max_db=4.)
     out["moderate"] = replace(base, k=.5, gain_min_db=-6., gain_max_db=6.)
     out["adaptive"] = replace(base, mode="expand", adaptive=True,
@@ -66,14 +105,15 @@ def compare(m, orig, target):
             "score": abs(delta_dr - target) + .8 * shape + max(0., delta_dr - target - 1.) * 2}
 
 
-def output_violations(x, y, sr, orig, measured, *, check_boundaries=True):
+def output_violations(x, y, sr, orig, measured, *, check_boundaries=True,
+                      tp_ceiling=-1.0):
     errors = []
     if x.shape != y.shape:
         errors.append("sample_count_or_channels_changed")
     if not np.isfinite(y).all():
         errors.append("nonfinite_pcm")
-    if measured["tp_dbfs"] > -.95:
-        errors.append("true_peak_exceeds_minus_1")
+    if measured["tp_dbfs"] > tp_ceiling + 0.05:
+        errors.append("true_peak_above_ceiling")
     if measured["clip_samples"]:
         errors.append("clipped_output")
     if measured["spikes"] > orig["spikes"]:
@@ -92,13 +132,14 @@ def output_violations(x, y, sr, orig, measured, *, check_boundaries=True):
     return errors
 
 
-def _candidate_trial(x, y, sr, orig, target, starts, source_windows):
+def _candidate_trial(x, y, sr, orig, target, starts, source_windows,
+                     tp_ceiling=-1.0):
     """Judge the delivered full waveform; internal cuts provide diagnostics."""
     if x.shape != y.shape:
         raise ValueError("processor changed sample count or channels")
     rest = measure(y, sr)
     full = compare(rest, orig, target)
-    violations = output_violations(x, y, sr, orig, rest)
+    violations = output_violations(x, y, sr, orig, rest, tp_ceiling=tp_ceiling)
     windows = []
     if not violations:
         length = min(len(x), 15 * sr)
@@ -114,10 +155,15 @@ def _candidate_trial(x, y, sr, orig, target, starts, source_windows):
                   "windows": windows}
 
 
-def select_track(x, sr, allow_sparse=False):
+def select_track(x, sr, allow_sparse=False, release_target=None):
     orig = measure(x, sr)
-    plan = material_plan(orig, len(x) / sr, allow_sparse=allow_sparse)
+    plan = material_plan(orig, len(x) / sr, allow_sparse=allow_sparse,
+                         release_target=release_target)
     policies = candidate_policies(plan)
+    # The violations check must agree with the policy's own ceiling; identity
+    # classes carry none and keep the conservative default.
+    tp_ceiling = (-1.0 if plan.get("tp_ceiling") is None
+                  else float(plan["tp_ceiling"]))
     # Spread windows across the track; include short files without seeking past EOF.
     length = min(len(x), 15 * sr)
     starts = sorted({int(f * (len(x) - length)) for f in (.15, .5, .85)})
@@ -132,7 +178,8 @@ def select_track(x, sr, allow_sparse=False):
         try:
             candidate = restore_track(x, sr, pol, keep_arrays=False)
             measured, trial = _candidate_trial(
-                x, candidate, sr, orig, plan["target"], starts, source_windows)
+                x, candidate, sr, orig, plan["target"], starts, source_windows,
+                tp_ceiling=tp_ceiling)
         except (ValueError, FloatingPointError, np.linalg.LinAlgError) as exc:
             trials.append({"name": name, "valid": False, "score": None,
                            "violations": ["candidate_evaluation_failed"],

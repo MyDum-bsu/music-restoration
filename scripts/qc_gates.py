@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from rnext import features as F  # noqa: E402
 from rnext.dsp.contour import true_peak_dbfs  # noqa: E402
+from scripts import audio_measure  # noqa: E402  (lufs_tp: ffmpeg ebur128)
 
 
 def gain_smoothness(x: np.ndarray, sr: int, frame: int = 2048) -> dict:
@@ -149,10 +150,22 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("files", nargs="+")
     ap.add_argument("--tp-ceiling", type=float, default=-0.5)
+    ap.add_argument("--lufs-window", default="",
+                    help="enforce a loudness window 'LO:HI' (e.g. '-14.0:-11.0'): "
+                         "LUFS outside it — or unmeasurable — is a FAIL")
     ap.add_argument("--orig", help="source directory: compare against the source "
                                     "take (spikes FAIL only if the output has more, "
                                     "and the applied gain gets checked)")
     args = ap.parse_args()
+    window = None
+    if args.lufs_window:
+        try:
+            lo, hi = (float(v) for v in args.lufs_window.split(":"))
+            if lo > hi:
+                raise ValueError("LO must not exceed HI")
+        except ValueError as exc:
+            ap.error(f"bad --lufs-window {args.lufs_window!r}: {exc}")
+        window = (lo, hi)
 
     bad = False
     for f in args.files:
@@ -193,11 +206,16 @@ def main() -> int:
         spikes = sample_spikes(x)
         spike_fail, spike_mode = spike_verdict(spikes, orig_spikes)
         clipped = int((np.abs((x * 32768).astype(np.int32)) >= 32766).sum())
+        lufs_val = None
+        if window is not None:
+            lufs_val, _tp = audio_measure.lufs_tp(f)
         rec = {
             "file": f, "dr": st[0], "peak_db": round(st[3], 2),
             "tp_dbfs": round(tp, 2), "tp_ceiling": args.tp_ceiling,
             "tp_ok": bool(tp <= args.tp_ceiling + 0.05),
             "clipped_samples_out": clipped,
+            "lufs_i": None if lufs_val is None else round(lufs_val, 2),
+            "lufs_window": None if window is None else list(window),
             "max_gain_step_db_per_frame": gain_step,
             "gain_step_checked": gain_step is not None,
             "gain_step_note": "info: effective out-in, not contour gain",
@@ -206,9 +224,14 @@ def main() -> int:
             "sample_spikes_orig": orig_spikes,
             "spike_gate": spike_mode,
         }
+        lufs_fail = (window is not None
+                     and (lufs_val is None or not (window[0] <= lufs_val <= window[1])))
         # gain_step is informational: effective out−in, not the contour gain.
-        # The verdict only uses TP, clipping and click-like spikes.
-        bad_cnt = (not rec["tp_ok"]) or clipped > 0 or spike_fail
+        # The verdict uses TP, clipping, click-like spikes and the LUFS window
+        # when one was requested.
+        bad_cnt = (not rec["tp_ok"]) or clipped > 0 or spike_fail or lufs_fail
+        if lufs_fail:
+            rec["lufs_fail"] = "unmeasurable" if lufs_val is None else "outside_window"
         rec["verdict"] = "FAIL" if bad_cnt else "OK"
         print(json.dumps(rec, ensure_ascii=False))
         if bad_cnt:

@@ -25,7 +25,7 @@ TRACK_COLUMNS = [
     "lufs_orig", "lufs_ours", "true_peak_db_orig", "true_peak_db_ours",
     "clip_samples_orig", "clip_samples_ours",
     "spikes_over_09_orig", "spikes_over_09_ours",
-    "band_shift_db", "band_delta_mean_db",
+    "band_shift_db", "band_delta_mean_db", "punch_retention_db",
 ]
 VERDICT_COLUMNS = [
     "track", "verdict", "reason", "comparability", "status", "needs_review",
@@ -188,7 +188,8 @@ def test_cli_end_to_end(mod, tmp_path):
     assert any(s["track"].startswith("07") for s in summary["skipped"]), "bonus track must be reported"
     assert summary["needs_review"] == 0
     for key in ("lufs_gap_median", "dr_change_median", "crest_change_median",
-                "band_shift_db_mean", "tp_at_ceiling", "dr_regression_tracks",
+                "band_shift_db_mean", "punch_retention_median", "tp_at_ceiling",
+                "dr_regression_tracks",
                 "clipped_orig_sum", "clipped_ours_sum", "spikes_orig_sum", "spikes_ours_sum"):
         assert key in summary["systematics"], key
     assert summary["limitations"], "the report must state its own limits"

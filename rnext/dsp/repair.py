@@ -18,11 +18,12 @@ def _unchanged(x, common, reason, status="kept_original", repair=None):
     return x.copy(), result
 
 
-def select_restoration(x, sr, mode="auto", bits=24, clip_threshold=None):
+def select_restoration(x, sr, mode="auto", bits=24, clip_threshold=None,
+                       release_target=None):
     if mode not in ("auto", "dynamics", "declip"):
         raise ValueError("unknown restoration mode")
     if mode == "dynamics":
-        return select_track(x, sr, allow_sparse=True)
+        return select_track(x, sr, allow_sparse=True, release_target=release_target)
     mask, diagnosis = hard_clip_mask(x, bits)
     if clip_threshold is not None:
         if not np.isfinite(clip_threshold) or clip_threshold <= 0:
@@ -34,7 +35,7 @@ def select_restoration(x, sr, mode="auto", bits=24, clip_threshold=None):
     else:
         diagnosis["mask_source"] = "plateau_detector"
     if not mask.any() and mode == "auto":
-        y, report = select_track(x, sr)
+        y, report = select_track(x, sr, release_target=release_target)
         report["clip_diagnosis"] = diagnosis
         return y, report
     orig = measure(x, sr)
