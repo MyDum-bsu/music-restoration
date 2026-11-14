@@ -109,7 +109,7 @@ def pick_releases(records, seed, per_master=5):
 TRACK_NUM_RE = re.compile(r"\s*(\d{1,3})")
 
 
-def _measure_file(path: Path) -> dict:
+def measure_file(path: Path) -> dict:
     """audio_measure metrics for one file plus spikes and the band vector.
 
     spikes_over_09 counts samples with |x| > 0.9 in the first ~90 s, the same
@@ -161,7 +161,7 @@ def measure_side(path) -> dict:
     files = _side_files(root)
     if not files:
         raise EvalError(f"side directory has no audio files: {root}")
-    per_file = [_measure_file(p) for p in files]
+    per_file = [measure_file(p) for p in files]
     agg: dict = {}
     for metric in METRICS:
         values = [m[metric] for m in per_file]
@@ -259,7 +259,7 @@ def run_measurement(manifest: Path) -> dict:
             continue
         sides_metrics: dict[int, dict] = {}
         for n in common:
-            sides_metrics[n] = {side: _measure_file(indexes[side][n]) for side in SIDES}
+            sides_metrics[n] = {side: measure_file(indexes[side][n]) for side in SIDES}
         label = {n: indexes["orig"][n].stem for n in common}
         track_rows.append({"release": name, "label": label,
                            "tracks": {n: sides_metrics[n] for n in common}})
