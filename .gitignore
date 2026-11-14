@@ -22,3 +22,4 @@ node_modules/
 
 # machine-local workspace config; config/workspace.example.json is the tracked template
 config/workspace.json
+.zcode/
