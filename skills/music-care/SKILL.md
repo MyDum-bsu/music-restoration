@@ -18,6 +18,7 @@ battle-tested scripts and a list of learned-the-hard-way rules.
 | song lyrics into tags | **add-lyrics** | "embed lyrics", "add lyrics" |
 | phone library: inventory, covers, lyrics, delivery | **phone-music** | "check my phone", "push to the phone", "covers on the phone" |
 | restoration project status | **restore-status** | "how are things", "status", "how many tracks" |
+| evaluate a finished restoration ("was it good") | **release-restore** (+ `evaluate_album.py`) | "evaluate the restoration", "how good is the result", "compare the result with the original" |
 | blind comparison of restoration variants | **release-restore** (+ `listen_pack.py`) | "compare the variants", "build a listening pack" |
 
 ## The golden path

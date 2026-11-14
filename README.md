@@ -103,6 +103,20 @@ python3 scripts/finish_release.py --restored "out/album-candidate" \
   --source "album/" --dest "collection/album-candidate"
 ```
 
+Then evaluate the result against its source:
+
+```bash
+python3 scripts/evaluate_album.py --src "album/" --restored "out/album-candidate" \
+  --out "eval/album-candidate"
+```
+
+One command measures both sides with the same instrument, applies a verdict
+ladder declared before the data (true-peak ceiling on our output first, then a
+DR gap, then click-like jumps; loudness never votes), lifts `report.json`
+statuses and renders `REPORT.md` with the systematic shifts and the limits of
+the metrics. Which command answers which question:
+[docs/evaluation.md](docs/evaluation.md).
+
 Phone delivery is a separate requested stage; verify device-side hashes.
 Preserve the original source, provenance and processing report.
 

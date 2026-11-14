@@ -45,6 +45,16 @@ Finish only after file count and all statuses agree with the requested tracklist
 
 For an independent external audit, `qc_gates.py --orig <src-directory> <outputs>` checks peak/clipping/sample jumps. That tool matches by track-number prefix and is not the safe runner's status authority. Use explicitly paired files and matching duration/rate; a copied original can honestly retain a high true peak.
 
+## Evaluate against the source
+
+After checking statuses, one command answers "did this album turn out well?":
+
+```bash
+python3 scripts/evaluate_album.py --src "<source-directory>" --restored "<output>" --out "<eval-dir>"
+```
+
+It measures both sides with the shared instrument (`audio_measure.py` plus the common spike/band kernel), matches tracks by number then normalized name (a bonus track missing on one side is reported as skipped, never dropped), lifts `report.json` statuses into the verdicts, and writes `tracks.csv`, `verdicts.csv`, `summary.json` and `REPORT.md`. The ladder is fixed before the data: our output's true-peak ceiling first, then a DR gap of 0.3, then click-like sample jumps, then a tie; LUFS never votes, it only marks loudness comparability. `REPORT.md` names the systematic shifts (loudness, tonal band shift) and states its own limitations. Metrics are engineering proxies — they prove output constraints and shifts, not listening preference; see [quality.md](references/quality.md) for what each level of evidence can prove. The full evaluation runbook lives in [docs/evaluation.md](../../docs/evaluation.md).
+
 ## Dress and deliver
 
 After checking statuses, use `finish_release.py --restored "<output>" --source "<source-directory>" --dest "<collection-destination>"` for tags, covers, lyrics, DR report and spectra. For a single-file input, pass its parent as source. Recheck tags and track counts after dressing. Copy into the collection, preserve source and report. Use add-lyrics/phone-music for their respective stages.
