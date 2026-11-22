@@ -192,6 +192,10 @@ def main():
               f"validation errors: {len(errors)}")
         for e in errors:
             print(f"  {e}")
+    leaks = corpus_v1.validate_cross_manifest_leakage(docs)
+    print(f"cross-manifest group leakage: {len(leaks)}")
+    for e in leaks:
+        print(f"  {e}")
 
 
 if __name__ == "__main__":

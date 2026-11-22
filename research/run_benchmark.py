@@ -157,9 +157,21 @@ def _clean_error(text, exc=None):
     return text
 
 
+_SAFE_ARGV_VALUE = re.compile(r"[A-Za-z0-9_,+-]+")
+
+
 def _safe_argv():
-    """argv with absolute paths reduced to basenames (protocol record)."""
-    return [a if not a.startswith("/") else Path(a).name for a in sys.argv]
+    """Flags plus safe enum values only — no paths, no filenames."""
+    out = []
+    for a in sys.argv:
+        if a.startswith("--"):
+            flag, _, value = a.partition("=")
+            out.append(flag)
+            if value and _SAFE_ARGV_VALUE.fullmatch(value):
+                out.append(value)
+        elif "/" not in a and _SAFE_ARGV_VALUE.fullmatch(a):
+            out.append(a)
+    return out
 
 
 def _git_commit():
@@ -192,6 +204,10 @@ def main():
                    help="run sealed cases; only valid with custodian approval")
     p.add_argument("--strict-toolchain", action="store_true",
                    help="require detected toolchain to equal declared pins exactly")
+    p.add_argument("--check-against", action="append", default=[],
+                   metavar="MANIFEST",
+                   help="other corpus/v1 manifest(s) for cross-manifest group "
+                        "leakage checks (repeatable)")
     args = p.parse_args()
 
     doc = corpus_v1.load(args.manifest)
@@ -200,10 +216,9 @@ def main():
 
     # Sealed cases are partitioned BEFORE any rights/file checks: a mixed
     # manifest must not fail — or leak — on inputs the caller cannot touch.
-    # On a sealed tier EVERY case is sealed.
-    def is_sealed(case):
-        return doc.get("tier") == "sealed" or bool(case.get("sealed"))
-    sealed = [c for c in doc.get("cases", []) if is_sealed(c)]
+    # On a sealed tier EVERY case is sealed; a case is also sealed when any
+    # of its inputs is custodian-held.
+    sealed = [c for c in doc.get("cases", []) if corpus_v1.is_sealed_case(doc, c)]
     if doc.get("tier") == "sealed" and not args.custodian_release:
         print("manifest error: sealed manifest requires --custodian-release",
               file=sys.stderr)
@@ -218,10 +233,15 @@ def main():
                 print(f"manifest error: {e}", file=sys.stderr)
             return 2
     view = doc if args.custodian_release else corpus_v1.without_sealed(doc)
-    errors = corpus_v1.validate_manifest(view, check_hashes_root=root)
+    # operation rights are checked before any file bytes are touched
+    errors = []
     for case in view.get("cases", []):
         if not corpus_v1.case_allowed(case, args.operation):
             errors.append(f"case {case['id']}: operation '{args.operation}' not permitted")
+    if args.check_against:
+        others = [corpus_v1.load(m) for m in args.check_against]
+        errors += corpus_v1.validate_cross_manifest_leakage([view, *others])
+    errors += corpus_v1.validate_manifest(view, check_hashes_root=root)
     try:
         detected = corpus_v1.actual_toolchain()
     except Exception as exc:
@@ -231,12 +251,14 @@ def main():
         got = detected.get(field)
         if got is None:
             continue
-        if args.strict_toolchain and got != declared:
-            errors.append(f"toolchain.{field}: detected {got} != declared {declared}")
-        elif re.match(r"\d+\.\d+", declared or "") and \
-                re.match(r"\d+\.\d+", got or "") and \
-                re.match(r"\d+\.\d+", declared).group(0) != \
-                re.match(r"\d+\.\d+", got).group(0):
+        declared_mm = re.match(r"\d+\.\d+", declared or "")
+        got_mm = re.match(r"\d+\.\d+", got or "")
+        if args.strict_toolchain or declared_mm is None:
+            # non-semver pins (e.g. ffmpeg git builds) require exact equality
+            if got != declared:
+                errors.append(f"toolchain.{field}: detected {got} != "
+                              f"declared {declared}")
+        elif got_mm and declared_mm.group(0) != got_mm.group(0):
             errors.append(f"toolchain.{field}: major/minor drift "
                           f"(declared {declared}, detected {got})")
     if errors:
@@ -268,7 +290,7 @@ def main():
         row = run_case(view, root, case, methods,
                        doc.get("numeric_tolerance", 1e-6),
                        allow_custodian=args.custodian_release)
-        (sealed_rows if is_sealed(case) else rows).append(row)
+        (sealed_rows if corpus_v1.is_sealed_case(doc, case) else rows).append(row)
         statuses = {k: v["status"] for k, v in row["methods"].items()}
         print(f"{case['id']}: {row['status']} {statuses}", flush=True)
     (out / "results.json").write_text(json.dumps(

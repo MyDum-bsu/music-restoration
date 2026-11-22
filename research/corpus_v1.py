@@ -117,16 +117,18 @@ def _check_spec(spec, idx, where, errors):
             (not isinstance(spec["bytes"], int) or isinstance(spec["bytes"], bool)
              or spec["bytes"] <= 0):
         errors.append(f"{where}: bytes must be a positive int")
+    if entry is None:
+        errors.append(f"{where}: '{spec['path']}' not declared in files[]")
+    else:
+        # filled fields must agree with files[] even for custodian-held inputs
+        if spec["sha256"] is not None and entry["sha256"] != spec["sha256"]:
+            errors.append(f"{where}: spec for '{spec['path']}' disagrees with files[]")
+        if spec["bytes"] is not None and entry["bytes"] != spec["bytes"]:
+            errors.append(f"{where}: spec for '{spec['path']}' disagrees with files[]")
     if held:
-        if entry is None:
-            errors.append(f"{where}: '{spec['path']}' not declared in files[]")
         return  # custodian-held bytes: content checked by custodian, not here
     if spec["sha256"] is None or spec["bytes"] is None:
         errors.append(f"{where}: sha256/bytes required for non-custodian files")
-    if entry is None:
-        errors.append(f"{where}: '{spec['path']}' not declared in files[]")
-    elif entry["sha256"] != spec["sha256"] or entry["bytes"] != spec["bytes"]:
-        errors.append(f"{where}: spec for '{spec['path']}' disagrees with files[]")
 
 
 def validate_manifest(doc, check_hashes_root=None):
@@ -320,6 +322,17 @@ def resolve(doc, root, spec, allow_custodian=False):
     return target
 
 
+def is_sealed_case(doc, case):
+    """Sealed by tier, flag, or any custodian-held input."""
+    if doc.get("tier") == "sealed" or case.get("sealed"):
+        return True
+    idx = _files_index(doc)
+    specs = [c for c in (case.get(r) for r in ("clean", "degraded", "mask"))
+             if isinstance(c, dict)]
+    specs += list(case.get("references", {}).values())
+    return any(_held(s) or _held(idx.get(s.get("path"))) for s in specs)
+
+
 def used_paths(cases):
     """File paths referenced by a set of cases."""
     paths = set()
@@ -334,7 +347,7 @@ def used_paths(cases):
 
 def without_sealed(doc):
     """Manifest view with every sealed case (and its private files) removed."""
-    keep = [c for c in doc.get("cases", []) if not c.get("sealed")]
+    keep = [c for c in doc.get("cases", []) if not is_sealed_case(doc, c)]
     paths = used_paths(keep)
     return {**doc, "cases": keep,
             "files": [f for f in doc.get("files", []) if f["path"] in paths]}
