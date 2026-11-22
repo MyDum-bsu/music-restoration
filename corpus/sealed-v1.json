@@ -1,0 +1,134 @@
+{
+  "schema": "corpus/v1",
+  "tier": "sealed",
+  "dataset_version": "sealed-2026-11-23",
+  "toolchain": {
+    "python": "3.12.3",
+    "numpy": "2.5.2",
+    "scipy": "1.17.1",
+    "ffmpeg": "125907-ga7e72069f1-20260802",
+    "libflac": "1.4.3"
+  },
+  "rng": {
+    "algorithm": "numpy-pcg64",
+    "seed": null
+  },
+  "numeric_tolerance": 1e-06,
+  "output_ceiling_dbfs": -1.0,
+  "custodian": {
+    "name": "sealed custodian (appointed by owner)",
+    "appointed_at": "2026-11-23",
+    "release": "withheld until E4 freeze"
+  },
+  "pilot": {
+    "sample_size": null,
+    "gate_margin_sdr_db": null,
+    "gate_margin_vs_external_db": null,
+    "min_coverage": null,
+    "cpu_p95_s_per_audio_min": null,
+    "rss_mb_p95": null,
+    "registered_at": null
+  },
+  "files": [
+    {
+      "path": "sealed/sealed-real-01.clean.flac",
+      "sha256": null,
+      "bytes": null,
+      "held_by": "custodian"
+    },
+    {
+      "path": "sealed/sealed-real-01.degraded.flac",
+      "sha256": null,
+      "bytes": null,
+      "held_by": "custodian"
+    },
+    {
+      "path": "sealed/sealed-real-02.clean.flac",
+      "sha256": null,
+      "bytes": null,
+      "held_by": "custodian"
+    },
+    {
+      "path": "sealed/sealed-real-02.degraded.flac",
+      "sha256": null,
+      "bytes": null,
+      "held_by": "custodian"
+    }
+  ],
+  "cases": [
+    {
+      "id": "sealed-real-01",
+      "kind": "paired_file",
+      "sealed": true,
+      "profile": "real_capture",
+      "rate": 44100,
+      "channels": 2,
+      "mode": "auto",
+      "split": "eval",
+      "rights": {
+        "local_inference": false,
+        "colab": false,
+        "training": false,
+        "listening": false,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-sealed-0",
+        "fingerprint": "fp-sealed-0",
+        "session": "ses-sealed-0",
+        "artist": "sealed-artist-0",
+        "album": "sealed-album-0",
+        "stem_family": "fam-sealed-0"
+      },
+      "clean": {
+        "path": "sealed/sealed-real-01.clean.flac",
+        "sha256": null,
+        "bytes": null,
+        "held_by": "custodian"
+      },
+      "degraded": {
+        "path": "sealed/sealed-real-01.degraded.flac",
+        "sha256": null,
+        "bytes": null,
+        "held_by": "custodian"
+      }
+    },
+    {
+      "id": "sealed-real-02",
+      "kind": "paired_file",
+      "sealed": true,
+      "profile": "real_capture",
+      "rate": 44100,
+      "channels": 2,
+      "mode": "auto",
+      "split": "eval",
+      "rights": {
+        "local_inference": false,
+        "colab": false,
+        "training": false,
+        "listening": false,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-sealed-1",
+        "fingerprint": "fp-sealed-1",
+        "session": "ses-sealed-1",
+        "artist": "sealed-artist-1",
+        "album": "sealed-album-1",
+        "stem_family": "fam-sealed-1"
+      },
+      "clean": {
+        "path": "sealed/sealed-real-02.clean.flac",
+        "sha256": null,
+        "bytes": null,
+        "held_by": "custodian"
+      },
+      "degraded": {
+        "path": "sealed/sealed-real-02.degraded.flac",
+        "sha256": null,
+        "bytes": null,
+        "held_by": "custodian"
+      }
+    }
+  ]
+}
