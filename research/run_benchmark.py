@@ -19,7 +19,11 @@ cases never appear in a dev report: they are excluded unless
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
+import platform
+import re
+import subprocess
 import sys
 
 import numpy as np
@@ -62,8 +66,9 @@ def run_case(doc, root, case, methods, tolerance):
             clean, clean_rate, _ = _decode(clean_path)
             if clean_rate != rate or clean.shape != degraded.shape:
                 raise ValueError("clean/degraded misaligned")
-            mask_path = corpus_v1.resolve(doc, root, case["mask"])
-            mask = corpus_synth.decode_mask(mask_path.read_bytes())
+            if case.get("mask") is not None:
+                mask_path = corpus_v1.resolve(doc, root, case["mask"])
+                mask = corpus_synth.decode_mask(mask_path.read_bytes())
             row["clean_sha256"] = case["clean"]["sha256"]
         expected = case.get("expected_input_sdr_db")
         if expected is not None and clean is not None:
@@ -95,12 +100,14 @@ def run_case(doc, root, case, methods, tolerance):
                         if mask is not None else None
                 row["methods"][name] = entry
             except Exception as exc:
-                row["methods"][name] = {"status": "error", "error": str(exc)[:300]}
+                row["methods"][name] = {"status": "error",
+                                        "error": _clean_error(str(exc))[:300]}
     except Exception as exc:
-        row["methods"] = {name: {"status": "error", "error": str(exc)[:300]}
+        row["methods"] = {name: {"status": "error",
+                                 "error": _clean_error(str(exc))[:300]}
                           for name in methods}
         row["status"] = "error"
-        row["error"] = str(exc)[:300]
+        row["error"] = _clean_error(str(exc))[:300]
         return row
     row["status"] = "error" if any(m["status"] == "error" for m in row["methods"].values()) else "ok"
     return row
@@ -133,6 +140,26 @@ def compare_reports(a_rows, b_rows, tolerance):
     return diffs
 
 
+def _clean_error(text):
+    """Strip local absolute paths from error text before it reaches reports."""
+    for prefix in (str(Path.cwd()), str(REPO), str(Path.home())):
+        text = text.replace(prefix, ".")
+    return re.sub(r"(?<![\w.])/(?:[\w.\-]+/)+", "/", text)
+
+
+def _safe_argv():
+    """argv with absolute paths reduced to basenames (protocol record)."""
+    return [a if not a.startswith("/") else Path(a).name for a in sys.argv]
+
+
+def _git_commit():
+    try:
+        return subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO,
+                              capture_output=True, text=True, check=True).stdout.strip()
+    except Exception:
+        return None
+
+
 def _implementation_hashes():
     files = [REPO / "research" / n for n in
              ("run_benchmark.py", "corpus_v1.py", "corpus_synth.py",
@@ -156,13 +183,22 @@ def main():
 
     doc = corpus_v1.load(args.manifest)
     root = Path(args.audio_root).resolve()
-    errors = corpus_v1.validate_manifest(doc, check_hashes_root=root)
     methods = [m.strip() for m in args.methods.split(",") if m.strip()]
-    for case in doc.get("cases", []):
+
+    # Sealed cases are partitioned BEFORE any rights/file checks: a mixed
+    # manifest must not fail — or leak — on inputs the caller cannot touch.
+    sealed = [c for c in doc.get("cases", []) if c.get("sealed")]
+    if doc.get("tier") == "sealed" and not args.custodian_release:
+        print("manifest error: sealed manifest requires --custodian-release",
+              file=sys.stderr)
+        return 2
+    view = doc if args.custodian_release else corpus_v1.without_sealed(doc)
+    errors = corpus_v1.validate_manifest(view, check_hashes_root=root)
+    for case in view.get("cases", []):
         if not corpus_v1.case_allowed(case, args.operation):
             errors.append(f"case {case['id']}: operation '{args.operation}' not permitted")
-    if doc.get("tier") == "sealed" and not args.custodian_release:
-        errors.append("sealed manifest requires --custodian-release")
+    if args.custodian_release and (sealed or doc.get("tier") == "sealed"):
+        errors += corpus_v1.pilot_errors(doc.get("pilot"))
     if errors:
         for e in errors:
             print(f"manifest error: {e}", file=sys.stderr)
@@ -173,31 +209,39 @@ def main():
     if any(out.iterdir()):
         p.error("output directory must be empty")
 
-    toolchain = dict(doc.get("toolchain", {}))
-    toolchain["implementation_sha256"] = _implementation_hashes()
+    try:
+        detected = corpus_v1.actual_toolchain()
+    except Exception:
+        detected = {}
+    toolchain = {"declared": doc.get("toolchain", {}), "detected": detected,
+                 "implementation_sha256": _implementation_hashes(),
+                 "git_commit": _git_commit(),
+                 "cpu": {"model": platform.processor() or platform.machine(),
+                         "logical_cores": os.cpu_count(),
+                         "numpy_threads": os.environ.get("OMP_NUM_THREADS", "unset")}}
     (out / "protocol.json").write_text(json.dumps({
         "manifest_sha256": corpus_v1.manifest_digest(doc),
         "dataset_version": doc["dataset_version"], "tier": doc["tier"],
         "toolchain": toolchain, "rng": doc.get("rng"),
         "numeric_tolerance": doc.get("numeric_tolerance", 1e-6),
         "metric": "fixed-gain and scale-aligned waveform SDR, true-mask SDR; no time shift",
-        "argv": sys.argv}, indent=2))
+        "argv": _safe_argv()}, indent=2))
 
-    rows, excluded = [], []
-    for case in sorted(doc["cases"], key=lambda c: c["id"]):
-        if case.get("sealed") and not args.custodian_release:
-            excluded.append(case["id"])  # sealed never enters a dev report
-            continue
-        row = run_case(doc, root, case, methods,
+    rows, sealed_rows = [], []
+    for case in sorted(view["cases"], key=lambda c: c["id"]):
+        row = run_case(view, root, case, methods,
                        doc.get("numeric_tolerance", 1e-6))
-        rows.append(row)
-        tmp = out / "results.json.tmp"
-        tmp.write_text(json.dumps({"excluded_sealed": sorted(excluded),
-                                   "cases": rows}, indent=2, allow_nan=False))
-        tmp.replace(out / "results.json")
+        (sealed_rows if case.get("sealed") else rows).append(row)
         statuses = {k: v["status"] for k, v in row["methods"].items()}
         print(f"{case['id']}: {row['status']} {statuses}", flush=True)
-    return int(any(r["status"] == "error" for r in rows))
+    (out / "results.json").write_text(json.dumps(
+        {"excluded_sealed_count": len(sealed) if not args.custodian_release else 0,
+         "cases": rows}, indent=2, allow_nan=False))
+    if sealed_rows:
+        # sealed metrics never mix into a dev report
+        (out / "results_sealed.json").write_text(
+            json.dumps({"cases": sealed_rows}, indent=2, allow_nan=False))
+    return int(any(r["status"] == "error" for r in rows + sealed_rows))
 
 
 if __name__ == "__main__":

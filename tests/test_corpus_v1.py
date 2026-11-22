@@ -44,7 +44,8 @@ def mini_manifest(tmp_path):
             case.setdefault(role, {}).update(specs[role])
             files.append(specs[role])
     doc = {"schema": corpus_v1.SCHEMA, "tier": "dev",
-           "dataset_version": "test-1", "toolchain": {"python": ">=3.10"},
+           "dataset_version": "test-1",
+           "toolchain": corpus_v1.actual_toolchain(),
            "rng": {"algorithm": "numpy-pcg64", "seed": 1},
            "numeric_tolerance": 1e-6, "files": files, "cases": cases}
     (tmp_path / "manifest.json").write_text(json.dumps(doc))
@@ -81,6 +82,91 @@ def test_group_leakage_across_splits_is_rejected(tmp_path):
     doc["cases"][1]["groups"]["take"] = "take-a"  # same take in eval and control
     errors = corpus_v1.validate_manifest(doc)
     assert any("appears in both" in e for e in errors)
+
+
+def test_cross_manifest_group_leakage_is_rejected(tmp_path):
+    doc = mini_manifest(tmp_path)
+    sealed = corpus_v1.load(ROOT / "corpus" / "sealed-v1.json")
+    dev = corpus_v1.load(ROOT / "corpus" / "dev-v1.json")
+    assert corpus_v1.validate_cross_manifest_leakage([doc, dev, sealed]) == []
+    sealed["cases"][0]["groups"]["take"] = "take-a"  # collides with mini dev case
+    errors = corpus_v1.validate_cross_manifest_leakage([doc, sealed])
+    assert any("shared between" in e for e in errors)
+
+
+def test_rights_values_must_be_bool(tmp_path):
+    doc = mini_manifest(tmp_path)
+    doc["cases"][0]["rights"]["colab"] = "false"  # string, not bool
+    errors = corpus_v1.validate_manifest(doc)
+    assert any("rights.colab must be a bool" in e for e in errors)
+
+
+def test_file_spec_format_is_checked(tmp_path):
+    doc = mini_manifest(tmp_path)
+    doc["cases"][0]["degraded"]["sha256"] = "ZZZ-not-hex"
+    errors = corpus_v1.validate_manifest(doc)
+    assert any("64 lowercase hex" in e for e in errors)
+    doc = mini_manifest(tmp_path)
+    doc["cases"][0]["degraded"]["bytes"] = -1
+    assert any("positive int" in e for e in corpus_v1.validate_manifest(doc))
+
+
+def test_toolchain_placeholders_are_rejected(tmp_path):
+    doc = mini_manifest(tmp_path)
+    doc["toolchain"] = {"python": ">=3.10", "ffmpeg": "pinned-by-environment"}
+    errors = corpus_v1.validate_manifest(doc)
+    assert any("toolchain.libflac" in e for e in errors)
+    assert any("toolchain.python" in e for e in errors)
+    assert any("toolchain.ffmpeg" in e for e in errors)
+
+
+def test_mask_rle_rejects_out_of_bounds():
+    import pytest as _pytest
+    blob = json.dumps({"frames": 10, "channels": 2,
+                       "runs": [[18, 5]]}).encode()
+    with _pytest.raises(ValueError, match="out of bounds"):
+        corpus_synth.decode_mask(blob)
+
+
+def test_sealed_cases_never_enter_dev_report(tmp_path):
+    doc = mini_manifest(tmp_path)
+    held = {"path": "sealed/x.flac", "sha256": None, "bytes": None,
+            "held_by": "custodian"}
+    doc["cases"].append({
+        "id": "m-sealed", "kind": "paired_file", "sealed": True,
+        "profile": "real", "rate": 44100, "channels": 2, "split": "eval",
+        "rights": {k: False for k in corpus_v1.OPERATIONS},
+        "groups": {k: f"{k}-s" for k in corpus_v1.GROUP_KEYS},
+        "clean": dict(held), "degraded": dict(held)})
+    doc["files"].append(dict(held))
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps(doc))
+    proc = run_cli(manifest, tmp_path / "audio", tmp_path / "out")
+    assert proc.returncode == 0, proc.stderr
+    report = json.loads((tmp_path / "out" / "results.json").read_text())
+    assert report["excluded_sealed_count"] == 1
+    assert "m-sealed" not in proc.stdout
+    assert all(r["id"] != "m-sealed" for r in report["cases"])
+    assert not (tmp_path / "out" / "results_sealed.json").exists()
+
+
+def test_paired_file_without_mask_reports_null_mask_metrics(tmp_path):
+    doc = corpus_v1.load(ROOT / "corpus" / "smoke-v1.json")
+    case = doc["cases"][0]
+    audio = tmp_path / "audio"
+    corpus_synth.synthesize_case(case, audio)
+    case = dict(case)
+    del case["mask"]
+    case["kind"] = "paired_file"
+    doc = {**doc, "files": [f for f in doc["files"]
+                            if not f["path"].endswith(".mask")],
+           "cases": [case]}
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text(json.dumps(doc))
+    proc = run_cli(manifest, audio, tmp_path / "out", "--methods", "identity")
+    assert proc.returncode == 0, proc.stderr
+    rows = json.loads((tmp_path / "out" / "results.json").read_text())["cases"]
+    assert rows[0]["methods"]["identity"]["masked_fixed_gain_sdr_db"] is None
 
 
 def test_sealed_tier_blocked_until_pilot_registered():

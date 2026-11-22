@@ -16,8 +16,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 from research import corpus_synth, corpus_v1
 
-TOOLCHAIN = {"python": ">=3.10", "ffmpeg": "pinned-by-environment",
-             "numpy": ">=1.24", "scipy": ">=1.10", "bits_wav": 16}
+TOOLCHAIN = corpus_v1.actual_toolchain()
 RIGHTS_PUBLIC = {"local_inference": True, "colab": True, "training": True,
                  "listening": True, "publication": True}
 RIGHTS_DEV = {"local_inference": True, "colab": True, "training": True,
@@ -88,7 +87,7 @@ def smoke_cases():
                    groups=g(take="t-smoke-4", fingerprint="fp-smoke-4")),
         synth_case("smoke-clip-late-90s-44k", 44100, 92, 105, "late_clip",
                    "defect_after_90s", RIGHTS_PUBLIC,
-                   threshold_dbfs=-2.0, defect_start_s=90,
+                   threshold_dbfs=-2.0, defect_start_s=90, defect_gain=8.0,
                    groups=g(take="t-smoke-5", fingerprint="fp-smoke-5")),
         synth_case("smoke-clean-control-48k", 48000, 4, 106, "clean",
                    "clean_control", RIGHTS_PUBLIC,
@@ -117,6 +116,11 @@ def dev_cases():
          "clean_control", {}),
         ("dev-intentional-control-44k", 44100, 5, 206, "intentional_saturation",
          "control", "intentional_control", dict(drive=4.0)),
+        ("dev-soft-limiter-ctl-48k", 48000, 5, 207, "soft_limiter",
+         "control", "soft_limiter_control", dict(knee=.75)),
+        ("dev-clip-eval-c-late90-44k", 44100, 92, 208, "late_clip", "eval",
+         "defect_after_90s",
+         dict(threshold_dbfs=-2.0, defect_start_s=90, defect_gain=8.0)),
     ]
     cases = []
     for i, (cid, rate, sec, seed, op, split, profile, kw) in enumerate(specs):
@@ -125,7 +129,7 @@ def dev_cases():
                                 groups=g(take=f"t-dev-{i}", fingerprint=f"fp-dev-{i}",
                                          session=f"ses-dev-{i}",
                                          artist=f"dev-artist-{i}",
-                                         album=f"dev-album-{i // 2}")))
+                                         album=f"dev-album-{i}")))
     return cases
 
 

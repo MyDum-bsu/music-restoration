@@ -3,11 +3,11 @@
   "tier": "smoke",
   "dataset_version": "smoke-2026-11-23",
   "toolchain": {
-    "python": ">=3.10",
-    "ffmpeg": "pinned-by-environment",
-    "numpy": ">=1.24",
-    "scipy": ">=1.10",
-    "bits_wav": 16
+    "python": "3.12.3",
+    "numpy": "2.5.2",
+    "scipy": "1.17.1",
+    "ffmpeg": "125907-ga7e72069f1-20260802",
+    "libflac": "1.4.3"
   },
   "rng": {
     "algorithm": "numpy-pcg64",
@@ -83,13 +83,13 @@
     },
     {
       "path": "smoke-clip-late-90s-44k.degraded.wav",
-      "sha256": "92dbe53f277756f93d03cc63482669711233c6cfa0facf78ac8621aa8c3ce3e9",
+      "sha256": "dfdf0c220599b92ee4e2cbccc9dd95d6f565fdee5b5337b2019a6c6edcf4fc01",
       "bytes": 16228844
     },
     {
       "path": "smoke-clip-late-90s-44k.clean.mask",
-      "sha256": "fc0f3be16e902547a59cf50038fb5d33a00a70aaac0d20d55ce8bf730546484d",
-      "bytes": 41
+      "sha256": "d4fa9b2ee229391dce760f945dfc47f964d00f4b202b2f3cdb1d51f6f603a34c",
+      "bytes": 523076
     },
     {
       "path": "smoke-clean-control-48k.clean.wav",
@@ -358,7 +358,7 @@
       },
       "degraded": {
         "path": "smoke-clip-late-90s-44k.degraded.wav",
-        "sha256": "92dbe53f277756f93d03cc63482669711233c6cfa0facf78ac8621aa8c3ce3e9",
+        "sha256": "dfdf0c220599b92ee4e2cbccc9dd95d6f565fdee5b5337b2019a6c6edcf4fc01",
         "bytes": 16228844
       },
       "synthesis": {
@@ -369,12 +369,13 @@
         "operator": "late_clip",
         "bits": 16,
         "threshold_dbfs": -2.0,
-        "defect_start_s": 90
+        "defect_start_s": 90,
+        "defect_gain": 8.0
       },
       "mask": {
         "path": "smoke-clip-late-90s-44k.clean.mask",
-        "sha256": "fc0f3be16e902547a59cf50038fb5d33a00a70aaac0d20d55ce8bf730546484d",
-        "bytes": 41
+        "sha256": "d4fa9b2ee229391dce760f945dfc47f964d00f4b202b2f3cdb1d51f6f603a34c",
+        "bytes": 523076
       }
     },
     {

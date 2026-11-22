@@ -3,11 +3,11 @@
   "tier": "sealed",
   "dataset_version": "sealed-2026-11-23",
   "toolchain": {
-    "python": ">=3.10",
-    "ffmpeg": "pinned-by-environment",
-    "numpy": ">=1.24",
-    "scipy": ">=1.10",
-    "bits_wav": 16
+    "python": "3.12.3",
+    "numpy": "2.5.2",
+    "scipy": "1.17.1",
+    "ffmpeg": "125907-ga7e72069f1-20260802",
+    "libflac": "1.4.3"
   },
   "rng": {
     "algorithm": "numpy-pcg64",

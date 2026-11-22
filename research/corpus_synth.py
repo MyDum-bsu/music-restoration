@@ -74,7 +74,7 @@ def apply_operator(clean, rate, spec, seed):
         pos = thr * spec.get("pos_scale", 1.0)   # asymmetric clipping
         neg = thr * spec.get("neg_scale", 1.0)
         start = int(round(spec.get("defect_start_s", 0) * rate))
-        region = x[start:]
+        region = x[start:] * spec.get("defect_gain", 1.0)  # boost defect region if needed
         clipped = np.clip(region, -neg, pos)
         mask[start:] = clipped != region
         x[start:] = clipped
@@ -112,8 +112,11 @@ def encode_mask(mask):
 
 def decode_mask(blob):
     doc = json.loads(blob)
-    flat = np.zeros(doc["frames"] * doc["channels"], dtype=bool)
+    total = doc["frames"] * doc["channels"]
+    flat = np.zeros(total, dtype=bool)
     for start, length in doc["runs"]:
+        if start < 0 or length <= 0 or start + length > total:
+            raise ValueError(f"mask run out of bounds: [{start}, +{length}) of {total}")
         flat[start:start + length] = True
     return flat.reshape(doc["frames"], doc["channels"])
 
@@ -126,6 +129,9 @@ def synthesize_case(case, root):
     clean = _clean_signal(syn["seed"], syn["rate"], syn["seconds"],
                           quiet_tail=syn.get("quiet_tail", False))
     degraded, mask, meta = apply_operator(clean, syn["rate"], syn, syn["seed"])
+    if syn["operator"] in DEFECT_OPERATORS and not mask.any():
+        raise ValueError(f"defect operator '{syn['operator']}' produced an empty "
+                         f"mask for case {case['id']}: adjust threshold/gain/seed")
     specs = {}
     for role, pcm in (("clean", clean), ("degraded", degraded)):
         rel = case[role]["path"]
