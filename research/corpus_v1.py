@@ -108,15 +108,21 @@ def _check_spec(spec, idx, where, errors):
             errors.append(f"{where}: missing '{field}'")
             return
     entry = idx.get(spec["path"])
-    if _held(entry) or _held(spec):
+    held = _held(entry) or _held(spec)
+    # format is checked whenever the fields carry a value, custodian-held or not
+    if spec["sha256"] is not None and \
+            (not isinstance(spec["sha256"], str) or not _SHA256.fullmatch(spec["sha256"])):
+        errors.append(f"{where}: sha256 must be 64 lowercase hex chars")
+    if spec["bytes"] is not None and \
+            (not isinstance(spec["bytes"], int) or isinstance(spec["bytes"], bool)
+             or spec["bytes"] <= 0):
+        errors.append(f"{where}: bytes must be a positive int")
+    if held:
         if entry is None:
             errors.append(f"{where}: '{spec['path']}' not declared in files[]")
-        return  # custodian-held bytes: hash/size checked by custodian, not here
-    if not isinstance(spec["sha256"], str) or not _SHA256.fullmatch(spec["sha256"]):
-        errors.append(f"{where}: sha256 must be 64 lowercase hex chars")
-    if not isinstance(spec["bytes"], int) or isinstance(spec["bytes"], bool) \
-            or spec["bytes"] <= 0:
-        errors.append(f"{where}: bytes must be a positive int")
+        return  # custodian-held bytes: content checked by custodian, not here
+    if spec["sha256"] is None or spec["bytes"] is None:
+        errors.append(f"{where}: sha256/bytes required for non-custodian files")
     if entry is None:
         errors.append(f"{where}: '{spec['path']}' not declared in files[]")
     elif entry["sha256"] != spec["sha256"] or entry["bytes"] != spec["bytes"]:
@@ -257,23 +263,30 @@ def verify_files(doc, root):
     from research import corpus_synth
     errors = []
     root = Path(root).resolve()
+    skipped = set()  # paths already failed or custodian-held: never opened again
     for f in doc.get("files", []):
         target = (root / f["path"]).resolve()
         try:
             target.relative_to(root)
         except ValueError:
             errors.append(f"file escapes root: {f['path']}")
+            skipped.add(f["path"])
             continue
         if f.get("held_by") == "custodian":
+            skipped.add(f["path"])
             continue  # custodian-held sealed bytes are not distributable
         if not target.exists():
             errors.append(f"missing file: {f['path']}")
+            skipped.add(f["path"])
         elif target.stat().st_size != f["bytes"] or digest(target) != f["sha256"]:
             errors.append(f"hash mismatch: {f['path']}")
+            skipped.add(f["path"])
     for c in doc.get("cases", []):
         syn = c.get("synthesis") or {}
         if syn.get("operator") not in corpus_synth.DEFECT_OPERATORS or "mask" not in c:
             continue
+        if c["mask"]["path"] in skipped:
+            continue  # do not read/decode a mask that already failed or is held
         target = (root / c["mask"]["path"]).resolve()
         if not target.exists():
             continue  # already reported by the files[] pass
@@ -288,7 +301,7 @@ def verify_files(doc, root):
     return errors
 
 
-def resolve(doc, root, spec):
+def resolve(doc, root, spec, allow_custodian=False):
     """Verified absolute path for a manifest file spec."""
     root = Path(root).resolve()
     target = (root / spec["path"]).resolve()
@@ -297,7 +310,7 @@ def resolve(doc, root, spec):
     if entry is None or entry["sha256"] != spec["sha256"] \
             or entry["bytes"] != spec["bytes"]:
         raise ValueError(f"undeclared or mismatched file spec: {spec['path']}")
-    if entry.get("held_by") == "custodian":
+    if entry.get("held_by") == "custodian" and not allow_custodian:
         raise PermissionError(f"custodian-held sealed input: {spec['path']}")
     if not _SHA256.fullmatch(spec["sha256"] or ""):
         raise ValueError(f"malformed sha256 in spec: {spec['path']}")
@@ -328,21 +341,25 @@ def without_sealed(doc):
 
 
 def validate_cross_manifest_leakage(manifests):
-    """No group value may recur across different manifests (dev vs sealed...)."""
+    """No group value may recur across different manifests (dev vs sealed...).
+
+    Manifests are told apart by identity label (tier+dataset_version+position),
+    not dataset_version alone — two manifests may share a version string.
+    """
     errors = []
-    seen = {}  # (key, value) -> dataset_version
-    for doc in manifests:
-        version = doc.get("dataset_version", "?")
+    seen = {}  # (key, value) -> manifest label
+    for i, doc in enumerate(manifests):
+        label = f"{doc.get('tier', '?')}:{doc.get('dataset_version', '?')}#{i}"
         for c in doc.get("cases", []):
             for key in GROUP_KEYS:
                 value = (c.get("groups") or {}).get(key)
                 if value is None:
                     continue
                 tag = (key, value)
-                if tag in seen and seen[tag] != version:
+                if tag in seen and seen[tag] != label:
                     errors.append(f"case {c['id']}: group {key}='{value}' shared "
-                                  f"between {seen[tag]} and {version}")
-                seen.setdefault(tag, version)
+                                  f"between {seen[tag]} and {label}")
+                seen.setdefault(tag, label)
     return errors
 
 

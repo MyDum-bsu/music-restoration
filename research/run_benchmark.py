@@ -52,22 +52,25 @@ def _masked_sdr(clean, cand, mask):
                 float(np.sum((clean[mask] - cand[mask]) ** 2)))
 
 
-def run_case(doc, root, case, methods, tolerance):
+def run_case(doc, root, case, methods, tolerance, allow_custodian=False):
     """One manifest case -> results row (statuses never raise)."""
     row = {"id": case["id"], "split": case.get("split"), "profile": case.get("profile"),
            "mode": case.get("mode", "auto"), "methods": {}}
     try:
-        degraded_path = corpus_v1.resolve(doc, root, case["degraded"])
+        degraded_path = corpus_v1.resolve(doc, root, case["degraded"],
+                                          allow_custodian=allow_custodian)
         degraded, rate, info = _decode(degraded_path)
         row["input_sha256"] = case["degraded"]["sha256"]
         clean = mask = None
         if case["kind"] != "unpaired":
-            clean_path = corpus_v1.resolve(doc, root, case["clean"])
+            clean_path = corpus_v1.resolve(doc, root, case["clean"],
+                                           allow_custodian=allow_custodian)
             clean, clean_rate, _ = _decode(clean_path)
             if clean_rate != rate or clean.shape != degraded.shape:
                 raise ValueError("clean/degraded misaligned")
             if case.get("mask") is not None:
-                mask_path = corpus_v1.resolve(doc, root, case["mask"])
+                mask_path = corpus_v1.resolve(doc, root, case["mask"],
+                                              allow_custodian=allow_custodian)
                 mask = corpus_synth.decode_mask(mask_path.read_bytes())
             row["clean_sha256"] = case["clean"]["sha256"]
         expected = case.get("expected_input_sdr_db")
@@ -96,18 +99,19 @@ def run_case(doc, root, case, methods, tolerance):
                     m = reconstruction_metrics(clean, cand)
                     entry["fixed_gain_sdr_db"] = m["fixed_gain_sdr_db"]
                     entry["scale_aligned_sdr_db"] = m["scale_aligned_sdr_db"]
+                    entry["gain_to_clean"] = m["gain_to_clean"]
                     entry["masked_fixed_gain_sdr_db"] = _masked_sdr(clean, cand, mask) \
                         if mask is not None else None
                 row["methods"][name] = entry
             except Exception as exc:
                 row["methods"][name] = {"status": "error",
-                                        "error": _clean_error(str(exc))[:300]}
+                                        "error": _clean_error(str(exc), exc)[:300]}
     except Exception as exc:
         row["methods"] = {name: {"status": "error",
-                                 "error": _clean_error(str(exc))[:300]}
+                                 "error": _clean_error(str(exc), exc)[:300]}
                           for name in methods}
         row["status"] = "error"
-        row["error"] = _clean_error(str(exc))[:300]
+        row["error"] = _clean_error(str(exc), exc)[:300]
         return row
     row["status"] = "error" if any(m["status"] == "error" for m in row["methods"].values()) else "ok"
     return row
@@ -140,11 +144,17 @@ def compare_reports(a_rows, b_rows, tolerance):
     return diffs
 
 
-def _clean_error(text):
-    """Strip local absolute paths from error text before it reaches reports."""
+def _clean_error(text, exc=None):
+    """Strip local absolute paths (incl. quoted/spaced) from error text."""
     for prefix in (str(Path.cwd()), str(REPO), str(Path.home())):
         text = text.replace(prefix, ".")
-    return re.sub(r"(?<![\w.])/(?:[\w.\-]+/)+", "/", text)
+    text = re.sub(r"'/[^']*'", "'<path>'", text)          # quoted, maybe spaced
+    text = re.sub(r'"/[^"]*"', '"<path>"', text)
+    text = re.sub(r"(?<![\w.])/[\w.\-]+(?:/[\w.\-]+)*", "<path>", text)
+    text = re.sub(r"/[^\n]*$", "<path>", text, flags=re.M)  # spaced tail to eol
+    if exc is not None:
+        text = f"{type(exc).__name__}: {text}"
+    return text
 
 
 def _safe_argv():
@@ -165,7 +175,8 @@ def _implementation_hashes():
              ("run_benchmark.py", "corpus_v1.py", "corpus_synth.py",
               "bench_declipping.py", "fetch_declipping.py")]
     files += [REPO / "rnext/dsp" / (n + ".py") for n in
-              ("sparse", "predictive", "repair", "selection", "contour", "declip")]
+              ("sparse", "predictive", "repair", "selection", "contour", "declip",
+               "pipeline")]
     files.append(REPO / "rnext/features.py")
     return {str(p.relative_to(REPO)): corpus_v1.digest(p) for p in files if p.exists()}
 
@@ -179,6 +190,8 @@ def main():
     p.add_argument("--methods", default="identity,gain_only,restore")
     p.add_argument("--custodian-release", action="store_true",
                    help="run sealed cases; only valid with custodian approval")
+    p.add_argument("--strict-toolchain", action="store_true",
+                   help="require detected toolchain to equal declared pins exactly")
     args = p.parse_args()
 
     doc = corpus_v1.load(args.manifest)
@@ -187,18 +200,45 @@ def main():
 
     # Sealed cases are partitioned BEFORE any rights/file checks: a mixed
     # manifest must not fail — or leak — on inputs the caller cannot touch.
-    sealed = [c for c in doc.get("cases", []) if c.get("sealed")]
+    # On a sealed tier EVERY case is sealed.
+    def is_sealed(case):
+        return doc.get("tier") == "sealed" or bool(case.get("sealed"))
+    sealed = [c for c in doc.get("cases", []) if is_sealed(c)]
     if doc.get("tier") == "sealed" and not args.custodian_release:
         print("manifest error: sealed manifest requires --custodian-release",
               file=sys.stderr)
         return 2
+    # custodian gate runs before any file bytes are touched
+    if args.custodian_release and sealed:
+        pre = [] if (doc.get("custodian") or {}).get("name") else \
+            ["custodian not appointed"]
+        pre += corpus_v1.pilot_errors(doc.get("pilot"))
+        if pre:
+            for e in pre:
+                print(f"manifest error: {e}", file=sys.stderr)
+            return 2
     view = doc if args.custodian_release else corpus_v1.without_sealed(doc)
     errors = corpus_v1.validate_manifest(view, check_hashes_root=root)
     for case in view.get("cases", []):
         if not corpus_v1.case_allowed(case, args.operation):
             errors.append(f"case {case['id']}: operation '{args.operation}' not permitted")
-    if args.custodian_release and (sealed or doc.get("tier") == "sealed"):
-        errors += corpus_v1.pilot_errors(doc.get("pilot"))
+    try:
+        detected = corpus_v1.actual_toolchain()
+    except Exception as exc:
+        detected, errors = {}, errors + [f"toolchain detection failed: "
+                                         f"{type(exc).__name__}"]
+    for field, declared in (doc.get("toolchain") or {}).items():
+        got = detected.get(field)
+        if got is None:
+            continue
+        if args.strict_toolchain and got != declared:
+            errors.append(f"toolchain.{field}: detected {got} != declared {declared}")
+        elif re.match(r"\d+\.\d+", declared or "") and \
+                re.match(r"\d+\.\d+", got or "") and \
+                re.match(r"\d+\.\d+", declared).group(0) != \
+                re.match(r"\d+\.\d+", got).group(0):
+            errors.append(f"toolchain.{field}: major/minor drift "
+                          f"(declared {declared}, detected {got})")
     if errors:
         for e in errors:
             print(f"manifest error: {e}", file=sys.stderr)
@@ -209,10 +249,6 @@ def main():
     if any(out.iterdir()):
         p.error("output directory must be empty")
 
-    try:
-        detected = corpus_v1.actual_toolchain()
-    except Exception:
-        detected = {}
     toolchain = {"declared": doc.get("toolchain", {}), "detected": detected,
                  "implementation_sha256": _implementation_hashes(),
                  "git_commit": _git_commit(),
@@ -230,8 +266,9 @@ def main():
     rows, sealed_rows = [], []
     for case in sorted(view["cases"], key=lambda c: c["id"]):
         row = run_case(view, root, case, methods,
-                       doc.get("numeric_tolerance", 1e-6))
-        (sealed_rows if case.get("sealed") else rows).append(row)
+                       doc.get("numeric_tolerance", 1e-6),
+                       allow_custodian=args.custodian_release)
+        (sealed_rows if is_sealed(case) else rows).append(row)
         statuses = {k: v["status"] for k, v in row["methods"].items()}
         print(f"{case['id']}: {row['status']} {statuses}", flush=True)
     (out / "results.json").write_text(json.dumps(
