@@ -211,8 +211,12 @@ def test_cli_declip_delivery_contract(tmp_path, monkeypatch):
     rows=json.loads((out/'report.json').read_text())
     row=rows[0]
     assert row['status']=='processed_candidate' and row['mode']=='declip'
-    assert row['delivery_qc']=={'tp_ceiling_dbfs':-1.0,'tp_tolerance_db':0.05,
-                                'tp_measurer':'polyphase_4x'}
+    qc=row['delivery_qc']
+    assert {k:qc[k] for k in ('tp_ceiling_dbfs','tp_tolerance_db','tp_measurer')}=={
+        'tp_ceiling_dbfs':-1.0,'tp_tolerance_db':0.05,'tp_measurer':'polyphase_4x'}
+    assert qc['delivered_tp_dbfs']<=-1.0+0.05 and qc['delivered_clip_samples']==0
+    assert qc['delivered_sha256']==row['output_sha256']
+    assert row['restoration_evidence']['mode']=='declip'
     assert row['encoded_metrics']['tp_dbfs']<=-1.0+0.05
     assert row['source_sha256']==before
     assert hashlib.sha256((src/'track.flac').read_bytes()).hexdigest()==before
@@ -329,6 +333,57 @@ def test_write_error_leaves_no_accepted_artifact(tmp_path):
     finally:
         outdir.chmod(0o755)
     assert leftovers==[]
+
+
+def test_delayed_defect_after_90s_is_detected(tmp_path):
+    """A clip plateau sitting past the old 90 s measurement window must still
+    be found — by the delivery pipeline and by audio_measure alike."""
+    from scripts.restore_per_track import write_24
+    from scripts.restore_safe import process
+    from scripts import audio_measure
+    sr=44100
+    t=np.arange(100*sr)/sr
+    x=np.column_stack([.3*np.sin(2*np.pi*330*t)]*2).astype('float32')
+    # repeated clipped bursts at ~92-96 s, past the old 90 s window
+    for start in range(92*sr,97*sr,sr):
+        tb=np.arange(2000)/sr
+        burst=np.clip(1.2*np.sin(2*np.pi*880*tb),-1.,1.)
+        x[start:start+2000]=np.column_stack([burst]*2)
+    source=tmp_path/'late.flac'
+    write_24(x,sr,source,0)
+    m=audio_measure.analyse(source)
+    assert m['clipped_samples']>0, "defect after 90 s was not measured"
+    report=process(source,tmp_path/'out.flac')
+    assert report['mode']=='declip'
+    assert report['clip_diagnosis']['masked_samples']>0
+
+
+def test_qc_failure_leaves_no_candidate_at_dest(tmp_path, monkeypatch):
+    """A rejected candidate never reaches dest: the delivered file is the
+    byte-for-byte source, and its rejected metrics are quarantined."""
+    from scripts.restore_per_track import write_24
+    from scripts import restore_safe as runner
+    import hashlib
+    sr=44100
+    t=np.arange(sr)/sr
+    x=np.column_stack([.1*np.sin(2*np.pi*440*t)]*2).astype('float32')
+    source,dest=tmp_path/'source.flac',tmp_path/'output.flac'
+    write_24(x,sr,source,1)
+    def proposed(pcm,rate,**options):
+        y=pcm*.5
+        return y, {'status':'processed_candidate','orig':measure(pcm,rate),
+                   'rest':measure(y,rate),'plan':{'target':1.},'violations':[]}
+    monkeypatch.setattr(runner,'select_restoration',proposed)
+    monkeypatch.setattr(runner,'output_violations',
+                        lambda *a,**kw: ['encoded_peak_or_clipping_failure'])
+    report=runner.process(source,dest)
+    assert report['status']=='qc_fallback_original'
+    assert source.read_bytes()==dest.read_bytes()
+    assert 'encoded_metrics' not in report
+    assert report['rejected_candidate_metrics']['tp_dbfs'] is not None
+    qc=report['delivery_qc']
+    assert qc['delivered_sha256']==hashlib.sha256(dest.read_bytes()).hexdigest()
+    assert report['restoration_evidence']['violations']
 
 
 def test_listening_rejects_whole_song_against_excerpt(monkeypatch, tmp_path):

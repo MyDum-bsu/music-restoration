@@ -39,10 +39,14 @@ def ffprobe(path: Path) -> dict:
         return {}
 
 
-def decode(path: Path, max_s: float = 90.0):
-    """Decode to float32; for long files only the beginning (DR over the fragment)."""
+def decode(path: Path, max_s: float | None = None):
+    """Decode to float32. The whole file by default — a defect sitting past a
+    head window must still be found; pass max_s only for deliberate previews."""
     try:
-        x, sr = F.decode_f32(str(path), 0.0, max_s)
+        if max_s is None:
+            x, sr = F.decode_f32(str(path))
+        else:
+            x, sr = F.decode_f32(str(path), 0.0, max_s)
         if x.size == 0:
             x, sr = F.decode_f32(str(path))
         return x, sr

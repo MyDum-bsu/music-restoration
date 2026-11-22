@@ -42,18 +42,15 @@ def _tmp_path(dest):
     return dest.parent / f".{dest.name}.{uuid.uuid4().hex}.tmp"
 
 
-def _encode_atomic(y, sr, dest):
-    """Encode to a unique temp on the same volume, then atomically commit."""
-    tmp = _tmp_path(dest)
-    wav_tmp = tmp.parent / f"__tmp_{uuid.uuid4().hex}.wav"
+def _encode_to(y, sr, path):
+    """Encode to `path` (a staging name); the caller commits via os.replace."""
+    wav_tmp = path.parent / f"__tmp_{uuid.uuid4().hex}.wav"
     try:
         rng = np.random.default_rng(0xC0FFEE)
         dith = rng.random(y.shape) + rng.random(y.shape) - 1.0
         yq = np.clip(np.round(y * 8388608.0 + dith), -8388608, 8388607).astype(np.int32)
-        encode_flac(yq, sr, tmp, wav_tmp, bits=24)
-        os.replace(tmp, dest)
+        encode_flac(yq, sr, path, wav_tmp, bits=24)
     finally:
-        tmp.unlink(missing_ok=True)
         wav_tmp.unlink(missing_ok=True)
 
 
@@ -67,8 +64,8 @@ def _copy_atomic(source, dest):
         tmp.unlink(missing_ok=True)
 
 
-def _encoded_qc(x, y, dest, report, source_sr, ceiling):
-    decoded, out_sr = F.decode_f32(str(dest), strict=True, channels=None)
+def _encoded_qc(x, y, staged, report, source_sr, ceiling):
+    decoded, out_sr = F.decode_f32(str(staged), strict=True, channels=None)
     encoded = measure(decoded, out_sr)
     if report.get("mode") == "declip":
         # Repair may legitimately change source-relative spectrum/DR. Verify
@@ -88,46 +85,62 @@ def _encoded_qc(x, y, dest, report, source_sr, ceiling):
     return encoded, errors
 
 
-def _loudness_pass(x, y, dest, report, sr, ceiling):
-    """Opt-in release loudness: gain under the same effective ceiling, re-encode,
-    then report what was actually achieved. Never adds gain above the TP
-    ceiling and never hides an unreached target behind a valid FLAC."""
+def _loudness_pass(x, y, staged, report, sr, ceiling):
+    """Opt-in release loudness: gain under the same effective ceiling, re-encode
+    on the staging file, then report what was actually achieved. Never adds
+    gain above the TP ceiling and never hides an unreached target behind a
+    valid FLAC."""
     loud = {"requested_lufs": float(report["loudness_target"]),
             "tolerance_lu": LOUDNESS_TOLERANCE_LU,
             "tp_ceiling_dbfs": ceiling}
     report["loudness"] = loud
-    lufs, _tp = audio_measure.lufs_tp(dest)
+    lufs, _tp = audio_measure.lufs_tp(staged)
     if lufs is None:
         loud.update(result="not_measured",
                     reason="lufs_unmeasurable_on_encoded_candidate")
         return y
     loud["pre_gain_lufs"] = lufs
     delta = float(report["loudness_target"]) - lufs
-    if abs(delta) <= LOUDNESS_TOLERANCE_LU:
-        loud.update(result="met", applied_gain_db=0.0, achieved_lufs=lufs)
-        return y
     loud["requested_gain_db"] = round(delta, 2)
+    # Total delivered gain = this pass + the gain the repair already applied
+    # (the declip branch attenuates for headroom by construction).
+    repair_gain = float((report.get("repair") or {}).get("output_gain_db") or 0.0)
+    if abs(delta) <= LOUDNESS_TOLERANCE_LU:
+        loud.update(result="met", applied_gain_db=0.0, achieved_lufs=lufs,
+                    total_applied_gain_db=round(repair_gain, 2))
+        return y
     y2 = limit.limit_track((y * 10 ** (delta / 20.)).astype(np.float32), sr,
                            ceiling_db=ceiling)
-    _encode_atomic(y2, sr, dest)
-    encoded, errors = _encoded_qc(x, y2, dest, report, sr, ceiling)
-    report["encoded_metrics"] = encoded
-    if errors:
-        raise ValueError("loudness pass violated output constraints: "
-                         + ", ".join(errors))
-    achieved, _ = audio_measure.lufs_tp(dest)
-    if achieved is None:
-        loud.update(result="not_measured",
-                    reason="lufs_unmeasurable_after_gain")
-        return y2
-    applied = round(achieved - lufs, 2)
-    loud.update(achieved_lufs=achieved, applied_gain_db=applied)
-    if abs(achieved - float(report["loudness_target"])) <= LOUDNESS_TOLERANCE_LU:
-        loud["result"] = "met"
-    else:
-        loud.update(result="limited_by_peak",
-                    reason=(f"true-peak ceiling {ceiling} dBTP admits "
-                            f"{applied} dB of {round(delta, 2)} dB requested"))
+    staged2 = _tmp_path(staged.with_name(staged.name + ".loud"))
+    try:
+        _encode_to(y2, sr, staged2)
+        encoded, errors = _encoded_qc(x, y2, staged2, report, sr, ceiling)
+        report["encoded_metrics"] = encoded
+        if errors:
+            raise ValueError("loudness pass violated output constraints: "
+                             + ", ".join(errors))
+        achieved, _ = audio_measure.lufs_tp(staged2)
+        if achieved is None:
+            loud.update(result="not_measured",
+                        reason="lufs_unmeasurable_after_gain")
+            return y
+        applied = round(achieved - lufs, 2)
+        loud.update(achieved_lufs=achieved, applied_gain_db=applied,
+                    total_applied_gain_db=round(applied + repair_gain, 2))
+        if abs(achieved - float(report["loudness_target"])) <= LOUDNESS_TOLERANCE_LU:
+            loud["result"] = "met"
+        elif delta > 0 and applied < delta - LOUDNESS_TOLERANCE_LU:
+            loud.update(result="limited_by_peak",
+                        reason=(f"true-peak ceiling {ceiling} dBTP admits "
+                                f"{applied} dB of {round(delta, 2)} dB requested"))
+        else:
+            loud.update(result="not_met",
+                        reason=(f"applied gain {applied} dB was not limited by "
+                                f"the peak ceiling yet achieved {achieved} LUFS, "
+                                f"outside ±{LOUDNESS_TOLERANCE_LU} LU of the target"))
+        os.replace(staged2, staged)
+    finally:
+        staged2.unlink(missing_ok=True)
     return y2
 
 
@@ -170,25 +183,63 @@ def process(source, dest, mode="auto", clip_threshold=None, release_target=None,
     report["delivery_qc"] = {"tp_ceiling_dbfs": ceiling,
                              "tp_tolerance_db": TP_TOLERANCE_DB,
                              "tp_measurer": "polyphase_4x"}
-    if report["status"] == "processed_candidate":
-        _encode_atomic(y, sr, dest)
-        encoded, errors = _encoded_qc(x, y, dest, report, sr, ceiling)
-        report["encoded_metrics"] = encoded
-        if errors:
-            _reject_candidate(report, errors)
-    if report["status"] == "processed_candidate" and loudness_target is not None:
-        report["loudness_target"] = loudness_target
-        try:
-            y = _loudness_pass(x, y, dest, report, sr, ceiling)
-        except ValueError as exc:
-            _reject_candidate(report, str(exc))
-    if report["status"] != "processed_candidate":
-        _copy_atomic(source, dest)
+    # Everything lands on a unique staging name first; `dest` is committed by a
+    # single os.replace only after encode, decode-back QC and the loudness pass
+    # have all succeeded — an interrupted run can never leave an unverified
+    # candidate at the output path.
+    staged = _tmp_path(dest)
+    try:
+        if report["status"] == "processed_candidate":
+            _encode_to(y, sr, staged)
+            encoded, errors = _encoded_qc(x, y, staged, report, sr, ceiling)
+            report["encoded_metrics"] = encoded
+            if errors:
+                report["rejected_candidate_metrics"] = report.pop("encoded_metrics")
+                _reject_candidate(report, errors)
+            elif loudness_target is not None:
+                report["loudness_target"] = loudness_target
+                try:
+                    y = _loudness_pass(x, y, staged, report, sr, ceiling)
+                except ValueError as exc:
+                    rejected = report.pop("encoded_metrics", None)
+                    if rejected is not None:
+                        report["rejected_candidate_metrics"] = rejected
+                    _reject_candidate(report, str(exc))
+        if report["status"] == "processed_candidate":
+            os.replace(staged, dest)
+        else:
+            _copy_atomic(source, dest)
+    finally:
+        staged.unlink(missing_ok=True)
+    # delivery_qc describes the file actually handed over — measured on the
+    # committed output, never on a rejected attempt.
+    delivered, dsr = F.decode_f32(str(dest), strict=True, channels=None)
+    delivered_metrics = measure(delivered, dsr)
+    output_sha256 = _sha256(dest)
+    report["delivery_qc"].update(
+        delivered_tp_dbfs=delivered_metrics["tp_dbfs"],
+        delivered_clip_samples=delivered_metrics["clip_samples"],
+        delivered_dr=delivered_metrics["dr"],
+        delivered_sha256=output_sha256)
+    if (report["status"] != "processed_candidate"
+            and report["orig"]["tp_dbfs"] > ceiling + TP_TOLERANCE_DB):
+        report["delivery_qc"]["source_exceeds_ceiling"] = True
+    # restoration_evidence records the attempt itself: what was tried, why it
+    # was kept or rejected — separate from the delivered-file facts above.
+    evidence = {"mode": report.get("mode"), "chosen": report.get("chosen"),
+                "restoration_state": report.get("restoration_state"),
+                "reason": report.get("reason"),
+                "violations": list(report.get("violations", [])),
+                "repair": report.get("repair"),
+                "rejected_candidate_metrics":
+                    report.get("rejected_candidate_metrics")}
+    report["restoration_evidence"] = {k: v for k, v in evidence.items()
+                                    if v is not None}
     # The output is accepted only together with this report: hash the committed
     # file so a stale/orphan artifact can never pass as the verified result.
     report.update(source=str(source.resolve()), output=str(dest.resolve()),
                   source_sha256=source_sha256,
-                  output_sha256=_sha256(dest),
+                  output_sha256=output_sha256,
                   source_format=info, provenance="not_verified_by_container",
                   output_claim="candidate enhancement; listening evaluation pending")
     if _sha256(source) != source_sha256:
@@ -240,7 +291,7 @@ def main():
         except Exception as exc:
             row = {"source": str(source), "status": "error", "error": str(exc)}
         rows.append(row)
-        tmp = out / "report.json.tmp"
+        tmp = _tmp_path(out / "report.json")
         tmp.write_text(json.dumps(rows, ensure_ascii=False, indent=2, allow_nan=False))
         tmp.replace(out / "report.json")
         print(f"{source.name}: {row['status']}", flush=True)
