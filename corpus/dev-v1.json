@@ -1,0 +1,411 @@
+{
+  "schema": "corpus/v1",
+  "tier": "dev",
+  "dataset_version": "dev-2026-11-23",
+  "toolchain": {
+    "python": ">=3.10",
+    "ffmpeg": "pinned-by-environment",
+    "numpy": ">=1.24",
+    "scipy": ">=1.10",
+    "bits_wav": 16
+  },
+  "rng": {
+    "algorithm": "numpy-pcg64",
+    "seed": 20261123
+  },
+  "numeric_tolerance": 1e-06,
+  "output_ceiling_dbfs": -1.0,
+  "files": [
+    {
+      "path": "dev-clip-train-a-44k.clean.wav",
+      "sha256": "2c71963b94abf6cfc26e3e0c66f75967c3739528f129a9c50ef7075727a4cf9d",
+      "bytes": 1058444
+    },
+    {
+      "path": "dev-clip-train-a-44k.degraded.wav",
+      "sha256": "619d882417bdf76821584feb64f65ac5d99609276c7c15c36f2a4c690356442c",
+      "bytes": 1058444
+    },
+    {
+      "path": "dev-clip-train-a-44k.clean.mask",
+      "sha256": "0bd16dc91aa7e5e8a545b129d438fa35dc4386e828f8b10733a8862ab62c48ce",
+      "bytes": 565
+    },
+    {
+      "path": "dev-clip-train-b-48k.clean.wav",
+      "sha256": "cb09a558b9a03af16d935af1406e0011d2e48901ee196061f402be7f9caa9a9b",
+      "bytes": 1152044
+    },
+    {
+      "path": "dev-clip-train-b-48k.degraded.wav",
+      "sha256": "426462e14a63e9a050d843941c13b3f43f544f582fac8c512f69373de4ca1a25",
+      "bytes": 1152044
+    },
+    {
+      "path": "dev-clip-train-b-48k.clean.mask",
+      "sha256": "ff504def77da9048af89a292adab24fec7f24924aab2cb6107404d69617eb65d",
+      "bytes": 426
+    },
+    {
+      "path": "dev-clip-eval-a-44k.clean.wav",
+      "sha256": "d09522d6bdb9b99e8532deb1b025e0cf53c8366f213fbb7a5df1f464718a6b20",
+      "bytes": 1058444
+    },
+    {
+      "path": "dev-clip-eval-a-44k.degraded.wav",
+      "sha256": "8eedbee05cb66162ceb92eae23463f8ca2f93adb64ae948832a0c149fdc4c165",
+      "bytes": 1058444
+    },
+    {
+      "path": "dev-clip-eval-a-44k.clean.mask",
+      "sha256": "6555c94dba9b3535d2a6ef767f79a78375434efa6aa71db3ed09959b6786efb3",
+      "bytes": 380
+    },
+    {
+      "path": "dev-clip-eval-b-96k.clean.wav",
+      "sha256": "eb0cb8365aa3fac42dda3407b5dae9a8a3454e2f73fd01cfc4026e362000e823",
+      "bytes": 1536044
+    },
+    {
+      "path": "dev-clip-eval-b-96k.degraded.wav",
+      "sha256": "e36b2f5832d113a1d4e7a0c5c0fd319664326d969b5612b25ddb954e8e58bf8a",
+      "bytes": 1536044
+    },
+    {
+      "path": "dev-clip-eval-b-96k.clean.mask",
+      "sha256": "23fb0ba65da2350e85b96a10ea45d41c88689bf55839b8e109fe55950a4dab73",
+      "bytes": 215
+    },
+    {
+      "path": "dev-clean-control-48k.clean.wav",
+      "sha256": "ec0ed0dfb7c93bdbe376e519921adfbba9b0e50c39114ae3de0ce84da53fa1b1",
+      "bytes": 960044
+    },
+    {
+      "path": "dev-clean-control-48k.degraded.wav",
+      "sha256": "ec0ed0dfb7c93bdbe376e519921adfbba9b0e50c39114ae3de0ce84da53fa1b1",
+      "bytes": 960044
+    },
+    {
+      "path": "dev-clean-control-48k.clean.mask",
+      "sha256": "817cc328552e64260b15cfdb1f030e0061a945b2109bd1546676890ef8a78aca",
+      "bytes": 40
+    },
+    {
+      "path": "dev-intentional-control-44k.clean.wav",
+      "sha256": "ba6ca632e192e42c77f63552a7c26a9f9a9693d6c23cbf2120e7112d9945e894",
+      "bytes": 882044
+    },
+    {
+      "path": "dev-intentional-control-44k.degraded.wav",
+      "sha256": "290145b83e1ac2b97239289b1bb56f950a81def8faccb58ffac86ddeacc77080",
+      "bytes": 882044
+    },
+    {
+      "path": "dev-intentional-control-44k.clean.mask",
+      "sha256": "7dbfe1f94b597837baca3a1668a68e15ff360c20f96955b244cfc25ccf49f3f7",
+      "bytes": 40
+    }
+  ],
+  "cases": [
+    {
+      "id": "dev-clip-train-a-44k",
+      "kind": "paired_synthetic",
+      "profile": "dense_sub_full_scale",
+      "rate": 44100,
+      "channels": 2,
+      "mode": "auto",
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-dev-0",
+        "fingerprint": "fp-dev-0",
+        "session": "ses-dev-0",
+        "artist": "dev-artist-0",
+        "album": "dev-album-0",
+        "stem_family": null
+      },
+      "clean": {
+        "path": "dev-clip-train-a-44k.clean.wav",
+        "sha256": "2c71963b94abf6cfc26e3e0c66f75967c3739528f129a9c50ef7075727a4cf9d",
+        "bytes": 1058444
+      },
+      "degraded": {
+        "path": "dev-clip-train-a-44k.degraded.wav",
+        "sha256": "619d882417bdf76821584feb64f65ac5d99609276c7c15c36f2a4c690356442c",
+        "bytes": 1058444
+      },
+      "synthesis": {
+        "generator": "synth/v1",
+        "seed": 201,
+        "rate": 44100,
+        "seconds": 6,
+        "operator": "hard_clip",
+        "bits": 16,
+        "threshold_dbfs": -4.0
+      },
+      "split": "train",
+      "mask": {
+        "path": "dev-clip-train-a-44k.clean.mask",
+        "sha256": "0bd16dc91aa7e5e8a545b129d438fa35dc4386e828f8b10733a8862ab62c48ce",
+        "bytes": 565
+      }
+    },
+    {
+      "id": "dev-clip-train-b-48k",
+      "kind": "paired_synthetic",
+      "profile": "rare_asymmetric_sub_full_scale",
+      "rate": 48000,
+      "channels": 2,
+      "mode": "auto",
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-dev-1",
+        "fingerprint": "fp-dev-1",
+        "session": "ses-dev-1",
+        "artist": "dev-artist-1",
+        "album": "dev-album-0",
+        "stem_family": null
+      },
+      "clean": {
+        "path": "dev-clip-train-b-48k.clean.wav",
+        "sha256": "cb09a558b9a03af16d935af1406e0011d2e48901ee196061f402be7f9caa9a9b",
+        "bytes": 1152044
+      },
+      "degraded": {
+        "path": "dev-clip-train-b-48k.degraded.wav",
+        "sha256": "426462e14a63e9a050d843941c13b3f43f544f582fac8c512f69373de4ca1a25",
+        "bytes": 1152044
+      },
+      "synthesis": {
+        "generator": "synth/v1",
+        "seed": 202,
+        "rate": 48000,
+        "seconds": 6,
+        "operator": "hard_clip",
+        "bits": 16,
+        "threshold_dbfs": -1.5,
+        "pos_scale": 0.75
+      },
+      "split": "train",
+      "mask": {
+        "path": "dev-clip-train-b-48k.clean.mask",
+        "sha256": "ff504def77da9048af89a292adab24fec7f24924aab2cb6107404d69617eb65d",
+        "bytes": 426
+      }
+    },
+    {
+      "id": "dev-clip-eval-a-44k",
+      "kind": "paired_synthetic",
+      "profile": "dithered_clip",
+      "rate": 44100,
+      "channels": 2,
+      "mode": "auto",
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-dev-2",
+        "fingerprint": "fp-dev-2",
+        "session": "ses-dev-2",
+        "artist": "dev-artist-2",
+        "album": "dev-album-1",
+        "stem_family": null
+      },
+      "clean": {
+        "path": "dev-clip-eval-a-44k.clean.wav",
+        "sha256": "d09522d6bdb9b99e8532deb1b025e0cf53c8366f213fbb7a5df1f464718a6b20",
+        "bytes": 1058444
+      },
+      "degraded": {
+        "path": "dev-clip-eval-a-44k.degraded.wav",
+        "sha256": "8eedbee05cb66162ceb92eae23463f8ca2f93adb64ae948832a0c149fdc4c165",
+        "bytes": 1058444
+      },
+      "synthesis": {
+        "generator": "synth/v1",
+        "seed": 203,
+        "rate": 44100,
+        "seconds": 6,
+        "operator": "hard_clip",
+        "bits": 16,
+        "threshold_dbfs": -3.0,
+        "dither": true
+      },
+      "split": "eval",
+      "mask": {
+        "path": "dev-clip-eval-a-44k.clean.mask",
+        "sha256": "6555c94dba9b3535d2a6ef767f79a78375434efa6aa71db3ed09959b6786efb3",
+        "bytes": 380
+      }
+    },
+    {
+      "id": "dev-clip-eval-b-96k",
+      "kind": "paired_synthetic",
+      "profile": "quiet_tail",
+      "rate": 96000,
+      "channels": 2,
+      "mode": "auto",
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-dev-3",
+        "fingerprint": "fp-dev-3",
+        "session": "ses-dev-3",
+        "artist": "dev-artist-3",
+        "album": "dev-album-1",
+        "stem_family": null
+      },
+      "clean": {
+        "path": "dev-clip-eval-b-96k.clean.wav",
+        "sha256": "eb0cb8365aa3fac42dda3407b5dae9a8a3454e2f73fd01cfc4026e362000e823",
+        "bytes": 1536044
+      },
+      "degraded": {
+        "path": "dev-clip-eval-b-96k.degraded.wav",
+        "sha256": "e36b2f5832d113a1d4e7a0c5c0fd319664326d969b5612b25ddb954e8e58bf8a",
+        "bytes": 1536044
+      },
+      "synthesis": {
+        "generator": "synth/v1",
+        "seed": 204,
+        "rate": 96000,
+        "seconds": 4,
+        "operator": "hard_clip",
+        "bits": 16,
+        "threshold_dbfs": -2.0,
+        "quiet_tail": true
+      },
+      "split": "eval",
+      "mask": {
+        "path": "dev-clip-eval-b-96k.clean.mask",
+        "sha256": "23fb0ba65da2350e85b96a10ea45d41c88689bf55839b8e109fe55950a4dab73",
+        "bytes": 215
+      }
+    },
+    {
+      "id": "dev-clean-control-48k",
+      "kind": "paired_synthetic",
+      "profile": "clean_control",
+      "rate": 48000,
+      "channels": 2,
+      "mode": "auto",
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-dev-4",
+        "fingerprint": "fp-dev-4",
+        "session": "ses-dev-4",
+        "artist": "dev-artist-4",
+        "album": "dev-album-2",
+        "stem_family": null
+      },
+      "clean": {
+        "path": "dev-clean-control-48k.clean.wav",
+        "sha256": "ec0ed0dfb7c93bdbe376e519921adfbba9b0e50c39114ae3de0ce84da53fa1b1",
+        "bytes": 960044
+      },
+      "degraded": {
+        "path": "dev-clean-control-48k.degraded.wav",
+        "sha256": "ec0ed0dfb7c93bdbe376e519921adfbba9b0e50c39114ae3de0ce84da53fa1b1",
+        "bytes": 960044
+      },
+      "synthesis": {
+        "generator": "synth/v1",
+        "seed": 205,
+        "rate": 48000,
+        "seconds": 5,
+        "operator": "clean",
+        "bits": 16
+      },
+      "split": "control",
+      "mask": {
+        "path": "dev-clean-control-48k.clean.mask",
+        "sha256": "817cc328552e64260b15cfdb1f030e0061a945b2109bd1546676890ef8a78aca",
+        "bytes": 40
+      }
+    },
+    {
+      "id": "dev-intentional-control-44k",
+      "kind": "paired_synthetic",
+      "profile": "intentional_control",
+      "rate": 44100,
+      "channels": 2,
+      "mode": "auto",
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-dev-5",
+        "fingerprint": "fp-dev-5",
+        "session": "ses-dev-5",
+        "artist": "dev-artist-5",
+        "album": "dev-album-2",
+        "stem_family": null
+      },
+      "clean": {
+        "path": "dev-intentional-control-44k.clean.wav",
+        "sha256": "ba6ca632e192e42c77f63552a7c26a9f9a9693d6c23cbf2120e7112d9945e894",
+        "bytes": 882044
+      },
+      "degraded": {
+        "path": "dev-intentional-control-44k.degraded.wav",
+        "sha256": "290145b83e1ac2b97239289b1bb56f950a81def8faccb58ffac86ddeacc77080",
+        "bytes": 882044
+      },
+      "synthesis": {
+        "generator": "synth/v1",
+        "seed": 206,
+        "rate": 44100,
+        "seconds": 5,
+        "operator": "intentional_saturation",
+        "bits": 16,
+        "drive": 4.0
+      },
+      "split": "control",
+      "mask": {
+        "path": "dev-intentional-control-44k.clean.mask",
+        "sha256": "7dbfe1f94b597837baca3a1668a68e15ff360c20f96955b244cfc25ccf49f3f7",
+        "bytes": 40
+      }
+    }
+  ],
+  "pilot": {
+    "sample_size": null,
+    "gate_margin_sdr_db": null,
+    "gate_margin_vs_external_db": null,
+    "min_coverage": null,
+    "cpu_p95_s_per_audio_min": null,
+    "rss_mb_p95": null,
+    "registered_at": null
+  }
+}
