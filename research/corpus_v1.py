@@ -159,6 +159,15 @@ def validate_manifest(doc, check_hashes_root=None):
     paths = [f["path"] for f in doc.get("files", [])]
     if len(paths) != len(set(paths)):
         errors.append("duplicate paths in files[]")
+    for f in doc.get("files", []):
+        where = f"files[{f.get('path', '?')}]"
+        if f.get("sha256") is not None and \
+                (not isinstance(f["sha256"], str) or not _SHA256.fullmatch(f["sha256"])):
+            errors.append(f"{where}: sha256 must be 64 lowercase hex chars")
+        if f.get("bytes") is not None and \
+                (not isinstance(f["bytes"], int) or isinstance(f["bytes"], bool)
+                 or f["bytes"] <= 0):
+            errors.append(f"{where}: bytes must be a positive int")
 
     cases = doc.get("cases", [])
     ids = [c.get("id", "?") for c in cases]

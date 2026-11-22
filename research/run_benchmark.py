@@ -204,7 +204,7 @@ def _implementation_hashes():
 
 
 def main():
-    p = argparse.ArgumentParser(description=__doc__)
+    p = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     p.add_argument("--manifest", required=True)
     p.add_argument("--audio-root", required=True)
     p.add_argument("--out", required=True)

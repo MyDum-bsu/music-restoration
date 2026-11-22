@@ -175,19 +175,26 @@ def main():
     args = p.parse_args()
     root = Path(args.root)
     root.mkdir(parents=True, exist_ok=True)
-    docs = [build_synth_tier("smoke", "smoke-2026-11-23", smoke_cases(), root),
-            build_synth_tier("dev", "dev-2026-11-23", dev_cases(), root,
+    smoke, dev, sealed = smoke_cases(), dev_cases(), sealed_doc()
+    # group leakage is checked on case metadata BEFORE any audio bytes are
+    # written — a colliding build must not overwrite existing corpus files
+    stubs = [{"tier": "smoke", "dataset_version": "smoke-2026-11-23",
+              "cases": smoke},
+             {"tier": "dev", "dataset_version": "dev-2026-11-23", "cases": dev},
+             sealed]
+    leaks = corpus_v1.validate_cross_manifest_leakage(stubs)
+    for e in leaks:
+        print(f"cross-manifest group leakage: {e}", file=sys.stderr)
+    if leaks:
+        raise SystemExit(1)  # refuse to write colliding manifests/audio
+    docs = [build_synth_tier("smoke", "smoke-2026-11-23", smoke, root),
+            build_synth_tier("dev", "dev-2026-11-23", dev, root,
                              pilot={"sample_size": None, "gate_margin_sdr_db": None,
                                     "gate_margin_vs_external_db": None,
                                     "min_coverage": None,
                                     "cpu_p95_s_per_audio_min": None,
                                     "rss_mb_p95": None, "registered_at": None}),
-            sealed_doc()]
-    leaks = corpus_v1.validate_cross_manifest_leakage(docs)
-    for e in leaks:
-        print(f"cross-manifest group leakage: {e}", file=sys.stderr)
-    if leaks:
-        raise SystemExit(1)  # refuse to write colliding manifests
+            sealed]
     for doc in docs:
         target = root / f"{doc['tier']}-v1.json"
         target.write_text(json.dumps(doc, indent=2) + "\n")
