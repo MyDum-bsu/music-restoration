@@ -158,15 +158,25 @@ def _clean_error(text, exc=None):
 
 
 _SAFE_ARGV_VALUE = re.compile(r"[A-Za-z0-9_,+-]+")
+_PATH_FLAGS = {"--manifest", "--audio-root", "--out", "--check-against",
+               "--custodian-root"}
 
 
 def _safe_argv():
-    """Flags plus safe enum values only — no paths, no filenames."""
-    out = []
+    """Flags plus safe enum values only — path-flag values are redacted."""
+    out, redact_next = [], False
     for a in sys.argv:
+        if redact_next:
+            out.append("<redacted>")
+            redact_next = False
+            continue
         if a.startswith("--"):
             flag, _, value = a.partition("=")
             out.append(flag)
+            if flag in _PATH_FLAGS:
+                if not value:
+                    redact_next = True  # next token is this flag's path value
+                continue
             if value and _SAFE_ARGV_VALUE.fullmatch(value):
                 out.append(value)
         elif "/" not in a and _SAFE_ARGV_VALUE.fullmatch(a):
@@ -233,14 +243,19 @@ def main():
                 print(f"manifest error: {e}", file=sys.stderr)
             return 2
     view = doc if args.custodian_release else corpus_v1.without_sealed(doc)
-    # operation rights are checked before any file bytes are touched
+    # operation rights are checked before any file bytes are touched; a
+    # rights denial exits immediately — verify_files() must never run
     errors = []
     for case in view.get("cases", []):
         if not corpus_v1.case_allowed(case, args.operation):
             errors.append(f"case {case['id']}: operation '{args.operation}' not permitted")
+    if errors:
+        for e in errors:
+            print(f"manifest error: {e}", file=sys.stderr)
+        return 2
     if args.check_against:
         others = [corpus_v1.load(m) for m in args.check_against]
-        errors += corpus_v1.validate_cross_manifest_leakage([view, *others])
+        errors = corpus_v1.validate_cross_manifest_leakage([view, *others])
     errors += corpus_v1.validate_manifest(view, check_hashes_root=root)
     try:
         detected = corpus_v1.actual_toolchain()

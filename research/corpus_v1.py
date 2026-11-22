@@ -120,11 +120,17 @@ def _check_spec(spec, idx, where, errors):
     if entry is None:
         errors.append(f"{where}: '{spec['path']}' not declared in files[]")
     else:
-        # filled fields must agree with files[] even for custodian-held inputs
-        if spec["sha256"] is not None and entry["sha256"] != spec["sha256"]:
-            errors.append(f"{where}: spec for '{spec['path']}' disagrees with files[]")
-        if spec["bytes"] is not None and entry["bytes"] != spec["bytes"]:
-            errors.append(f"{where}: spec for '{spec['path']}' disagrees with files[]")
+        if _held(entry) != _held(spec):
+            errors.append(f"{where}: held_by disagrees with files[]")
+        # filled fields must agree with files[] even for custodian-held inputs;
+        # a pin present in files[] but missing from the spec is an error too
+        for field in ("sha256", "bytes"):
+            if entry[field] is not None and spec[field] is None:
+                errors.append(f"{where}: '{field}' pinned in files[] but "
+                              f"missing from spec")
+            elif spec[field] is not None and entry[field] != spec[field]:
+                errors.append(f"{where}: spec for '{spec['path']}' disagrees "
+                              f"with files[]")
     if held:
         return  # custodian-held bytes: content checked by custodian, not here
     if spec["sha256"] is None or spec["bytes"] is None:

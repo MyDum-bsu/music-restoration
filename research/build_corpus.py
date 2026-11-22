@@ -183,6 +183,11 @@ def main():
                                     "cpu_p95_s_per_audio_min": None,
                                     "rss_mb_p95": None, "registered_at": None}),
             sealed_doc()]
+    leaks = corpus_v1.validate_cross_manifest_leakage(docs)
+    for e in leaks:
+        print(f"cross-manifest group leakage: {e}", file=sys.stderr)
+    if leaks:
+        raise SystemExit(1)  # refuse to write colliding manifests
     for doc in docs:
         target = root / f"{doc['tier']}-v1.json"
         target.write_text(json.dumps(doc, indent=2) + "\n")
@@ -192,10 +197,6 @@ def main():
               f"validation errors: {len(errors)}")
         for e in errors:
             print(f"  {e}")
-    leaks = corpus_v1.validate_cross_manifest_leakage(docs)
-    print(f"cross-manifest group leakage: {len(leaks)}")
-    for e in leaks:
-        print(f"  {e}")
 
 
 if __name__ == "__main__":
