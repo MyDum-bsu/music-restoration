@@ -17,11 +17,11 @@
     "voice_manifest_path": "corpus/dev-e8-voice-v1.json",
     "voice_manifest_sha256": "fbc22f9a2a4f6937d890485a8b78ea67fa3d8700a9658dd8b527d47188d51eec",
     "voice_evaluator_path": "research/e8_voice_eval.py",
-    "voice_evaluator_sha256": "876e3985bda5b1cbd48013c71accafe02607ecd925a3f81680f308269bf58104",
+    "voice_evaluator_sha256": "447a9a87f40d3734cc8a75aca2b6e6af10fa1511ec76a66aea295f16239f9052",
     "stems_manifest_path": "corpus/dev-e8-stems-v1.json",
     "stems_manifest_sha256": "b6e3ce4c623a355c0e9f5bb2ec6d0090547778442592428eb83812700ae63c07",
     "stems_evaluator_path": "research/e8_stems_eval.py",
-    "stems_evaluator_sha256": "1c0fd80b587118f8e824cf5d88f0a8ed915a1cc109beead180163fed5c2251ec"
+    "stems_evaluator_sha256": "d20905071c654b017427e16cea8d4b2ffff45752744fc652b280a75f50ca14a0"
   },
   "go_no_go_decisions": {
     "go_no_go_1_voice": {
@@ -41,6 +41,7 @@
       ],
       "external_blockers": [
         "no_local_licensed_voice_weights_deepfilternet_sgmse_flow",
+        "unverified_checkpoint_licenses_and_sha256",
         "no_local_cuda_gpu",
         "colab_connection_not_authorized_or_configured"
       ]
@@ -63,6 +64,7 @@
       ],
       "external_blockers": [
         "no_local_licensed_stem_weights_htdemucs_scnet_bsroformer",
+        "unverified_checkpoint_licenses_and_sha256",
         "no_local_cuda_gpu",
         "colab_connection_not_authorized_or_configured"
       ]
@@ -89,7 +91,7 @@
       "manifest_path": "corpus/dev-e8-voice-v1.json",
       "manifest_sha256": "fbc22f9a2a4f6937d890485a8b78ea67fa3d8700a9658dd8b527d47188d51eec",
       "evaluator_path": "research/e8_voice_eval.py",
-      "evaluator_sha256": "876e3985bda5b1cbd48013c71accafe02607ecd925a3f81680f308269bf58104"
+      "evaluator_sha256": "447a9a87f40d3734cc8a75aca2b6e6af10fa1511ec76a66aea295f16239f9052"
     },
     "invariants": {
       "total_runs": 45,
@@ -107,6 +109,7 @@
       "production_dependency_added": false,
       "blocked_reasons": [
         "no_local_licensed_voice_weights_deepfilternet_sgmse_flow",
+        "unverified_checkpoint_licenses_and_sha256",
         "no_local_cuda_gpu",
         "colab_connection_not_authorized_or_configured"
       ],
@@ -136,6 +139,14 @@
         {
           "id": "deepfilternet3",
           "status": "blocked_external_weights_or_colab",
+          "local_weights_found": [],
+          "license_verified": false,
+          "blocked_reasons": [
+            "no_local_weights_for_deepfilternet3",
+            "unverified_checkpoint_license_and_sha256_for_deepfilternet3",
+            "no_local_cuda_gpu",
+            "colab_connection_not_authorized_or_configured"
+          ],
           "version_pin": "DeepFilterNet 0.5.6 (DeepFilterNet3 48 kHz)",
           "license": "MIT / Apache-2.0 dual-licensed",
           "colab_budget_estimate": "T4/L4 GPU (~1-2 GB VRAM, ~1-3 s/min audio; also CPU-capable after weight audit)",
@@ -144,6 +155,14 @@
         {
           "id": "sgmse_plus",
           "status": "blocked_external_weights_or_colab",
+          "local_weights_found": [],
+          "license_verified": false,
+          "blocked_reasons": [
+            "no_local_weights_for_sgmse_plus",
+            "unverified_checkpoint_license_and_sha256_for_sgmse_plus",
+            "no_local_cuda_gpu",
+            "colab_connection_not_authorized_or_configured"
+          ],
           "version_pin": "SGMSE+ (Richter et al. 2023, score-based diffusion)",
           "license": "MIT (verify checkpoint release terms)",
           "colab_budget_estimate": "T4/L4 GPU (~4-6 GB VRAM, ~15-40 s/min audio for 30-step reverse SDE)",
@@ -152,6 +171,14 @@
         {
           "id": "flow_matching_speech",
           "status": "blocked_external_weights_or_colab",
+          "local_weights_found": [],
+          "license_verified": false,
+          "blocked_reasons": [
+            "no_local_weights_for_flow_matching_speech",
+            "unverified_checkpoint_license_and_sha256_for_flow_matching_speech",
+            "no_local_cuda_gpu",
+            "colab_connection_not_authorized_or_configured"
+          ],
           "version_pin": "FlowSE / conditional flow-matching speech restoration (pin commit + SHA-256)",
           "license": "Verify repository & checkpoint SPDX before download",
           "colab_budget_estimate": "T4/L4 GPU (~4-8 GB VRAM, ~8-20 s/min audio for 5-10 ODE steps)",
@@ -211,6 +238,7 @@
       ],
       "external_blockers": [
         "no_local_licensed_voice_weights_deepfilternet_sgmse_flow",
+        "unverified_checkpoint_licenses_and_sha256",
         "no_local_cuda_gpu",
         "colab_connection_not_authorized_or_configured"
       ]
@@ -235,7 +263,7 @@
           "mean_syllable_env_corr_out": 0.7308063035576705,
           "mean_delta_syllable_env_corr": 0.0,
           "max_clean_control_err": null,
-          "mean_wall_s_per_audio_min": 0.001211896538734436
+          "mean_wall_s_per_audio_min": 0.0003419443964958191
         },
         "wpe_dereverb_cpu": {
           "n_cases": 3,
@@ -255,7 +283,7 @@
           "mean_syllable_env_corr_out": 0.7810918168039667,
           "mean_delta_syllable_env_corr": 0.05028551324629601,
           "max_clean_control_err": null,
-          "mean_wall_s_per_audio_min": 2.9997394480742514
+          "mean_wall_s_per_audio_min": 2.2058640886098146
         },
         "spectral_speech_enhancer_cpu": {
           "n_cases": 3,
@@ -275,7 +303,7 @@
           "mean_syllable_env_corr_out": 0.7312013495638805,
           "mean_delta_syllable_env_corr": 0.00039504600620987596,
           "max_clean_control_err": null,
-          "mean_wall_s_per_audio_min": 0.43480060808360577
+          "mean_wall_s_per_audio_min": 0.31651040026918054
         }
       },
       "noise_only": {
@@ -297,7 +325,7 @@
           "mean_syllable_env_corr_out": 0.9945455871413751,
           "mean_delta_syllable_env_corr": 0.0,
           "max_clean_control_err": null,
-          "mean_wall_s_per_audio_min": 0.0012018480338156223
+          "mean_wall_s_per_audio_min": 0.00043861567974090576
         },
         "wpe_dereverb_cpu": {
           "n_cases": 3,
@@ -317,7 +345,7 @@
           "mean_syllable_env_corr_out": 0.9882573037303946,
           "mean_delta_syllable_env_corr": -0.006288283410980496,
           "max_clean_control_err": null,
-          "mean_wall_s_per_audio_min": 2.960351231507957
+          "mean_wall_s_per_audio_min": 2.1803861437365413
         },
         "spectral_speech_enhancer_cpu": {
           "n_cases": 3,
@@ -337,7 +365,7 @@
           "mean_syllable_env_corr_out": 0.9965307425266711,
           "mean_delta_syllable_env_corr": 0.001985155385296015,
           "max_clean_control_err": null,
-          "mean_wall_s_per_audio_min": 0.5309805679135025
+          "mean_wall_s_per_audio_min": 0.3270554719492793
         }
       },
       "reverb_plus_noise": {
@@ -359,7 +387,7 @@
           "mean_syllable_env_corr_out": 0.8178956043836269,
           "mean_delta_syllable_env_corr": 0.0,
           "max_clean_control_err": null,
-          "mean_wall_s_per_audio_min": 0.0004190560430288315
+          "mean_wall_s_per_audio_min": 0.00045033637434244156
         },
         "wpe_dereverb_cpu": {
           "n_cases": 3,
@@ -379,7 +407,7 @@
           "mean_syllable_env_corr_out": 0.8447959385469516,
           "mean_delta_syllable_env_corr": 0.02690033416332464,
           "max_clean_control_err": null,
-          "mean_wall_s_per_audio_min": 2.7840952635742724
+          "mean_wall_s_per_audio_min": 2.180725864134729
         },
         "spectral_speech_enhancer_cpu": {
           "n_cases": 3,
@@ -399,7 +427,7 @@
           "mean_syllable_env_corr_out": 0.8171364651842223,
           "mean_delta_syllable_env_corr": -0.0007591391994045867,
           "max_clean_control_err": null,
-          "mean_wall_s_per_audio_min": 0.4180753598921001
+          "mean_wall_s_per_audio_min": 0.32663752837106586
         }
       },
       "clean_voice_control": {
@@ -421,7 +449,7 @@
           "mean_syllable_env_corr_out": 1.0,
           "mean_delta_syllable_env_corr": 0.0,
           "max_clean_control_err": 0.0,
-          "mean_wall_s_per_audio_min": 0.0006224317476153374
+          "mean_wall_s_per_audio_min": 0.000558735802769661
         },
         "wpe_dereverb_cpu": {
           "n_cases": 3,
@@ -441,7 +469,7 @@
           "mean_syllable_env_corr_out": 1.0,
           "mean_delta_syllable_env_corr": 0.0,
           "max_clean_control_err": 0.0,
-          "mean_wall_s_per_audio_min": 0.03358292020857334
+          "mean_wall_s_per_audio_min": 0.027023392729461193
         },
         "spectral_speech_enhancer_cpu": {
           "n_cases": 3,
@@ -461,7 +489,7 @@
           "mean_syllable_env_corr_out": 1.0,
           "mean_delta_syllable_env_corr": 0.0,
           "max_clean_control_err": 0.0,
-          "mean_wall_s_per_audio_min": 0.03351363120600581
+          "mean_wall_s_per_audio_min": 0.026746264193207026
         }
       },
       "ood_voice": {
@@ -483,7 +511,7 @@
           "mean_syllable_env_corr_out": 0.7036243948334523,
           "mean_delta_syllable_env_corr": 0.0,
           "max_clean_control_err": null,
-          "mean_wall_s_per_audio_min": 0.00038385624065995216
+          "mean_wall_s_per_audio_min": 0.0003743516281247139
         },
         "wpe_dereverb_cpu": {
           "n_cases": 3,
@@ -503,7 +531,7 @@
           "mean_syllable_env_corr_out": 0.7730260491701081,
           "mean_delta_syllable_env_corr": 0.06940165433665561,
           "max_clean_control_err": null,
-          "mean_wall_s_per_audio_min": 2.7563477917574346
+          "mean_wall_s_per_audio_min": 2.233679199591279
         },
         "spectral_speech_enhancer_cpu": {
           "n_cases": 3,
@@ -523,7 +551,7 @@
           "mean_syllable_env_corr_out": 0.7005694522173286,
           "mean_delta_syllable_env_corr": -0.0030549426161237867,
           "max_clean_control_err": null,
-          "mean_wall_s_per_audio_min": 0.3685930003412068
+          "mean_wall_s_per_audio_min": 0.3642344959080219
         }
       }
     },
@@ -560,9 +588,11 @@
             "syllable_env_corr_out": 0.9089470837375511,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 4.930800059810281e-05,
-            "wall_s_per_audio_min": 0.0011833920143544674
+            "wall_s": 1.8647988326847553e-05,
+            "wall_s_per_audio_min": 0.0004475517198443413
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -584,9 +614,11 @@
             "syllable_env_corr_out": 0.9106749080614481,
             "delta_syllable_env_corr": 0.0017278243238970648,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.13830779399722815,
-            "wall_s_per_audio_min": 3.3193870559334755
+            "wall_s": 0.08652180602075532,
+            "wall_s_per_audio_min": 2.0765233444981277
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -608,9 +640,11 @@
             "syllable_env_corr_out": 0.9091035613738582,
             "delta_syllable_env_corr": 0.00015647763630710632,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.0189878559904173,
-            "wall_s_per_audio_min": 0.45570854377001524
+            "wall_s": 0.013729188009165227,
+            "wall_s_per_audio_min": 0.32950051221996546
           }
         }
       },
@@ -646,9 +680,11 @@
             "syllable_env_corr_out": 0.6608681520807294,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 5.070504266768694e-05,
-            "wall_s_per_audio_min": 0.0012169210240244865
+            "wall_s": 1.1663010809570551e-05,
+            "wall_s_per_audio_min": 0.0002799122594296932
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -670,9 +706,11 @@
             "syllable_env_corr_out": 0.7138277910989449,
             "delta_syllable_env_corr": 0.05295963901821554,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.11747302900766954,
-            "wall_s_per_audio_min": 2.819352696184069
+            "wall_s": 0.10209106002002954,
+            "wall_s_per_audio_min": 2.450185440480709
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -694,9 +732,11 @@
             "syllable_env_corr_out": 0.6617608648030661,
             "delta_syllable_env_corr": 0.0008927127223367082,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.018082423019222915,
-            "wall_s_per_audio_min": 0.43397815246134996
+            "wall_s": 0.012918109016027302,
+            "wall_s_per_audio_min": 0.31003461638465524
           }
         }
       },
@@ -732,9 +772,11 @@
             "syllable_env_corr_out": 0.6226036748547313,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 5.147402407601476e-05,
-            "wall_s_per_audio_min": 0.0012353765778243542
+            "wall_s": 1.2432050425559282e-05,
+            "wall_s_per_audio_min": 0.0002983692102134228
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -756,9 +798,11 @@
             "syllable_env_corr_out": 0.7187727512515067,
             "delta_syllable_env_corr": 0.09616907639677541,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.11918660800438374,
-            "wall_s_per_audio_min": 2.86047859210521
+            "wall_s": 0.08712014503544196,
+            "wall_s_per_audio_min": 2.090883480850607
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -780,9 +824,11 @@
             "syllable_env_corr_out": 0.6227396225147172,
             "delta_syllable_env_corr": 0.00013594765998581337,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.017279797000810504,
-            "wall_s_per_audio_min": 0.4147151280194521
+            "wall_s": 0.012916503008455038,
+            "wall_s_per_audio_min": 0.3099960722029209
           }
         }
       },
@@ -818,9 +864,11 @@
             "syllable_env_corr_out": 0.998754060933161,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 4.1556020732969046e-05,
-            "wall_s_per_audio_min": 0.000997344497591257
+            "wall_s": 1.3968965504318476e-05,
+            "wall_s_per_audio_min": 0.0003352551721036434
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -842,9 +890,11 @@
             "syllable_env_corr_out": 0.9941149144969066,
             "delta_syllable_env_corr": -0.004639146436254404,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.13895613799104467,
-            "wall_s_per_audio_min": 3.334947311785072
+            "wall_s": 0.08762238099006936,
+            "wall_s_per_audio_min": 2.1029371437616646
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -866,9 +916,11 @@
             "syllable_env_corr_out": 0.9991380172298359,
             "delta_syllable_env_corr": 0.00038395629667486997,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.02653730899328366,
-            "wall_s_per_audio_min": 0.6368954158388078
+            "wall_s": 0.01313385198591277,
+            "wall_s_per_audio_min": 0.3152124476619065
           }
         }
       },
@@ -904,9 +956,11 @@
             "syllable_env_corr_out": 0.9977312306369112,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 7.151899626478553e-05,
-            "wall_s_per_audio_min": 0.0017164559103548527
+            "wall_s": 2.6609981432557106e-05,
+            "wall_s_per_audio_min": 0.0006386395543813705
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -928,9 +982,11 @@
             "syllable_env_corr_out": 0.9874391627921939,
             "delta_syllable_env_corr": -0.010292067844717256,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.12765706796199083,
-            "wall_s_per_audio_min": 3.06376963108778
+            "wall_s": 0.09382270398782566,
+            "wall_s_per_audio_min": 2.251744895707816
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -952,9 +1008,11 @@
             "syllable_env_corr_out": 0.9982304512654249,
             "delta_syllable_env_corr": 0.000499220628513708,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.025039542990271002,
-            "wall_s_per_audio_min": 0.600949031766504
+            "wall_s": 0.01399640500312671,
+            "wall_s_per_audio_min": 0.33591372007504106
           }
         }
       },
@@ -990,9 +1048,11 @@
             "syllable_env_corr_out": 0.987151469854053,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 3.715598722919822e-05,
-            "wall_s_per_audio_min": 0.0008917436935007572
+            "wall_s": 1.4248013030737638e-05,
+            "wall_s_per_audio_min": 0.0003419523127377033
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -1014,9 +1074,11 @@
             "syllable_env_corr_out": 0.9832178339020832,
             "delta_syllable_env_corr": -0.003933635951969827,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.10343069798545912,
-            "wall_s_per_audio_min": 2.482336751651019
+            "wall_s": 0.09110318298917264,
+            "wall_s_per_audio_min": 2.1864763917401433
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -1038,9 +1100,11 @@
             "syllable_env_corr_out": 0.9922237590847525,
             "delta_syllable_env_corr": 0.005072289230699467,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.014795719005633146,
-            "wall_s_per_audio_min": 0.3550972561351955
+            "wall_s": 0.013751677004620433,
+            "wall_s_per_audio_min": 0.3300402481108904
           }
         }
       },
@@ -1076,9 +1140,11 @@
             "syllable_env_corr_out": 0.9421766898617732,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 3.1289004255086184e-05,
-            "wall_s_per_audio_min": 0.0007509361021220684
+            "wall_s": 1.44570367410779e-05,
+            "wall_s_per_audio_min": 0.0003469688817858696
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -1100,9 +1166,11 @@
             "syllable_env_corr_out": 0.9352293373703773,
             "delta_syllable_env_corr": -0.006947352491395886,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.11878592398716137,
-            "wall_s_per_audio_min": 2.850862175691873
+            "wall_s": 0.0898548910045065,
+            "wall_s_per_audio_min": 2.156517384108156
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -1124,9 +1192,11 @@
             "syllable_env_corr_out": 0.9385788140172565,
             "delta_syllable_env_corr": -0.0035978758445166514,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.01265792001504451,
-            "wall_s_per_audio_min": 0.30379008036106825
+            "wall_s": 0.013047108019236475,
+            "wall_s_per_audio_min": 0.3131305924616754
           }
         }
       },
@@ -1162,9 +1232,11 @@
             "syllable_env_corr_out": 0.7593213996400506,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 1.1035008355975151e-05,
-            "wall_s_per_audio_min": 0.0002648402005434036
+            "wall_s": 3.0032009817659855e-05,
+            "wall_s_per_audio_min": 0.0007207682356238365
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -1186,9 +1258,11 @@
             "syllable_env_corr_out": 0.7855902381185775,
             "delta_syllable_env_corr": 0.0262688384785269,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.10464127297746018,
-            "wall_s_per_audio_min": 2.511390551459044
+            "wall_s": 0.08794274798128754,
+            "wall_s_per_audio_min": 2.110625951550901
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -1210,9 +1284,11 @@
             "syllable_env_corr_out": 0.762828095625385,
             "delta_syllable_env_corr": 0.0035066959853343738,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.022565452964045107,
-            "wall_s_per_audio_min": 0.5415708711370826
+            "wall_s": 0.013286527013406157,
+            "wall_s_per_audio_min": 0.3188766483217478
           }
         }
       },
@@ -1248,9 +1324,11 @@
             "syllable_env_corr_out": 0.7521887236490569,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 1.00579927675426e-05,
-            "wall_s_per_audio_min": 0.00024139182642102242
+            "wall_s": 1.180300023406744e-05,
+            "wall_s_per_audio_min": 0.00028327200561761856
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -1272,9 +1350,11 @@
             "syllable_env_corr_out": 0.8135682401518998,
             "delta_syllable_env_corr": 0.0613795165028429,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.1245847109821625,
-            "wall_s_per_audio_min": 2.9900330635719
+            "wall_s": 0.09479309403104708,
+            "wall_s_per_audio_min": 2.27503425674513
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -1296,9 +1376,11 @@
             "syllable_env_corr_out": 0.7500024859100254,
             "delta_syllable_env_corr": -0.0021862377390314824,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.017036047007422894,
-            "wall_s_per_audio_min": 0.40886512817814946
+            "wall_s": 0.0144960560137406,
+            "wall_s_per_audio_min": 0.3479053443297744
           }
         }
       },
@@ -1334,9 +1416,11 @@
             "syllable_env_corr_out": 1.0,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 4.1835010051727295e-05,
-            "wall_s_per_audio_min": 0.001004040241241455
+            "wall_s": 2.144195605069399e-05,
+            "wall_s_per_audio_min": 0.0005146069452166557
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -1358,9 +1442,11 @@
             "syllable_env_corr_out": 1.0,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.001383155002258718,
-            "wall_s_per_audio_min": 0.03319572005420923
+            "wall_s": 0.0010941500077024102,
+            "wall_s_per_audio_min": 0.026259600184857845
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -1382,9 +1468,11 @@
             "syllable_env_corr_out": 1.0,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.0013812689576297998,
-            "wall_s_per_audio_min": 0.033150454983115196
+            "wall_s": 0.001115103019401431,
+            "wall_s_per_audio_min": 0.026762472465634346
           }
         }
       },
@@ -1420,9 +1508,11 @@
             "syllable_env_corr_out": 1.0,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 1.1035008355975151e-05,
-            "wall_s_per_audio_min": 0.0002648402005434036
+            "wall_s": 2.3886037524789572e-05,
+            "wall_s_per_audio_min": 0.0005732649005949497
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -1444,9 +1534,11 @@
             "syllable_env_corr_out": 1.0,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.0013812690158374608,
-            "wall_s_per_audio_min": 0.03315045638009906
+            "wall_s": 0.0011084680445492268,
+            "wall_s_per_audio_min": 0.026603233069181442
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -1468,9 +1560,11 @@
             "syllable_env_corr_out": 1.0,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.0013925829553045332,
-            "wall_s_per_audio_min": 0.0334219909273088
+            "wall_s": 0.001108887023292482,
+            "wall_s_per_audio_min": 0.026613288559019566
           }
         }
       },
@@ -1506,9 +1600,11 @@
             "syllable_env_corr_out": 1.0,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 2.4933950044214725e-05,
-            "wall_s_per_audio_min": 0.0005984148010611534
+            "wall_s": 2.4513981770724058e-05,
+            "wall_s_per_audio_min": 0.0005883355624973774
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -1530,9 +1626,11 @@
             "syllable_env_corr_out": 1.0,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.001433441007975489,
-            "wall_s_per_audio_min": 0.034402584191411734
+            "wall_s": 0.0011753060389310122,
+            "wall_s_per_audio_min": 0.02820734493434429
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -1554,9 +1652,11 @@
             "syllable_env_corr_out": 1.0,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.0014153519878163934,
-            "wall_s_per_audio_min": 0.03396844770759344
+            "wall_s": 0.0011192929814569652,
+            "wall_s_per_audio_min": 0.026863031554967165
           }
         }
       },
@@ -1592,9 +1692,11 @@
             "syllable_env_corr_out": 0.5446136316512228,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 1.543504185974598e-05,
-            "wall_s_per_audio_min": 0.0003704410046339035
+            "wall_s": 1.2431992217898369e-05,
+            "wall_s_per_audio_min": 0.00029836781322956085
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -1616,9 +1718,11 @@
             "syllable_env_corr_out": 0.67371821134276,
             "delta_syllable_env_corr": 0.1291045796915372,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.11184430797584355,
-            "wall_s_per_audio_min": 2.684263391420245
+            "wall_s": 0.09140392497647554,
+            "wall_s_per_audio_min": 2.193694199435413
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -1640,9 +1744,11 @@
             "syllable_env_corr_out": 0.5372470810998391,
             "delta_syllable_env_corr": -0.007366550551383688,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.01532491302350536,
-            "wall_s_per_audio_min": 0.36779791256412864
+            "wall_s": 0.013430471997708082,
+            "wall_s_per_audio_min": 0.322331327944994
           }
         }
       },
@@ -1678,9 +1784,11 @@
             "syllable_env_corr_out": 0.8309626607276074,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 1.1942989658564329e-05,
-            "wall_s_per_audio_min": 0.0002866317518055439
+            "wall_s": 1.8507998902350664e-05,
+            "wall_s_per_audio_min": 0.00044419197365641594
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -1702,9 +1810,11 @@
             "syllable_env_corr_out": 0.8379877325480456,
             "delta_syllable_env_corr": 0.007025071820438211,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.10040024598129094,
-            "wall_s_per_audio_min": 2.4096059035509825
+            "wall_s": 0.08989470097003505,
+            "wall_s_per_audio_min": 2.157472823280841
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -1726,9 +1836,11 @@
             "syllable_env_corr_out": 0.8309419922988097,
             "delta_syllable_env_corr": -2.0668428797665506e-05,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.015649470034986734,
-            "wall_s_per_audio_min": 0.3755872808396816
+            "wall_s": 0.013277516991365701,
+            "wall_s_per_audio_min": 0.3186604077927768
           }
         }
       },
@@ -1764,9 +1876,11 @@
             "syllable_env_corr_out": 0.735296892121527,
             "delta_syllable_env_corr": 0.0,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 2.0603998564183712e-05,
-            "wall_s_per_audio_min": 0.0004944959655404091
+            "wall_s": 1.5853962395340204e-05,
+            "wall_s_per_audio_min": 0.0003804950974881649
           },
           "wpe_dereverb_cpu": {
             "arm": "wpe_dereverb_cpu",
@@ -1788,9 +1902,11 @@
             "syllable_env_corr_out": 0.8073722036195184,
             "delta_syllable_env_corr": 0.0720753114979914,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.13229892001254484,
-            "wall_s_per_audio_min": 3.175174080301076
+            "wall_s": 0.0979112740023993,
+            "wall_s_per_audio_min": 2.349870576057583
           },
           "spectral_speech_enhancer_cpu": {
             "arm": "spectral_speech_enhancer_cpu",
@@ -1812,9 +1928,11 @@
             "syllable_env_corr_out": 0.733519283253337,
             "delta_syllable_env_corr": -0.001777608868190006,
             "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
             "input_mutated": false,
-            "wall_s": 0.015099741984158754,
-            "wall_s_per_audio_min": 0.3623938076198101
+            "wall_s": 0.018821322999428958,
+            "wall_s_per_audio_min": 0.451711751986295
           }
         }
       }
@@ -1841,7 +1959,7 @@
       "manifest_path": "corpus/dev-e8-stems-v1.json",
       "manifest_sha256": "b6e3ce4c623a355c0e9f5bb2ec6d0090547778442592428eb83812700ae63c07",
       "evaluator_path": "research/e8_stems_eval.py",
-      "evaluator_sha256": "1c0fd80b587118f8e824cf5d88f0a8ed915a1cc109beead180163fed5c2251ec"
+      "evaluator_sha256": "d20905071c654b017427e16cea8d4b2ffff45752744fc652b280a75f50ca14a0"
     },
     "invariants": {
       "total_runs": 27,
@@ -1861,6 +1979,7 @@
       "production_dependency_added": false,
       "blocked_reasons": [
         "no_local_licensed_stem_weights_htdemucs_scnet_bsroformer",
+        "unverified_checkpoint_licenses_and_sha256",
         "no_local_cuda_gpu",
         "colab_connection_not_authorized_or_configured"
       ],
@@ -1883,6 +2002,14 @@
         {
           "id": "htdemucs_v4",
           "status": "blocked_external_weights_or_colab",
+          "local_weights_found": [],
+          "license_verified": false,
+          "blocked_reasons": [
+            "no_local_weights_for_htdemucs_v4",
+            "unverified_checkpoint_license_and_sha256_for_htdemucs_v4",
+            "no_local_cuda_gpu",
+            "colab_connection_not_authorized_or_configured"
+          ],
           "version_pin": "demucs 4.0.1 (`htdemucs` / `htdemucs_ft` 4-stem bag of 4 models)",
           "license": "MIT",
           "colab_budget_estimate": "T4/L4 GPU (~2-4 GB VRAM, ~2-5 s/min audio for `htdemucs`, ~8-18 s/min for `htdemucs_ft`)",
@@ -1891,6 +2018,14 @@
         {
           "id": "scnet",
           "status": "blocked_external_weights_or_colab",
+          "local_weights_found": [],
+          "license_verified": false,
+          "blocked_reasons": [
+            "no_local_weights_for_scnet",
+            "unverified_checkpoint_license_and_sha256_for_scnet",
+            "no_local_cuda_gpu",
+            "colab_connection_not_authorized_or_configured"
+          ],
           "version_pin": "SCNet (Tong et al. 2024, Sparse Compression Network \u2014 pin commit + SHA-256)",
           "license": "MIT (verify checkpoint release terms)",
           "colab_budget_estimate": "T4/L4 GPU (~4-6 GB VRAM, ~4-10 s/min audio)",
@@ -1899,6 +2034,14 @@
         {
           "id": "bs_roformer",
           "status": "blocked_external_weights_or_colab",
+          "local_weights_found": [],
+          "license_verified": false,
+          "blocked_reasons": [
+            "no_local_weights_for_bs_roformer",
+            "unverified_checkpoint_license_and_sha256_for_bs_roformer",
+            "no_local_cuda_gpu",
+            "colab_connection_not_authorized_or_configured"
+          ],
           "version_pin": "BS-RoFormer (Lu et al. 2023, Band-Split RoFormer \u2014 pin checkpoint SHA-256)",
           "license": "MIT/Apache-2.0 code; MUST verify specific community checkpoint license before download",
           "colab_budget_estimate": "T4/L4 GPU (~6-10 GB VRAM, ~10-25 s/min audio with overlap-add)",
@@ -1944,6 +2087,7 @@
       ],
       "external_blockers": [
         "no_local_licensed_stem_weights_htdemucs_scnet_bsroformer",
+        "unverified_checkpoint_licenses_and_sha256",
         "no_local_cuda_gpu",
         "colab_connection_not_authorized_or_configured"
       ]
@@ -1979,7 +2123,7 @@
               "mean_false_leakage_dbfs": null
             }
           },
-          "mean_wall_s_per_audio_min": 0.4595772656612098
+          "mean_wall_s_per_audio_min": 0.3146701797377318
         },
         "hpss_band_separator_cpu": {
           "n_cases": 4,
@@ -2010,7 +2154,7 @@
               "mean_false_leakage_dbfs": null
             }
           },
-          "mean_wall_s_per_audio_min": 5.76530387357343
+          "mean_wall_s_per_audio_min": 4.85328086419031
         },
         "oracle_irm_upper_bound": {
           "n_cases": 4,
@@ -2041,7 +2185,7 @@
               "mean_false_leakage_dbfs": null
             }
           },
-          "mean_wall_s_per_audio_min": 3.136736430111341
+          "mean_wall_s_per_audio_min": 2.5857958858832717
         }
       },
       "sparse_clean_stem_control": {
@@ -2074,7 +2218,7 @@
               "mean_false_leakage_dbfs": -34.264514469689104
             }
           },
-          "mean_wall_s_per_audio_min": 0.2528751001227647
+          "mean_wall_s_per_audio_min": 0.23472472792491317
         },
         "hpss_band_separator_cpu": {
           "n_cases": 2,
@@ -2105,7 +2249,7 @@
               "mean_false_leakage_dbfs": -61.08073952984287
             }
           },
-          "mean_wall_s_per_audio_min": 4.592799024190754
+          "mean_wall_s_per_audio_min": 4.19625860452652
         },
         "oracle_irm_upper_bound": {
           "n_cases": 2,
@@ -2136,7 +2280,7 @@
               "mean_false_leakage_dbfs": -223.21176292053795
             }
           },
-          "mean_wall_s_per_audio_min": 3.0265350840054452
+          "mean_wall_s_per_audio_min": 2.537036004010588
         }
       },
       "ood_stems": {
@@ -2169,7 +2313,7 @@
               "mean_false_leakage_dbfs": null
             }
           },
-          "mean_wall_s_per_audio_min": 0.3465195200406015
+          "mean_wall_s_per_audio_min": 0.2342444877140224
         },
         "hpss_band_separator_cpu": {
           "n_cases": 3,
@@ -2200,7 +2344,7 @@
               "mean_false_leakage_dbfs": null
             }
           },
-          "mean_wall_s_per_audio_min": 6.293204367626458
+          "mean_wall_s_per_audio_min": 4.694567151833326
         },
         "oracle_irm_upper_bound": {
           "n_cases": 3,
@@ -2231,7 +2375,7 @@
               "mean_false_leakage_dbfs": null
             }
           },
-          "mean_wall_s_per_audio_min": 3.8607522803358734
+          "mean_wall_s_per_audio_min": 2.5807838239707053
         }
       }
     },
@@ -2282,8 +2426,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.023852574988268316,
-            "wall_s_per_audio_min": 0.5724617997184396
+            "wall_s": 0.023038124025333673,
+            "wall_s_per_audio_min": 0.5529149766080081
           },
           "hpss_band_separator_cpu": {
             "arm": "hpss_band_separator_cpu",
@@ -2320,8 +2464,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.23000940296333283,
-            "wall_s_per_audio_min": 5.520225671119988
+            "wall_s": 0.1905463089933619,
+            "wall_s_per_audio_min": 4.573111415840685
           },
           "oracle_irm_upper_bound": {
             "arm": "oracle_irm_upper_bound",
@@ -2358,8 +2502,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.1234697499894537,
-            "wall_s_per_audio_min": 2.963273999746889
+            "wall_s": 0.10669883695663884,
+            "wall_s_per_audio_min": 2.5607720869593322
           }
         }
       },
@@ -2409,8 +2553,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.019981641962658614,
-            "wall_s_per_audio_min": 0.47955940710380673
+            "wall_s": 0.009778904961422086,
+            "wall_s_per_audio_min": 0.23469371907413006
           },
           "hpss_band_separator_cpu": {
             "arm": "hpss_band_separator_cpu",
@@ -2447,8 +2591,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.25086609699064866,
-            "wall_s_per_audio_min": 6.020786327775568
+            "wall_s": 0.21445166500052437,
+            "wall_s_per_audio_min": 5.146839960012585
           },
           "oracle_irm_upper_bound": {
             "arm": "oracle_irm_upper_bound",
@@ -2485,8 +2629,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.12858394399518147,
-            "wall_s_per_audio_min": 3.0860146558843553
+            "wall_s": 0.11324117798358202,
+            "wall_s_per_audio_min": 2.7177882716059685
           }
         }
       },
@@ -2536,8 +2680,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.01165938499616459,
-            "wall_s_per_audio_min": 0.27982523990795016
+            "wall_s": 0.00979964795988053,
+            "wall_s_per_audio_min": 0.23519155103713274
           },
           "hpss_band_separator_cpu": {
             "arm": "hpss_band_separator_cpu",
@@ -2574,8 +2718,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.24531720497179776,
-            "wall_s_per_audio_min": 5.887612919323146
+            "wall_s": 0.18940417701378465,
+            "wall_s_per_audio_min": 4.5457002483308315
           },
           "oracle_irm_upper_bound": {
             "arm": "oracle_irm_upper_bound",
@@ -2612,8 +2756,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.13265218102606013,
-            "wall_s_per_audio_min": 3.183652344625443
+            "wall_s": 0.10522348701488227,
+            "wall_s_per_audio_min": 2.5253636883571744
           }
         }
       },
@@ -2663,8 +2807,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.02110260899644345,
-            "wall_s_per_audio_min": 0.5064626159146428
+            "wall_s": 0.009828353009652346,
+            "wall_s_per_audio_min": 0.2358804722316563
           },
           "hpss_band_separator_cpu": {
             "arm": "hpss_band_separator_cpu",
@@ -2701,8 +2845,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.23469127400312573,
-            "wall_s_per_audio_min": 5.6325905760750175
+            "wall_s": 0.21447799302404746,
+            "wall_s_per_audio_min": 5.147471832577139
           },
           "oracle_irm_upper_bound": {
             "arm": "oracle_irm_upper_bound",
@@ -2739,8 +2883,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.13808353000786155,
-            "wall_s_per_audio_min": 3.3140047201886773
+            "wall_s": 0.10580247902544215,
+            "wall_s_per_audio_min": 2.5392594966106117
           }
         }
       },
@@ -2787,8 +2931,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.011042958009056747,
-            "wall_s_per_audio_min": 0.2650309922173619
+            "wall_s": 0.009928576997481287,
+            "wall_s_per_audio_min": 0.23828584793955088
           },
           "hpss_band_separator_cpu": {
             "arm": "hpss_band_separator_cpu",
@@ -2825,8 +2969,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.1828320500208065,
-            "wall_s_per_audio_min": 4.387969200499356
+            "wall_s": 0.16500992403598502,
+            "wall_s_per_audio_min": 3.9602381768636405
           },
           "oracle_irm_upper_bound": {
             "arm": "oracle_irm_upper_bound",
@@ -2863,8 +3007,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.13599720399361104,
-            "wall_s_per_audio_min": 3.263932895846665
+            "wall_s": 0.10514582198811695,
+            "wall_s_per_audio_min": 2.523499727714807
           }
         }
       },
@@ -2912,8 +3056,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.010029967001173645,
-            "wall_s_per_audio_min": 0.2407192080281675
+            "wall_s": 0.009631816996261477,
+            "wall_s_per_audio_min": 0.23116360791027546
           },
           "hpss_band_separator_cpu": {
             "arm": "hpss_band_separator_cpu",
@@ -2950,8 +3094,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.19990120199508965,
-            "wall_s_per_audio_min": 4.797628847882152
+            "wall_s": 0.18467829300789163,
+            "wall_s_per_audio_min": 4.432279032189399
           },
           "oracle_irm_upper_bound": {
             "arm": "oracle_irm_upper_bound",
@@ -2988,8 +3132,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.11621405300684273,
-            "wall_s_per_audio_min": 2.7891372721642256
+            "wall_s": 0.10627384501276538,
+            "wall_s_per_audio_min": 2.550572280306369
           }
         }
       },
@@ -3039,8 +3183,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.010158406978007406,
-            "wall_s_per_audio_min": 0.24380176747217774
+            "wall_s": 0.009702426963485777,
+            "wall_s_per_audio_min": 0.23285824712365866
           },
           "hpss_band_separator_cpu": {
             "arm": "hpss_band_separator_cpu",
@@ -3077,8 +3221,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.20471716998144984,
-            "wall_s_per_audio_min": 4.913212079554796
+            "wall_s": 0.18866440397687256,
+            "wall_s_per_audio_min": 4.5279456954449415
           },
           "oracle_irm_upper_bound": {
             "arm": "oracle_irm_upper_bound",
@@ -3115,8 +3259,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.1482908960315399,
-            "wall_s_per_audio_min": 3.5589815047569573
+            "wall_s": 0.10726211400469765,
+            "wall_s_per_audio_min": 2.5742907361127436
           }
         }
       },
@@ -3166,8 +3310,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.012830219988245517,
-            "wall_s_per_audio_min": 0.3079252797178924
+            "wall_s": 0.00974426296306774,
+            "wall_s_per_audio_min": 0.23386231111362576
           },
           "hpss_band_separator_cpu": {
             "arm": "hpss_band_separator_cpu",
@@ -3204,8 +3348,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.31129607401089743,
-            "wall_s_per_audio_min": 7.471105776261538
+            "wall_s": 0.20568777504377067,
+            "wall_s_per_audio_min": 4.936506601050496
           },
           "oracle_irm_upper_bound": {
             "arm": "oracle_irm_upper_bound",
@@ -3242,8 +3386,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.17890573100885376,
-            "wall_s_per_audio_min": 4.29373754421249
+            "wall_s": 0.10862522601382807,
+            "wall_s_per_audio_min": 2.6070054243318737
           }
         }
       },
@@ -3293,8 +3437,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.020326313038822263,
-            "wall_s_per_audio_min": 0.4878315129317343
+            "wall_s": 0.009833871037699282,
+            "wall_s_per_audio_min": 0.23601290490478277
           },
           "hpss_band_separator_cpu": {
             "arm": "hpss_band_separator_cpu",
@@ -3331,8 +3475,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.27063730196096003,
-            "wall_s_per_audio_min": 6.495295247063041
+            "wall_s": 0.19246871495852247,
+            "wall_s_per_audio_min": 4.619249159004539
           },
           "oracle_irm_upper_bound": {
             "arm": "oracle_irm_upper_bound",
@@ -3369,8 +3513,8 @@
               }
             },
             "input_mutated": false,
-            "wall_s": 0.15539740800159052,
-            "wall_s_per_audio_min": 3.7295377920381725
+            "wall_s": 0.10671063797781244,
+            "wall_s_per_audio_min": 2.5610553114674985
           }
         }
       }

@@ -291,3 +291,100 @@ def test_e8_artifacts_separate_go_no_go_provenance_e4_untouched_and_gfm_tables()
         else:
             expected_cols = None
     assert table_count >= 4
+
+
+def test_sealed_path_rejected_before_io(tmp_path: Path) -> None:
+    """Sealed paths are rejected before any read/write in both voice and stems CLIs."""
+    with pytest.raises(ValueError, match="sealed_corpus_forbidden_in_e8"):
+        e8_voice_eval.main(["--manifest", "corpus/sealed-v1.json"])
+    with pytest.raises(ValueError, match="sealed_corpus_forbidden_in_e8"):
+        e8_stems_eval.main(["--stems-manifest", "corpus/sealed-v1.json"])
+
+    sealed_fake = tmp_path / "sealed-fake.json"
+    with pytest.raises(ValueError, match="sealed_corpus_forbidden_in_e8"):
+        e8_voice_eval.main(["--manifest", str(sealed_fake), "--build-manifest"])
+    assert not sealed_fake.exists()
+
+    with pytest.raises(ValueError, match="sealed_corpus_forbidden_in_e8"):
+        e8_stems_eval.main(["--stems-manifest", str(sealed_fake), "--build-manifest"])
+    assert not sealed_fake.exists()
+
+
+def test_missing_manifest_and_disguised_tier_fail_closed(tmp_path: Path) -> None:
+    """Missing manifests raise FileNotFoundError and tier=='sealed' JSON is rejected before decoding."""
+    # 1. Manifest with tier=='sealed' under an innocuous filename rejected before decoding.
+    disguised = tmp_path / "disguised-dev.json"
+    disguised.write_text(json.dumps({"tier": "sealed", "schema": e8_voice_eval.VOICE_CORPUS_SCHEMA}), encoding="utf-8")
+    with pytest.raises(ValueError, match="sealed_corpus_forbidden_in_e8"):
+        e8_voice_eval.run_e8_voice_eval(disguised)
+
+    disguised_stems = tmp_path / "disguised-stems.json"
+    disguised_stems.write_text(
+        json.dumps({"tier": "sealed", "schema": e8_stems_eval.STEMS_CORPUS_SCHEMA}), encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="sealed_corpus_forbidden_in_e8"):
+        e8_stems_eval.run_e8_stems_eval(disguised_stems)
+
+    # 2. Missing manifest without --build-manifest fails closed with FileNotFoundError.
+    missing = tmp_path / "does-not-exist.json"
+    with pytest.raises(FileNotFoundError):
+        e8_voice_eval.main(["--manifest", str(missing)])
+    assert not missing.exists()
+
+    with pytest.raises(FileNotFoundError):
+        e8_stems_eval.main(["--stems-manifest", str(missing)])
+    assert not missing.exists()
+
+
+def test_per_model_weight_audit_does_not_mark_all_models_ready_from_one_file(tmp_path: Path) -> None:
+    """A single unverified weight file cannot mark other models or itself ready."""
+    (tmp_path / "deepfilternet_unverified.pt").write_bytes(b"fake")
+    v_audit = e8_voice_eval.audit_voice_external_models_and_metrics(models_dir=tmp_path)
+    assert v_audit["neural_arm_status"] == "blocked_external_weights_or_colab"
+    v_models = {m["id"]: m for m in v_audit["external_neural_models"]}
+    assert len(v_models["deepfilternet3"]["local_weights_found"]) == 1
+    assert v_models["deepfilternet3"]["license_verified"] is False
+    assert v_models["deepfilternet3"]["status"] == "blocked_external_weights_or_colab"
+    assert v_models["sgmse_plus"]["local_weights_found"] == []
+    assert v_models["flow_matching_speech"]["local_weights_found"] == []
+
+    (tmp_path / "htdemucs_unverified.th").write_bytes(b"fake")
+    s_audit = e8_stems_eval.audit_stems_external_models(models_dir=tmp_path)
+    assert s_audit["neural_arm_status"] == "blocked_external_weights_or_colab"
+    s_models = {m["id"]: m for m in s_audit["external_neural_models"]}
+    assert len(s_models["htdemucs_v4"]["local_weights_found"]) == 1
+    assert s_models["htdemucs_v4"]["license_verified"] is False
+    assert s_models["htdemucs_v4"]["status"] == "blocked_external_weights_or_colab"
+    assert s_models["scnet"]["local_weights_found"] == []
+    assert s_models["bs_roformer"]["local_weights_found"] == []
+
+
+def test_zero_output_scores_floor_not_ceiling_on_active_speech() -> None:
+    """Silent output on active speech/stems scores honest floor (-60 dB / 0.0), never ceiling."""
+    v_case = _voice_case("e8-voice-ctl-clean-alto-16k")
+    clean, _deg, _ = e8_voice_eval.synthesize_voice_case(v_case)
+    sr = int(v_case["rate"])
+    zeros = np.zeros_like(clean)
+
+    assert e8_voice_eval.si_sdr_db(clean, zeros) <= -50.0
+    assert e8_voice_eval.stoi_proxy_envelope_corr(clean, zeros, sr) <= 0.05
+    assert e8_voice_eval.syllable_envelope_corr(clean, zeros, sr) <= 0.05
+
+    # Also verify stems SI-SDR on silent estimate of an active stem.
+    s_case = _stems_case("e8-stems-std-pop-rock-44k")
+    stems, _mix = e8_stems_eval.synthesize_stems_case(s_case)
+    assert e8_voice_eval.si_sdr_db(stems["vocals"], np.zeros_like(stems["vocals"])) <= -50.0
+
+
+def test_wpe_solver_fallback_is_recorded_in_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Linear solver failure inside WPE is explicitly recorded as solver_fallback=True."""
+    v_case = _voice_case("e8-voice-rev-baritone-small-16k")
+    _clean, degraded, _ = e8_voice_eval.synthesize_voice_case(v_case)
+
+    def _boom(*_args, **_kwargs):
+        raise np.linalg.LinAlgError("forced singular matrix")
+
+    monkeypatch.setattr(np.linalg, "solve", _boom)
+    res = e8_voice_eval.run_voice_arm("wpe_dereverb_cpu", degraded, int(v_case["rate"]), bypass_clean=False)
+    assert res.meta["solver_fallback"] is True
+    assert res.meta["solver_fallback_bins"] > 0

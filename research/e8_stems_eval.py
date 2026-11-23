@@ -616,19 +616,14 @@ def evaluate_stems_case(
 # ---------------------------------------------------------------------------
 
 def audit_stems_external_models(models_dir: Path | None = None) -> dict:
-    """Honest local audit of HTDemucs / SCNet / BS-RoFormer weights, licenses, and Colab budget."""
+    """Honest per-model local audit of HTDemucs / SCNet / BS-RoFormer weights, licenses, and Colab budget."""
     m_dir = models_dir if models_dir is not None else (REPO / "models")
     weight_exts = (".pt", ".pth", ".ckpt", ".onnx", ".safetensors", ".th")
-    stem_keywords = ("htdemucs", "demucs", "scnet", "roformer", "mdx")
-    local_weights = []
+    all_weight_files: list[Path] = []
     if m_dir.exists():
         for p in sorted(m_dir.rglob("*")):
-            if (
-                p.is_file()
-                and p.suffix.lower() in weight_exts
-                and any(k in p.name.lower() for k in stem_keywords)
-            ):
-                local_weights.append(p.relative_to(REPO).as_posix())
+            if p.is_file() and p.suffix.lower() in weight_exts:
+                all_weight_files.append(p)
 
     cuda_available = False
     torch_version = None
@@ -641,15 +636,83 @@ def audit_stems_external_models(models_dir: Path | None = None) -> dict:
         torch_version = None
 
     colab_authorized = bool(os.environ.get("MR_E8_COLAB_AUTHORIZED") == "1")
+
+    model_specs = [
+        {
+            "id": "htdemucs_v4",
+            "keywords": ("htdemucs", "demucs"),
+            "version_pin": "demucs 4.0.1 (`htdemucs` / `htdemucs_ft` 4-stem bag of 4 models)",
+            "license": "MIT",
+            "colab_budget_estimate": "T4/L4 GPU (~2-4 GB VRAM, ~2-5 s/min audio for `htdemucs`, ~8-18 s/min for `htdemucs_ft`)",
+            "target_role": "Standard 4-stem music separation baseline (vocals/drums/bass/other)",
+        },
+        {
+            "id": "scnet",
+            "keywords": ("scnet",),
+            "version_pin": "SCNet (Tong et al. 2024, Sparse Compression Network — pin commit + SHA-256)",
+            "license": "MIT (verify checkpoint release terms)",
+            "colab_budget_estimate": "T4/L4 GPU (~4-6 GB VRAM, ~4-10 s/min audio)",
+            "target_role": "High-efficiency frequency-band sparse separation",
+        },
+        {
+            "id": "bs_roformer",
+            "keywords": ("roformer", "bs_roformer"),
+            "version_pin": "BS-RoFormer (Lu et al. 2023, Band-Split RoFormer — pin checkpoint SHA-256)",
+            "license": "MIT/Apache-2.0 code; MUST verify specific community checkpoint license before download",
+            "colab_budget_estimate": "T4/L4 GPU (~6-10 GB VRAM, ~10-25 s/min audio with overlap-add)",
+            "target_role": "State-of-the-art vocal/stem separation (heavy VRAM; Colab-only research)",
+        },
+    ]
+
+    external_neural_models = []
+    local_weights: list[str] = []
+    for spec in model_specs:
+        matched = [
+            e8_voice_eval._portable_rel_path(p)
+            for p in all_weight_files
+            if any(k in p.name.lower() for k in spec["keywords"])
+        ]
+        local_weights.extend(matched)
+        # Per-model gate: requires matching weight file, verified license/checksum pin,
+        # CUDA GPU, AND explicit Colab authorization. Never flips all models ready from one file.
+        license_verified = False
+        m_reasons = []
+        if not matched:
+            m_reasons.append(f"no_local_weights_for_{spec['id']}")
+        if not license_verified:
+            m_reasons.append(f"unverified_checkpoint_license_and_sha256_for_{spec['id']}")
+        if not cuda_available:
+            m_reasons.append("no_local_cuda_gpu")
+        if not colab_authorized:
+            m_reasons.append("colab_connection_not_authorized_or_configured")
+        m_status = "blocked_external_weights_or_colab" if m_reasons else "ready"
+        external_neural_models.append({
+            "id": spec["id"],
+            "status": m_status,
+            "local_weights_found": matched,
+            "license_verified": license_verified,
+            "blocked_reasons": m_reasons,
+            "version_pin": spec["version_pin"],
+            "license": spec["license"],
+            "colab_budget_estimate": spec["colab_budget_estimate"],
+            "target_role": spec["target_role"],
+        })
+
     blocked_reasons = []
-    if not local_weights:
+    if any(not m["local_weights_found"] for m in external_neural_models):
         blocked_reasons.append("no_local_licensed_stem_weights_htdemucs_scnet_bsroformer")
+    if any(not m["license_verified"] for m in external_neural_models):
+        blocked_reasons.append("unverified_checkpoint_licenses_and_sha256")
     if not cuda_available:
         blocked_reasons.append("no_local_cuda_gpu")
     if not colab_authorized:
         blocked_reasons.append("colab_connection_not_authorized_or_configured")
 
-    neural_status = "blocked_external_weights_or_colab" if blocked_reasons else "ready"
+    neural_status = (
+        "ready"
+        if all(m["status"] == "ready" for m in external_neural_models)
+        else "blocked_external_weights_or_colab"
+    )
     return {
         "contour": "B_stems",
         "neural_arm_status": neural_status,
@@ -659,7 +722,7 @@ def audit_stems_external_models(models_dir: Path | None = None) -> dict:
         "environment_audit": {
             "torch_version": torch_version,
             "cuda_available": cuda_available,
-            "local_stem_weights_found": local_weights,
+            "local_stem_weights_found": sorted(set(local_weights)),
             "colab_authorized": colab_authorized,
         },
         "external_datasets": [
@@ -671,32 +734,7 @@ def audit_stems_external_models(models_dir: Path | None = None) -> dict:
                 "required_action": "Provision approved dev subset on Colab with SHA-256 manifest; never mix with sealed music holdout",
             },
         ],
-        "external_neural_models": [
-            {
-                "id": "htdemucs_v4",
-                "status": neural_status,
-                "version_pin": "demucs 4.0.1 (`htdemucs` / `htdemucs_ft` 4-stem bag of 4 models)",
-                "license": "MIT",
-                "colab_budget_estimate": "T4/L4 GPU (~2-4 GB VRAM, ~2-5 s/min audio for `htdemucs`, ~8-18 s/min for `htdemucs_ft`)",
-                "target_role": "Standard 4-stem music separation baseline (vocals/drums/bass/other)",
-            },
-            {
-                "id": "scnet",
-                "status": neural_status,
-                "version_pin": "SCNet (Tong et al. 2024, Sparse Compression Network — pin commit + SHA-256)",
-                "license": "MIT (verify checkpoint release terms)",
-                "colab_budget_estimate": "T4/L4 GPU (~4-6 GB VRAM, ~4-10 s/min audio)",
-                "target_role": "High-efficiency frequency-band sparse separation",
-            },
-            {
-                "id": "bs_roformer",
-                "status": neural_status,
-                "version_pin": "BS-RoFormer (Lu et al. 2023, Band-Split RoFormer — pin checkpoint SHA-256)",
-                "license": "MIT/Apache-2.0 code; MUST verify specific community checkpoint license before download",
-                "colab_budget_estimate": "T4/L4 GPU (~6-10 GB VRAM, ~10-25 s/min audio with overlap-add)",
-                "target_role": "State-of-the-art vocal/stem separation (heavy VRAM; Colab-only research)",
-            },
-        ],
+        "external_neural_models": external_neural_models,
         "colab_handoff_spec": {
             "permitted_inputs": "corpus/dev-e8-stems-v1.json + licensed MUSDB18-HQ dev split ONLY",
             "forbidden_inputs": ["corpus/sealed-v1.json", "corpus/sealed-e5-v1.json", "private_masters"],
@@ -767,6 +805,7 @@ def evaluate_go_no_go_stems(summary_by_stratum: dict, external_audit: dict) -> d
 
 def build_stems_manifest(out_path: Path) -> dict:
     """Build deterministic `corpus/dev-e8-stems-v1.json` with SHA-256 digests & exact additivity."""
+    e8_voice_eval.assert_not_sealed_path(out_path)
     cases = stems_cases()
     file_entries = []
     strata_counts: dict[str, int] = {s: 0 for s in STEMS_STRATA}
@@ -850,7 +889,14 @@ def _verify_e4_freeze_untouched() -> dict:
 
 def run_e8_stems_eval(manifest_path: Path, out_json: Path | None = None) -> dict:
     """Run the full Contour-B 4-stem evaluation benchmark on CPU."""
+    e8_voice_eval.assert_not_sealed_path(manifest_path)
+    if out_json is not None:
+        e8_voice_eval.assert_not_sealed_path(out_json)
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"E8 stems manifest not found: {manifest_path}")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if str(manifest.get("tier", "")).lower() == "sealed":
+        raise ValueError("sealed_corpus_forbidden_in_e8")
     if manifest.get("schema") != STEMS_CORPUS_SCHEMA:
         raise ValueError(f"unexpected E8 stems manifest schema: {manifest.get('schema')!r}")
 
@@ -934,7 +980,7 @@ def run_e8_stems_eval(manifest_path: Path, out_json: Path | None = None) -> dict
         "colab_launched": False,
         "toolchain": {**corpus_v1.actual_toolchain(), "platform": platform.machine()},
         "provenance": {
-            "manifest_path": "corpus/dev-e8-stems-v1.json",
+            "manifest_path": e8_voice_eval._portable_rel_path(manifest_path),
             "manifest_sha256": corpus_v1.digest(manifest_path),
             "evaluator_path": "research/e8_stems_eval.py",
             "evaluator_sha256": corpus_v1.digest(REPO / "research" / "e8_stems_eval.py"),
@@ -985,11 +1031,11 @@ def render_combined_e8_report_md(combined: dict) -> str:
         f"- **Sealed corpora (`corpus/sealed-v1.json`, `corpus/sealed-e5-v1.json`):** `sealed_corpora_opened = {combined['sealed_corpora_opened']}` (strictly untouched).",
         f"- **Frozen E4 Preserve hard-declip pipeline:** `{e4['matched_files']}/{e4['total_pinned_files']}` SHA-256 pins verified untouched (`all_untouched = {e4['all_untouched']}`).",
         "- **Preserve promotion / production dependencies / Colab automation:** `False` (isolated CPU feasibility study only).",
-        f"- **Contour A Manifest SHA-256 (`corpus/dev-e8-voice-v1.json`):** `{v['provenance']['manifest_sha256']}`",
+        f"- **Contour A Manifest SHA-256 (`{v['provenance']['manifest_path']}`):** `{v['provenance']['manifest_sha256']}`",
         f"- **Contour A Evaluator SHA-256 (`research/e8_voice_eval.py`):** `{v['provenance']['evaluator_sha256']}`",
-        f"- **Contour B Manifest SHA-256 (`corpus/dev-e8-stems-v1.json`):** `{s['provenance']['manifest_sha256']}`",
+        f"- **Contour B Manifest SHA-256 (`{s['provenance']['manifest_path']}`):** `{s['provenance']['manifest_sha256']}`",
         f"- **Contour B Evaluator SHA-256 (`research/e8_stems_eval.py`):** `{s['provenance']['evaluator_sha256']}`",
-        f"- **Contour B Exact Additive Mix Invariant:** `max(|sum(true_stems) - mix|) = {s['invariants']['max_corpus_additive_err']:.2e}`, `max(|sum(est_stems) - mix|) = {s['invariants']['max_mix_recon_err']:.2e}`.",
+        f"- **Contour B Exact Additive Mix Invariant (float64):** `max(|sum(true_stems) - mix|) = {s['invariants']['max_corpus_additive_err']:.2e}`, `max(|sum(est_stems) - mix|) = {s['invariants']['max_mix_recon_err']:.2e}` (note: 16-bit PCM WAV export introduces per-stem quantization rounding up to `<= 4 LSB`).",
         "",
         "> **Strict Non-Generalization Warning:** Contour A (Voice) and Contour B (Stems) are **two independent feasibility contours**. Results from speech enhancement or 4-stem source separation **MUST NOT** be generalized to full-mix stereo music mastering (`Preserve` hard-declipping).",
         "",
@@ -1058,9 +1104,9 @@ def render_combined_e8_report_md(combined: dict) -> str:
         "",
         "## 3. Contour B — 4-Stem Separation Feasibility",
         "",
-        "### 3.1 CPU Baselines vs Oracle IRM Upper Bound by Stratum",
+        "### 3.1 CPU Baselines vs Oracle IRM Mask Reference by Stratum",
         "",
-        "| Stratum (n) | Arm | Oracle | Vocals SI-SDR (dB) | Drums SI-SDR (dB) | Bass SI-SDR (dB) | Other SI-SDR (dB) | Mean Active SI-SDR (dB) | Mean Leakage (dB) | Mix Recon Max Err | Wall (s/min) |",
+        "| Stratum (n) | Arm | Oracle | Vocals SI-SDR (dB) | Drums SI-SDR (dB) | Bass SI-SDR (dB) | Other SI-SDR (dB) | Mean Active SI-SDR (dB) | Mean Active Leakage (dB) | Mix Recon Max Err | Wall (s/min) |",
         "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
 
@@ -1119,9 +1165,10 @@ def render_combined_e8_report_md(combined: dict) -> str:
         "1. **Synthetic Dev Corpora Only:** Both `dev-e8-voice-v1` (formant + RIR + noise) and `dev-e8-stems-v1` (4-stem additive stereo mix) are deterministic synthetic benchmarks designed to validate metrics, invariants, and CPU baselines offline. Real speech corpora (`DAPS`, `VoiceBank+DEMAND`) and real multitrack music (`MUSDB18-HQ`) are `not_provisioned_on_host`.",
         "2. **Neural GPU Arms Blocked Locally:** `DeepFilterNet3`, `SGMSE+`, flow-matching speech restoration, `DNSMOS`, `HTDemucs`, `SCNet`, and `BS-RoFormer` are all honestly reported as `blocked_external_weights_or_colab` with zero fabricated numbers. All GPU inference/benchmarks require separate Google Colab authorization.",
         "3. **Licensed Perceptual Metrics:** Official ITU-T P.862 `PESQ` is marked `license_required_for_pesq`; local voice evaluation uses `stoi_proxy_envelope_corr`, `formant_drift_hz`, `spectral_lsd_db`, and `syllable_env_corr` as transparent CPU proxies.",
-        "4. **Oracle IRM Is an Upper Bound, Not a Deployable Separator:** `oracle_irm_upper_bound` accesses ground-truth clean stems to establish the magnitude-masking ceiling on `dev-e8-stems-v1`; real separators have no access to clean stems.",
-        "5. **OOD Failure Modes Exposed Honestly:** In Contour A, heavy hall reverb at 2 dB SNR and non-stationary babble degrade CPU spectral enhancement; in Contour B, spectral clash (`e8-stems-ood-vocal-other-clash-44k`) and mono collapse (`e8-stems-ood-mono-collapsed-mix-44k`) sharply reduce `hpss_band_separator_cpu` vocal/other separation because spatial Mid/Side cues vanish.",
-        "6. **Zero Generalization to Preserve Stereo Mastering:** Neither voice dereverberation/denoising nor 4-stem source separation validates or improves stereo hard-declipping (`Preserve`). Frozen E4 files remain `18/18` untouched.",
+        "4. **Oracle IRM Is an Oracle Mask Reference, Not a Deployable Separator or Proven SI-SDR Ceiling:** `oracle_irm_upper_bound` accesses ground-truth clean stems to provide a magnitude-only oracle mask reference on `dev-e8-stems-v1` (phase-aware/complex oracle masks can exceed real-valued IRM SI-SDR); real separators have no access to clean stems. `Mean Active Leakage (dB)` in Table 3.1 averages over active stems only; inactive stems in `sparse_clean_stem_control` are tracked separately via `false_leakage_dbfs` in the JSON results.",
+        "5. **Float64 vs PCM16 WAV Additivity:** `mix == sum(stems)` holds exactly in `float64` (`max_err = 0.00e+00`) during synthesis and evaluation; when stems and mix are quantized independently to 16-bit PCM WAV files for manifest SHA-256 digests, per-stem quantization rounding can differ by up to `<= 4 LSB`.",
+        "6. **OOD Failure Modes Exposed Honestly:** In Contour A, heavy hall reverb at 2 dB SNR and non-stationary babble degrade CPU spectral enhancement; in Contour B, spectral clash (`e8-stems-ood-vocal-other-clash-44k`) and mono collapse (`e8-stems-ood-mono-collapsed-mix-44k`) sharply reduce `hpss_band_separator_cpu` vocal/other separation because spatial Mid/Side cues vanish.",
+        "7. **Zero Generalization to Preserve Stereo Mastering:** Neither voice dereverberation/denoising nor 4-stem source separation validates or improves stereo hard-declipping (`Preserve`). Frozen E4 files remain `18/18` untouched.",
     ]
     return "\n".join(lines) + "\n"
 
@@ -1150,11 +1197,11 @@ def run_e8_combined_report(
         ),
         "e4_freeze_integrity": e4_check,
         "provenance": {
-            "voice_manifest_path": "corpus/dev-e8-voice-v1.json",
+            "voice_manifest_path": voice_res["provenance"]["manifest_path"],
             "voice_manifest_sha256": voice_res["provenance"]["manifest_sha256"],
             "voice_evaluator_path": "research/e8_voice_eval.py",
             "voice_evaluator_sha256": voice_res["provenance"]["evaluator_sha256"],
-            "stems_manifest_path": "corpus/dev-e8-stems-v1.json",
+            "stems_manifest_path": stems_res["provenance"]["manifest_path"],
             "stems_manifest_sha256": stems_res["provenance"]["manifest_sha256"],
             "stems_evaluator_path": "research/e8_stems_eval.py",
             "stems_evaluator_sha256": stems_res["provenance"]["evaluator_sha256"],
@@ -1174,7 +1221,7 @@ def run_e8_combined_report(
     return combined
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     ap.add_argument("--voice-manifest", default="corpus/dev-e8-voice-v1.json")
     ap.add_argument("--stems-manifest", default="corpus/dev-e8-stems-v1.json")
@@ -1182,16 +1229,23 @@ def main() -> int:
     ap.add_argument("--write-combined", action="store_true", help="Run both contours and write E8 report + JSON.")
     ap.add_argument("--out-json", default="docs/validation/e8-voice-stems-results.json")
     ap.add_argument("--out-md", default="docs/validation/e8-voice-stems-report.md")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     voice_manifest = Path(args.voice_manifest)
     stems_manifest = Path(args.stems_manifest)
+    e8_voice_eval.assert_not_sealed_path(stems_manifest)
+    e8_voice_eval.assert_not_sealed_path(voice_manifest)
 
-    if args.build_manifest or not stems_manifest.exists():
+    if args.build_manifest:
         build_stems_manifest(stems_manifest)
+    elif not stems_manifest.exists():
+        raise FileNotFoundError(f"E8 stems manifest not found (pass --build-manifest to generate): {stems_manifest}")
+
     if args.write_combined:
-        if args.build_manifest or not voice_manifest.exists():
+        if args.build_manifest:
             e8_voice_eval.build_voice_manifest(voice_manifest)
+        elif not voice_manifest.exists():
+            raise FileNotFoundError(f"E8 voice manifest not found (pass --build-manifest to generate): {voice_manifest}")
         res = run_e8_combined_report(voice_manifest, stems_manifest, Path(args.out_json), Path(args.out_md))
         print(
             f"E8 combined report complete: voice={res['contour_a_voice']['n_cases']} cases, "

@@ -545,6 +545,23 @@ def _is_clean_dry_speech(x: np.ndarray, sr: int) -> tuple[bool, dict]:
     return is_clean, {"floor_dbfs": floor_dbfs, "dynamic_range_db": dyn_db}
 
 
+def assert_not_sealed_path(path: Path) -> None:
+    """Fail closed before any I/O if `path` or any parent segment references `sealed`."""
+    p = Path(path)
+    for candidate in (p, p.resolve()):
+        for part in candidate.parts:
+            if "sealed" in part.lower():
+                raise ValueError("sealed_corpus_forbidden_in_e8")
+
+
+def _portable_rel_path(path: Path) -> str:
+    """Return repo-relative POSIX path without leaking host directory prefixes."""
+    try:
+        return Path(path).resolve().relative_to(REPO.resolve()).as_posix()
+    except ValueError:
+        return Path(path).name
+
+
 def _wpe_dereverb_stft(
     x: np.ndarray,
     sr: int,
@@ -555,13 +572,13 @@ def _wpe_dereverb_stft(
     delay: int = 2,
     iters: int = 2,
     reg: float = 1e-4,
-) -> np.ndarray:
+) -> tuple[np.ndarray, dict]:
     """Classic single-channel Weighted Prediction Error (WPE) dereverberation (Nakatani et al. 2010)."""
     n = x.shape[0]
     _f, _t, Z = signal.stft(x, fs=sr, window="hann", nperseg=n_fft, noverlap=n_fft - hop)
     n_freq, n_frames = Z.shape
     if n_frames <= delay + taps + 4:
-        return x.copy()
+        return x.copy(), {"solver_fallback": False, "solver_fallback_bins": 0}
 
     Y = Z.copy()
     # Pre-build delayed design matrix per frequency bin: shape (n_frames, taps).
@@ -569,6 +586,7 @@ def _wpe_dereverb_stft(
     idx = np.arange(valid_start, n_frames)
     n_valid = idx.shape[0]
     eye = np.eye(taps, dtype=np.complex128)
+    solver_fallback_bins = 0
 
     for _it in range(iters):
         # Variance estimate lambda_{t,f} smoothed across +/-1 frames.
@@ -593,6 +611,7 @@ def _wpe_dereverb_stft(
             try:
                 g = np.linalg.solve(R + trace_reg * eye, rhs)
             except np.linalg.LinAlgError:
+                solver_fallback_bins += 1
                 continue
             # Limit filter norm conservatively to prevent over-subtraction on dry/noisy speech.
             g_norm = float(np.linalg.norm(g))
@@ -605,7 +624,10 @@ def _wpe_dereverb_stft(
     y_out = np.asarray(y_out[:n], dtype=np.float64)
     if y_out.shape[0] < n:
         y_out = np.pad(y_out, (0, n - y_out.shape[0]))
-    return y_out
+    return y_out, {
+        "solver_fallback": solver_fallback_bins > 0,
+        "solver_fallback_bins": solver_fallback_bins,
+    }
 
 
 def _spectral_wiener_speech_enhance(
@@ -681,13 +703,13 @@ def run_voice_arm(
         )
 
     if arm == "wpe_dereverb_cpu":
-        y = _wpe_dereverb_stft(x, sr, taps=12, delay=2, iters=3)
+        y, wpe_meta = _wpe_dereverb_stft(x, sr, taps=12, delay=2, iters=3)
         return VoiceArmResult(
             arm=arm,
             enhanced=y,
             bypassed=False,
             wall_s=time.perf_counter() - t0,
-            meta={"taps": 12, "delay": 2, "iters": 3, **clean_meta},
+            meta={"taps": 12, "delay": 2, "iters": 3, **wpe_meta, **clean_meta},
         )
 
     if arm == "spectral_speech_enhancer_cpu":
@@ -708,22 +730,32 @@ def run_voice_arm(
 # ---------------------------------------------------------------------------
 
 def si_sdr_db(ref: np.ndarray, est: np.ndarray) -> float:
-    """Scale-invariant signal-to-distortion ratio (dB)."""
-    r = np.asarray(ref, dtype=np.float64).ravel()
-    e = np.asarray(est, dtype=np.float64).ravel()
-    r = r - np.mean(r)
-    e = e - np.mean(e)
+    """Scale-invariant signal-to-distortion ratio (dB).
+
+    Returns honest floor `-60.0 dB` when `est` is silent or constant on an active
+    reference (`rms(ref) >= 1e-8`), never `+60.0 dB`.
+    """
+    r_raw = np.asarray(ref, dtype=np.float64).ravel()
+    e_raw = np.asarray(est, dtype=np.float64).ravel()
+    r = r_raw - np.mean(r_raw)
+    e = e_raw - np.mean(e_raw)
     ref_e = float(np.dot(r, r))
     if ref_e <= EPS:
         return 0.0
+    est_rms = float(np.sqrt(np.mean(e_raw ** 2)))
+    est_e = float(np.dot(e, e))
+    if est_rms < 1e-8 or est_e <= EPS:
+        return -60.0
     alpha = float(np.dot(e, r)) / ref_e
     s_target = alpha * r
     e_noise = e - s_target
     num = float(np.dot(s_target, s_target))
     den = float(np.dot(e_noise, e_noise))
+    if num <= EPS:
+        return -60.0
     if den <= EPS:
         return 60.0
-    return float(min(60.0, 10.0 * np.log10(max(num, EPS) / den)))
+    return float(np.clip(10.0 * np.log10(num / den), -60.0, 60.0))
 
 
 def stoi_proxy_envelope_corr(ref: np.ndarray, est: np.ndarray, sr: int) -> float:
@@ -731,12 +763,20 @@ def stoi_proxy_envelope_corr(ref: np.ndarray, est: np.ndarray, sr: int) -> float
 
     Modeled on Taal et al. (2011) STOI principles (15 1/3-octave bands 150-4300 Hz,
     384 ms short-time segments, normalized & clipped correlation). Explicitly
-    labeled as a CPU proxy, not official licensed PESQ/pystoi.
+    labeled as a CPU proxy, not official licensed PESQ/pystoi. Returns `0.0` when
+    `est` is silent/constant on an active reference.
     """
+    r_arr = np.asarray(ref, dtype=np.float64)
+    e_arr = np.asarray(est, dtype=np.float64)
+    ref_rms = float(np.sqrt(np.mean(r_arr ** 2)))
+    est_rms = float(np.sqrt(np.mean(e_arr ** 2)))
+    if ref_rms >= 1e-8 and (est_rms < 1e-8 or float(np.std(e_arr)) < 1e-8):
+        return 0.0
+
     n_fft = 512
     hop = 200  # 12.5 ms at 16 kHz -> 30 frames = 375 ms
-    freqs, _t, R = signal.stft(ref, fs=sr, window="hann", nperseg=n_fft, noverlap=n_fft - hop)
-    _, _, E = signal.stft(est, fs=sr, window="hann", nperseg=n_fft, noverlap=n_fft - hop)
+    freqs, _t, R = signal.stft(r_arr, fs=sr, window="hann", nperseg=n_fft, noverlap=n_fft - hop)
+    _, _, E = signal.stft(e_arr, fs=sr, window="hann", nperseg=n_fft, noverlap=n_fft - hop)
     R_mag = np.abs(R)
     E_mag = np.abs(E)
 
@@ -772,13 +812,16 @@ def stoi_proxy_envelope_corr(ref: np.ndarray, est: np.ndarray, sr: int) -> float
         # Scale & clip degraded envelope per band (STOI normalization).
         norm_r = np.linalg.norm(xr, axis=1, keepdims=True) + EPS
         norm_e = np.linalg.norm(xe, axis=1, keepdims=True) + EPS
+        # Bands with near-zero estimate energy contribute 0 correlation, never clipped-ref illusion.
+        est_active = np.max(xe, axis=1) >= 1e-8
         xe_scaled = xe * (norm_r / norm_e)
         xe_clipped = np.minimum(xe_scaled, xr * (1.0 + beta))
         xr_c = xr - np.mean(xr, axis=1, keepdims=True)
         xe_c = xe_clipped - np.mean(xe_clipped, axis=1, keepdims=True)
         num = np.sum(xr_c * xe_c, axis=1)
         den = (np.linalg.norm(xr_c, axis=1) * np.linalg.norm(xe_c, axis=1)) + EPS
-        corrs.append(float(np.mean(num / den)))
+        band_corr = np.where(est_active, num / den, 0.0)
+        corrs.append(float(np.mean(band_corr)))
     return float(np.clip(np.mean(corrs) if corrs else 0.0, -1.0, 1.0))
 
 
@@ -831,15 +874,29 @@ def speech_spectral_lsd_db(ref: np.ndarray, est: np.ndarray, sr: int) -> float:
 
 
 def syllable_envelope_corr(ref: np.ndarray, est: np.ndarray, sr: int) -> float:
-    """Pearson correlation of 1.5-10 Hz word/syllable modulation envelope."""
+    """Pearson correlation of 1.5-10 Hz word/syllable modulation envelope.
+
+    Returns `0.0` when `est` is silent/constant on an active reference.
+    """
+    r_arr = np.asarray(ref, dtype=np.float64)
+    e_arr = np.asarray(est, dtype=np.float64)
+    ref_rms = float(np.sqrt(np.mean(r_arr ** 2)))
+    est_rms = float(np.sqrt(np.mean(e_arr ** 2)))
+    if ref_rms >= 1e-8 and (est_rms < 1e-8 or float(np.std(e_arr)) < 1e-8):
+        return 0.0
+
     sos_lp = signal.butter(4, 12.0 / (0.5 * sr), btype="low", output="sos")
-    env_r = signal.sosfiltfilt(sos_lp, np.abs(ref))
-    env_e = signal.sosfiltfilt(sos_lp, np.abs(est))
+    env_r = signal.sosfiltfilt(sos_lp, np.abs(r_arr))
+    env_e = signal.sosfiltfilt(sos_lp, np.abs(e_arr))
     # Downsample envelope to 100 Hz for clean correlation.
     step = max(sr // 100, 1)
     er = env_r[::step] - np.mean(env_r[::step])
     ee = env_e[::step] - np.mean(env_e[::step])
-    den = float(np.linalg.norm(er) * np.linalg.norm(ee))
+    nr = float(np.linalg.norm(er))
+    ne = float(np.linalg.norm(ee))
+    if nr > 1e-12 and ne <= 1e-12:
+        return 0.0
+    den = nr * ne
     if den <= EPS:
         return 1.0
     return float(np.clip(float(np.dot(er, ee)) / den, -1.0, 1.0))
@@ -897,6 +954,8 @@ def evaluate_voice_case(
         "syllable_env_corr_out": out_syl,
         "delta_syllable_env_corr": float(out_syl - in_syl),
         "clean_control_max_abs_err": float(np.max(np.abs(y - clean))) if is_clean_control else None,
+        "solver_fallback": bool(result.meta.get("solver_fallback", False)),
+        "solver_fallback_bins": int(result.meta.get("solver_fallback_bins", 0)),
         "input_mutated": input_mutated,
         "wall_s": float(result.wall_s),
         "wall_s_per_audio_min": float(result.wall_s / audio_min),
@@ -908,19 +967,14 @@ def evaluate_voice_case(
 # ---------------------------------------------------------------------------
 
 def audit_voice_external_models_and_metrics(models_dir: Path | None = None) -> dict:
-    """Honest local audit of external voice neural models, datasets, and licensed metrics."""
+    """Honest per-model local audit of external voice neural models, datasets, and licensed metrics."""
     m_dir = models_dir if models_dir is not None else (REPO / "models")
     weight_exts = (".pt", ".pth", ".ckpt", ".onnx", ".safetensors")
-    voice_keywords = ("deepfilternet", "sgmse", "dnsmos", "voice", "speech_flow")
-    local_weights = []
+    all_weight_files: list[Path] = []
     if m_dir.exists():
         for p in sorted(m_dir.rglob("*")):
-            if (
-                p.is_file()
-                and p.suffix.lower() in weight_exts
-                and any(k in p.name.lower() for k in voice_keywords)
-            ):
-                local_weights.append(p.relative_to(REPO).as_posix())
+            if p.is_file() and p.suffix.lower() in weight_exts:
+                all_weight_files.append(p)
 
     cuda_available = False
     torch_version = None
@@ -933,15 +987,83 @@ def audit_voice_external_models_and_metrics(models_dir: Path | None = None) -> d
         torch_version = None
 
     colab_authorized = bool(os.environ.get("MR_E8_COLAB_AUTHORIZED") == "1")
+
+    model_specs = [
+        {
+            "id": "deepfilternet3",
+            "keywords": ("deepfilternet", "deepfilter"),
+            "version_pin": "DeepFilterNet 0.5.6 (DeepFilterNet3 48 kHz)",
+            "license": "MIT / Apache-2.0 dual-licensed",
+            "colab_budget_estimate": "T4/L4 GPU (~1-2 GB VRAM, ~1-3 s/min audio; also CPU-capable after weight audit)",
+            "target_role": "Real-time / low-latency noise suppression + mild dereverberation",
+        },
+        {
+            "id": "sgmse_plus",
+            "keywords": ("sgmse",),
+            "version_pin": "SGMSE+ (Richter et al. 2023, score-based diffusion)",
+            "license": "MIT (verify checkpoint release terms)",
+            "colab_budget_estimate": "T4/L4 GPU (~4-6 GB VRAM, ~15-40 s/min audio for 30-step reverse SDE)",
+            "target_role": "Generative speech dereverberation & enhancement (requires hallucination/word-drop audit)",
+        },
+        {
+            "id": "flow_matching_speech",
+            "keywords": ("flowse", "speech_flow", "flow_matching"),
+            "version_pin": "FlowSE / conditional flow-matching speech restoration (pin commit + SHA-256)",
+            "license": "Verify repository & checkpoint SPDX before download",
+            "colab_budget_estimate": "T4/L4 GPU (~4-8 GB VRAM, ~8-20 s/min audio for 5-10 ODE steps)",
+            "target_role": "Low-step generative speech enhancement (strictly Enhance preview, never Preserve)",
+        },
+    ]
+
+    external_neural_models = []
+    local_weights: list[str] = []
+    for spec in model_specs:
+        matched = [
+            _portable_rel_path(p)
+            for p in all_weight_files
+            if any(k in p.name.lower() for k in spec["keywords"])
+        ]
+        local_weights.extend(matched)
+        # Per-model gate: requires matching weight file, verified license/checksum pin,
+        # CUDA GPU, AND explicit Colab authorization. Never flips all models ready from one file.
+        license_verified = False
+        m_reasons = []
+        if not matched:
+            m_reasons.append(f"no_local_weights_for_{spec['id']}")
+        if not license_verified:
+            m_reasons.append(f"unverified_checkpoint_license_and_sha256_for_{spec['id']}")
+        if not cuda_available:
+            m_reasons.append("no_local_cuda_gpu")
+        if not colab_authorized:
+            m_reasons.append("colab_connection_not_authorized_or_configured")
+        m_status = "blocked_external_weights_or_colab" if m_reasons else "ready"
+        external_neural_models.append({
+            "id": spec["id"],
+            "status": m_status,
+            "local_weights_found": matched,
+            "license_verified": license_verified,
+            "blocked_reasons": m_reasons,
+            "version_pin": spec["version_pin"],
+            "license": spec["license"],
+            "colab_budget_estimate": spec["colab_budget_estimate"],
+            "target_role": spec["target_role"],
+        })
+
     blocked_reasons = []
-    if not local_weights:
+    if any(not m["local_weights_found"] for m in external_neural_models):
         blocked_reasons.append("no_local_licensed_voice_weights_deepfilternet_sgmse_flow")
+    if any(not m["license_verified"] for m in external_neural_models):
+        blocked_reasons.append("unverified_checkpoint_licenses_and_sha256")
     if not cuda_available:
         blocked_reasons.append("no_local_cuda_gpu")
     if not colab_authorized:
         blocked_reasons.append("colab_connection_not_authorized_or_configured")
 
-    neural_status = "blocked_external_weights_or_colab" if blocked_reasons else "ready"
+    neural_status = (
+        "ready"
+        if all(m["status"] == "ready" for m in external_neural_models)
+        else "blocked_external_weights_or_colab"
+    )
 
     return {
         "contour": "A_voice",
@@ -952,7 +1074,7 @@ def audit_voice_external_models_and_metrics(models_dir: Path | None = None) -> d
         "environment_audit": {
             "torch_version": torch_version,
             "cuda_available": cuda_available,
-            "local_voice_weights_found": local_weights,
+            "local_voice_weights_found": sorted(set(local_weights)),
             "colab_authorized": colab_authorized,
         },
         "external_datasets": [
@@ -971,32 +1093,7 @@ def audit_voice_external_models_and_metrics(models_dir: Path | None = None) -> d
                 "required_action": "Provision on authorized Colab session or approved dev storage with SHA-256 manifest",
             },
         ],
-        "external_neural_models": [
-            {
-                "id": "deepfilternet3",
-                "status": neural_status,
-                "version_pin": "DeepFilterNet 0.5.6 (DeepFilterNet3 48 kHz)",
-                "license": "MIT / Apache-2.0 dual-licensed",
-                "colab_budget_estimate": "T4/L4 GPU (~1-2 GB VRAM, ~1-3 s/min audio; also CPU-capable after weight audit)",
-                "target_role": "Real-time / low-latency noise suppression + mild dereverberation",
-            },
-            {
-                "id": "sgmse_plus",
-                "status": neural_status,
-                "version_pin": "SGMSE+ (Richter et al. 2023, score-based diffusion)",
-                "license": "MIT (verify checkpoint release terms)",
-                "colab_budget_estimate": "T4/L4 GPU (~4-6 GB VRAM, ~15-40 s/min audio for 30-step reverse SDE)",
-                "target_role": "Generative speech dereverberation & enhancement (requires hallucination/word-drop audit)",
-            },
-            {
-                "id": "flow_matching_speech",
-                "status": neural_status,
-                "version_pin": "FlowSE / conditional flow-matching speech restoration (pin commit + SHA-256)",
-                "license": "Verify repository & checkpoint SPDX before download",
-                "colab_budget_estimate": "T4/L4 GPU (~4-8 GB VRAM, ~8-20 s/min audio for 5-10 ODE steps)",
-                "target_role": "Low-step generative speech enhancement (strictly Enhance preview, never Preserve)",
-            },
-        ],
+        "external_neural_models": external_neural_models,
         "external_perceptual_metrics": [
             {
                 "id": "pesq",
@@ -1078,6 +1175,7 @@ def evaluate_go_no_go_voice(summary_by_stratum: dict, external_audit: dict) -> d
 
 def build_voice_manifest(out_path: Path) -> dict:
     """Build deterministic `corpus/dev-e8-voice-v1.json` with SHA-256 audio digests."""
+    assert_not_sealed_path(out_path)
     cases = voice_cases()
     file_entries = []
     strata_counts: dict[str, int] = {s: 0 for s in VOICE_STRATA}
@@ -1135,7 +1233,14 @@ def _max(vals: list[float | None]) -> float | None:
 
 def run_e8_voice_eval(manifest_path: Path, out_json: Path | None = None) -> dict:
     """Run the full Contour-A voice evaluation benchmark on CPU."""
+    assert_not_sealed_path(manifest_path)
+    if out_json is not None:
+        assert_not_sealed_path(out_json)
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"E8 voice manifest not found: {manifest_path}")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if str(manifest.get("tier", "")).lower() == "sealed":
+        raise ValueError("sealed_corpus_forbidden_in_e8")
     if manifest.get("schema") != VOICE_CORPUS_SCHEMA:
         raise ValueError(f"unexpected E8 voice manifest schema: {manifest.get('schema')!r}")
 
@@ -1218,7 +1323,7 @@ def run_e8_voice_eval(manifest_path: Path, out_json: Path | None = None) -> dict
         "colab_launched": False,
         "toolchain": {**corpus_v1.actual_toolchain(), "platform": platform.machine()},
         "provenance": {
-            "manifest_path": "corpus/dev-e8-voice-v1.json",
+            "manifest_path": _portable_rel_path(manifest_path),
             "manifest_sha256": corpus_v1.digest(manifest_path),
             "evaluator_path": "research/e8_voice_eval.py",
             "evaluator_sha256": corpus_v1.digest(REPO / "research" / "e8_voice_eval.py"),
@@ -1239,16 +1344,21 @@ def run_e8_voice_eval(manifest_path: Path, out_json: Path | None = None) -> dict
     return results
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     ap.add_argument("--manifest", default="corpus/dev-e8-voice-v1.json")
     ap.add_argument("--build-manifest", action="store_true", help="Regenerate dev-e8-voice-v1.json before eval.")
     ap.add_argument("--out-json", default=None)
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     manifest_path = Path(args.manifest)
-    if args.build_manifest or not manifest_path.exists():
+    assert_not_sealed_path(manifest_path)
+    if args.out_json is not None:
+        assert_not_sealed_path(Path(args.out_json))
+    if args.build_manifest:
         build_voice_manifest(manifest_path)
+    elif not manifest_path.exists():
+        raise FileNotFoundError(f"E8 voice manifest not found (pass --build-manifest to generate): {manifest_path}")
 
     res = run_e8_voice_eval(manifest_path, Path(args.out_json) if args.out_json else None)
     gng = res["go_no_go_voice"]
