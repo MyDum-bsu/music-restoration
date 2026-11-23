@@ -6,8 +6,8 @@ processes · models · (with --deep: data integrity, tests, end-to-end pipeline 
 
 Each section has its own try/except — one failing does not break the report.
 
-  python3 scripts/status_report.py            # quick report
-  python3 scripts/status_report.py --deep     # + integrity, tests, e2e run
+  python3 research/status_report.py            # quick report
+  python3 research/status_report.py --deep     # + integrity, tests, e2e run
 """
 import argparse
 import json
@@ -48,7 +48,7 @@ def sec_disk() -> None:
     h("1. Flash drive and budget")
     try:
         root = workspace.data_root()
-        # the mount point may sit above data_root (here /media/mydum/Data)
+        # the mount point may sit above data_root
         mp = root
         while mp != mp.parent and not mp.is_mount():
             mp = mp.parent
@@ -58,7 +58,7 @@ def sec_disk() -> None:
                                   text=True).stdout
             ok(f"mounted at {mp}: {line.strip().splitlines()[-1]}")
         else:
-            bad(f"{root} NOT mounted — scripts/repair_flash.sh")
+            bad(f"{root} NOT mounted — research/repair_flash.sh")
         used = workspace.usage_bytes()
         budget = workspace.budget_bytes()
         pct = used / budget * 100
@@ -206,7 +206,7 @@ def sec_models() -> None:
 def sec_deep() -> None:
     h("7. Deep checks (--deep)")
     try:
-        r = subprocess.run([sys.executable, str(ROOT / "scripts/dataset_audit.py"), "--integrity"],
+        r = subprocess.run([sys.executable, str(ROOT / "research/dataset_audit.py"), "--integrity"],
                            capture_output=True, text=True, cwd=str(ROOT), timeout=900)
         for line in (r.stdout or "").strip().splitlines()[-2:]:
             (ok if "no problems" in line else warn)(line.strip())

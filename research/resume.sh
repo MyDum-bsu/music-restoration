@@ -8,8 +8,8 @@
 set -u
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
-DATA="/media/mydum/Data"
-DATA_ROOT="$DATA/Music/restore"
+DATA_ROOT="${MR_DATA_ROOT:-$(python3 -c 'from rnext import workspace; print(workspace.data_root())')}"
+DATA="${MR_DATA_MOUNT:-$(dirname "$(dirname "$DATA_ROOT")")}"
 
 say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 
@@ -28,7 +28,7 @@ Run this once (password required):
 
 If that does not help either:
 
-    sudo mount -t ntfs3 -o force,rw /dev/sda5 /media/mydum/Data
+    sudo mount -t ntfs3 -o force,rw /dev/sda5 "$DATA"
 
 then run this script again.
 MSG
@@ -74,4 +74,4 @@ if [ "${1:-}" = "--with-app" ] && [ -d app/node_modules ]; then
 fi
 
 say "done"
-python3 scripts/status.py | tail -3
+python3 research/status.py | tail -3

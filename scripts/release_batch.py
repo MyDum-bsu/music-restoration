@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""DEPRECATED legacy batch runner — use scripts/restore_per_track.py instead.
+"""DEPRECATED legacy batch runner — use scripts/restore_safe.py (Preserve) instead.
 
 It is kept only so old call sites do not break: it still runs restore_one.py per
-release, which is the single-policy path that produced worse results than the
-per-track pipeline ("не то качество", review item Standards #4).
+release, which is the single-policy legacy path.
 
-Replacement:
-  python3 scripts/restore_per_track.py --src "album/" --out "out/album [restored]"
+Replacement (Preserve local CPU default):
+  python3 scripts/restore_safe.py --src "album/" --out "out/album [restored]"
+  python3 scripts/evaluate_album.py --src "album/" --restored "out/album [restored]" --out "eval/album"
   python3 scripts/finish_release.py --restored "out/album [restored]" --source "album/"
 
 Batch run of releases: restoration → finalization → phone, one by one.

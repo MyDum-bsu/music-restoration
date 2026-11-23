@@ -5,17 +5,22 @@ description: One-command status report of the music-restoration project (audio r
 
 # music-restoration: project status
 
-Project: `~/Desktop/projects/music-restoration` — a DR-restoration pipeline
+Project: `<repo-root>` — a legacy DR-restoration research pipeline
 trained on "original → master restoration" pairs from rutracker (two
 restoration authors: Lisnoy Yozhyg `pid=5618698`, Alias Divas `pid=3048819`).
-The data lives on a flash drive at `/media/mydum/Data/Music/restore`
+The data lives under `<data_root>` configured in `config/workspace.json`
 (40 GiB budget).
+
+> **Isolation boundary (`legacy → Preserve` / `research → Preserve`):** This skill
+> monitors the isolated research/ML harness only. For production local CPU
+> restoration, use `python3 scripts/restore_safe.py --src <dir> --out <empty-out/>`
+> (zero ML/joblib/torch dependency).
 
 ## Quick answer
 
 ```bash
-python3 ~/Desktop/projects/music-restoration/scripts/status_report.py          # report
-python3 ~/Desktop/projects/music-restoration/scripts/status_report.py --deep   # + integrity, tests, run
+python3 research/status_report.py          # report
+python3 research/status_report.py --deep   # + integrity, tests, run
 ```
 
 The script prints 6 sections (7 with `--deep`) and does not crash if one of
@@ -74,27 +79,30 @@ them is unavailable:
 
 | symptom in the report | action |
 |---|---|
-| flash drive reported as not mounted | `scripts/repair_flash.sh` (finds the "Data" partition, clears the dirty flag, mounts; on refusal — `sudo ntfsfix -d /dev/sda5`) |
-| free space below 12 GB | `scripts/dataset_prune_stalled.py --max-progress 0.5` and/or `--peerless` |
-| loop/watchdog not running | `scripts/resume.sh` (mounting → Transmission tuning → integrity → loop → training); the watchdog `scripts/watchdog.sh` raises the loop by itself |
-| no promoted model | do nothing: keep accumulating tracks, the gate will pass one on its own; can be accelerated with `scripts/ml_auto.py --force` |
-| Transmission RPC off | `transmission-gtk` is not running: `scripts/resume.sh` will raise it; tuning — `scripts/transmission_tune.py --apply` |
-| many `paused_space` entries in the journal | pairs postponed over space/dead swarms — the selector will return them to work; optionally `scripts/dataset_fetch.py --refetch` |
+| flash drive reported as not mounted | `research/repair_flash.sh` (finds the "Data" partition, clears the dirty flag, mounts; on refusal — `sudo ntfsfix -d /dev/sda5`) |
+| free space below 12 GB | `research/dataset_prune_stalled.py --max-progress 0.5` and/or `--peerless` |
+| loop/watchdog not running | `research/resume.sh` (mounting → Transmission tuning → integrity → loop → training); the watchdog `research/watchdog.sh` raises the loop by itself |
+| no promoted model | do nothing: keep accumulating tracks, the gate will pass one on its own; can be accelerated with `research/ml_auto.py --force` |
+| Transmission RPC off | `transmission-gtk` is not running: `research/resume.sh` will raise it; tuning — `research/transmission_tune.py --apply` |
+| many `paused_space` entries in the journal | pairs postponed over space/dead swarms — the selector will return them to work; optionally `research/dataset_fetch.py --refetch` |
 | many `dead_swarm` entries in the journal | pairs with 0 peers after two attempts are marked terminal — that is normal, they do not occupy batch slots |
-| stalled torrents in Transmission | `scripts/dataset_prune_stalled.py --peerless`, then `scripts/dataset_fetch.py --repair` (clears wanted on removed pairs and removes zombie torrents) |
+| stalled torrents in Transmission | `research/dataset_prune_stalled.py --peerless`, then `research/dataset_fetch.py --repair` (clears wanted on removed pairs and removes zombie torrents) |
 
 ## Useful commands (deeper)
 
 ```bash
-python3 scripts/dataset_audit.py            # what was downloaded/extracted/lost
-python3 scripts/dataset_audit.py --integrity
-python3 scripts/dataset_select.py --limit 12   # what goes into the next batch
-python3 scripts/ml_auto.py --force             # retrain on the current data
-python3 scripts/fit_tilt.py --report           # tonal curve of the corpus
-python3 scripts/dataset_eval.py --all --variants flat,class,model   # end-to-end evaluation
-python3 scripts/dataset_eval.py --all --holdout-only                # honest (not in-sample)
+python3 research/dataset_audit.py            # what was downloaded/extracted/lost
+python3 research/dataset_audit.py --integrity
+python3 research/dataset_select.py --limit 12   # what goes into the next batch
+python3 research/ml_auto.py --force             # retrain on the current data
+python3 research/fit_tilt.py --report           # tonal curve of the corpus
+python3 research/dataset_eval.py --all --variants flat,class,model   # end-to-end evaluation
+python3 research/dataset_eval.py --all --holdout-only                # honest (not in-sample)
 
-# restoration and release packaging (details — the release-restore skill)
+# preferred Preserve restoration path (zero ML/network dependency)
+python3 scripts/restore_safe.py --src <dir> --out <empty-out/>
+
+# legacy manual/ML research restoration (opt-in historical comparison only)
 python3 scripts/restore_one.py --src <dir> --out out/ \
         --auto-policy --adaptive --ml-snapshot auto --tp -0.5
 python3 scripts/finish_release.py --restored out/ --source <src> \
@@ -112,7 +120,7 @@ python3 scripts/audio_measure.py <dir>
 ## Key paths
 
 ```
-/media/mydum/Data/Music/restore/
+<data_root>/                       (configured in config/workspace.json)
   corpus/dataset_plan.jsonl        pair plan (master release → original)
   corpus/restored/{tid}.json       topic breakdowns of masters (+ master DR tables)
   corpus/master_targets.jsonl      master targets without audio (637 releases / 8104 tracks)
@@ -127,9 +135,7 @@ python3 scripts/audio_measure.py <dir>
   release_src/                     downloaded release sources (bypasses the dataset raw)
 
 ~/Music/restorations/              ready for listening (copy from release/)
-~/Desktop/projects/music-restoration/skills/   project skills (audio-measure, tracker,
-                                   release-restore, restore-status)
-
-~/Desktop/projects/music-restoration/models/registry.jsonl      model snapshots
-~/Desktop/projects/music-restoration/models/leaderboard.jsonl   run results
+<repo-root>/skills/                project skills (audio-measure, tracker, release-restore)
+<repo-root>/models/registry.jsonl      model snapshots
+<repo-root>/models/leaderboard.jsonl   run results
 ```
