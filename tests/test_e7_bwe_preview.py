@@ -184,6 +184,54 @@ def test_export_bwe_preview_tags_flac_and_sidecar_without_touching_source(tmp_pa
         assert meta["BWE_TRACK_ROLE"] == [expected_role]
 
 
+def test_export_bwe_preview_fails_closed_on_symlink_or_source_alias(tmp_path: Path) -> None:
+    """export_bwe_preview refuses symlinks (e.g., sidecar -> source) before writing anything."""
+    case = _case_by_id("e7-bl8k-harmonic-mix-48k")
+    _clean, degraded, _am, _meta = e7_corpus.synthesize_e7_arrays(case)
+    sr = int(case["rate"])
+    cutoff = float(case["observed_cutoff_hz"])
+    seg = degraded[: int(sr * 0.3)].copy()
+
+    src_dir = tmp_path / "library"
+    out_dir = tmp_path / "enhance_preview"
+    src_dir.mkdir()
+    out_dir.mkdir()
+    src_path = src_dir / "original_track.wav"
+    corpus_synth.write_wav(src_path, sr, seg, bits=24, seed=0)
+    src_sha_before = hashlib.sha256(src_path.read_bytes()).hexdigest()
+
+    res = e7.run_arm("dsp_harmonic_bwe_preview", seg, sr, cutoff)
+
+    # Plant a symlink at the sidecar output path pointing to the untouched source file.
+    sidecar_link = out_dir / f"{case['id']}.{res.arm}.bwe_preview.sidecar.json"
+    sidecar_link.symlink_to(src_path)
+
+    with pytest.raises(ValueError, match="symlink"):
+        e7.export_bwe_preview(src_path, res, sr, out_dir, case["id"], bits=24)
+
+    # Source file must remain 100% untouched and no FLAC files should have been created.
+    assert hashlib.sha256(src_path.read_bytes()).hexdigest() == src_sha_before
+    assert not (out_dir / f"{case['id']}.{res.arm}.bwe_preview.flac").exists()
+    assert not (out_dir / f"{case['id']}.{res.arm}.synthesized_band_only.flac").exists()
+
+
+def test_zero_headroom_clamped_synth_reports_synthesized_hf_band_false() -> None:
+    """If headroom clamp zeroes out synthesized_band, synthesized_hf_band must be False."""
+    case = _case_by_id("e7-bl8k-harmonic-mix-48k")
+    _clean, degraded, _am, _meta = e7_corpus.synthesize_e7_arrays(case)
+    sr = int(case["rate"])
+    cutoff = float(case["observed_cutoff_hz"])
+    # Scale input peak to 0.995 (>= 0.99 ceiling) so headroom is strictly 0.0.
+    hot = degraded[: int(sr * 0.4)].copy()
+    hot *= 0.995 / float(np.max(np.abs(hot)))
+    res = e7.run_arm("dsp_harmonic_bwe_preview", hot, sr, cutoff)
+    assert float(np.max(np.abs(res.synthesized_band))) == 0.0
+    assert res.synthesized_hf_band is False
+    assert res.is_generative_preview is False
+    assert res.bypassed is True
+    assert res.meta["bypass_reason"] == "zero_headroom_clamped_synth"
+
+
 def test_neural_bwe_arm_honest_blocker_and_colab_contract() -> None:
     """Neural BWE arm honestly reports blocked_external_weights_or_colab with contract."""
     audit = e7.audit_neural_bwe_arm()

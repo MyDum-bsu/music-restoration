@@ -9,7 +9,7 @@
 - **Preserve promotion / neural production dependency / Colab automation:** `False` (isolated opt-in Enhance preview study only).
 - **Manifest SHA-256 (`corpus/dev-e7-bwe-v1.json`):** `0cef1dad5b41758ec6412f998d523a89c4a14dc3a65663231c05c4fdd5912334`
 - **Corpus Builder SHA-256 (`research/build_e7_bwe_corpus.py`):** `2b80e00479bf0245ebc6a8a903d95853ea37730d22228979ef2152d814a8157d`
-- **E7 Harness SHA-256 (`research/e7_bwe_preview.py`):** `d8c1297b21864d506f10dea9991be1ebd8d321a3779249149f61da6bbdbdf3cb`
+- **E7 Harness SHA-256 (`research/e7_bwe_preview.py`):** `e0b84e6c7d3db6dbe97c8964f116037cb2d5f23c44b8d84b8296e85b4e03614a`
 - **Additive & Immutability Contract:** `34/34` runs passed `preview == input + synthesized_band` (`max_err = 0.00e+00`) with `0` input mutations.
 
 > **Honest Semantics Notice:** High-frequency energy above `observed_cutoff_hz` produced by `dsp_harmonic_bwe_preview` is a **synthesized preview** (`synthesized_hf_band = true`, `is_generative_preview = true`, `not_original_restoration = true`), **never** a recovered original waveform. Missing-band LSD and spectral tilt evaluate envelope plausibility only.
@@ -23,17 +23,17 @@
 | Stratum (n) | Arm | Obs ΔSNR (dB) | Obs ΔLSD (dB) | Obs Max Err vs In | Miss LSD In (dB) | Miss LSD Out (dB) | Miss ΔLSD (dB) | Synth Energy (dBFS) | Wall (s/min) |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `bandlimit_8k` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 36.51 | 36.51 | +0.00 | 0 (none) | 0.03 |
-| `bandlimit_8k` (3) | `dsp_harmonic_bwe_preview` | +0.000 | -0.0000 | 3.43e-05 | 36.51 | 17.63 | -18.88 | -43.8 | 2.80 |
-| `bandlimit_11k` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 33.74 | 33.74 | +0.00 | 0 (none) | 0.02 |
-| `bandlimit_11k` (3) | `dsp_harmonic_bwe_preview` | +0.000 | -0.0000 | 1.12e-05 | 33.74 | 17.90 | -15.84 | -42.4 | 3.04 |
-| `bandlimit_16k` (2) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 20.62 | 20.62 | +0.00 | 0 (none) | 0.02 |
-| `bandlimit_16k` (2) | `dsp_harmonic_bwe_preview` | +0.000 | -0.0000 | 1.07e-05 | 20.62 | 17.92 | -2.71 | -42.7 | 3.11 |
+| `bandlimit_8k` (3) | `dsp_harmonic_bwe_preview` | +0.000 | -0.0000 | 3.43e-05 | 36.51 | 17.63 | -18.88 | -43.8 | 4.21 |
+| `bandlimit_11k` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 33.74 | 33.74 | +0.00 | 0 (none) | 0.04 |
+| `bandlimit_11k` (3) | `dsp_harmonic_bwe_preview` | +0.000 | -0.0000 | 1.12e-05 | 33.74 | 17.90 | -15.84 | -42.4 | 5.13 |
+| `bandlimit_16k` (2) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 20.62 | 20.62 | +0.00 | 0 (none) | 0.05 |
+| `bandlimit_16k` (2) | `dsp_harmonic_bwe_preview` | +0.000 | -0.0000 | 1.07e-05 | 20.62 | 17.92 | -2.71 | -42.7 | 6.23 |
 | `codec_roundtrip` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 33.94 | 33.94 | +0.00 | 0 (none) | 0.03 |
-| `codec_roundtrip` (3) | `dsp_harmonic_bwe_preview` | -0.000 | +0.0000 | 1.60e-05 | 33.94 | 18.69 | -15.25 | -45.3 | 3.76 |
+| `codec_roundtrip` (3) | `dsp_harmonic_bwe_preview` | -0.000 | +0.0000 | 1.60e-05 | 33.94 | 18.69 | -15.25 | -45.3 | 3.20 |
 | `fullband_clean_control` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 0.00 | 0.00 | +0.00 | 0 (none) | 0.02 |
-| `fullband_clean_control` (3) | `dsp_harmonic_bwe_preview` | +0.000 | +0.0000 | 0.00e+00 | 0.00 | 0.00 | +0.00 | 0 (none) | 0.43 |
-| `ood` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 39.59 | 39.59 | +0.00 | 0 (none) | 0.02 |
-| `ood` (3) | `dsp_harmonic_bwe_preview` | +0.000 | +0.0000 | 2.81e-04 | 39.59 | 19.60 | -19.99 | -45.5 | 3.28 |
+| `fullband_clean_control` (3) | `dsp_harmonic_bwe_preview` | +0.000 | +0.0000 | 0.00e+00 | 0.00 | 0.00 | +0.00 | 0 (none) | 0.38 |
+| `ood` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 39.59 | 39.59 | +0.00 | 0 (none) | 0.03 |
+| `ood` (3) | `dsp_harmonic_bwe_preview` | +0.000 | +0.0000 | 2.81e-04 | 39.59 | 19.60 | -19.99 | -45.5 | 2.93 |
 
 ### 2.2 Stereo Coherence (L/R Correlation, ILD, IPD) & Artifact Checks
 
@@ -82,8 +82,8 @@
 
 ## 4. Opt-In Derivative Export & Mandatory Tagging Contract
 
-- `export_bwe_preview()` writes **separate** opt-in files (`*.bwe_preview.flac`, `*.synthesized_band_only.flac`, and `*.bwe_preview.sidecar.json`) and verifies `source_sha256` before and after export (zero source mutation or library replacement).
-- Both the FLAC Vorbis comments and the JSON sidecar embed: `synthesized_hf_band`, `observed_cutoff_hz`, `is_generative_preview`, `not_original_restoration`, `enhance_opt_in_derivative`, `source_sha256`, `derivative_sha256`, and `synthesized_band_sha256`.
+- `export_bwe_preview()` writes **separate** opt-in files (`*.bwe_preview.flac`, `*.synthesized_band_only.flac`, and `*.bwe_preview.sidecar.json`), rejects any symlink or source-aliasing output path via `lstat`/`realpath` before writing, and verifies `source_sha256` before and after writing all three files (zero source mutation or library replacement).
+- Both the FLAC Vorbis comments and the JSON sidecar embed `synthesized_hf_band`, `observed_cutoff_hz`, `is_generative_preview`, `not_original_restoration`, `enhance_opt_in_derivative`, and `source_sha256`; the post-tag hashes `derivative_sha256` and `synthesized_band_sha256` are recorded in the JSON sidecar.
 
 ## 5. Neural BWE Arm Audit (AudioSR / UniverSR / BABE-2 / SAMECFM) & Colab Contract
 
@@ -94,8 +94,9 @@
 
 ## 6. Limitations & Honest Method Boundaries
 
-1. **Synthesized HF Is Preview, Not Original Restoration:** `dsp_harmonic_bwe_preview` improves missing-band spectral envelope distance (negative `Miss ΔLSD`) by transposing and harmonically exciting the upper observed octave, but it **cannot** reconstruct true lost micro-transients, unique cymbal overtones, or unpitched HF phase. Notice that missing-band IPD error remains high (~45-55 deg across strata) because phase in the missing band is unobservable from band-limited input.
-2. **Role of the Full-Band Bypass Guard:** Zero false HF on `fullband_clean_control` relies on `_detect_fullband_presence` (Hann-windowed Welch PSD `hf_to_mid_db > -28 dB`). When forced with `bypass_fullband=False` (Section 3.2), DSP synthesis injects extraneous HF above 20 kHz, confirming why explicit full-band detection and opt-in user control are mandatory.
-3. **Extreme Narrowband OOD (`e7-ood-narrowband-4k-48k`):** Extending from a 4 kHz cutoff across >2.5 missing octaves via periodic SBR + harmonic excitation yields a coarse spectral approximation only and increases timbre mismatch relative to 11-16 kHz cutoffs.
-4. **Codec Roundtrip Interaction (`mp3_64k`, `opus_32k`, `ood_double_codec_8k`):** Lossy codec quantization and pre-echo present in the upper observed band (`[0.5*cutoff, cutoff]`) are transposed upward by SBR; BWE does **not** remove codec pre-echo inside the observed band.
-5. **Neural BWE Comparison Pending Weights/Colab:** No AudioSR, UniverSR, BABE-2, or SAMECFM comparison numbers are reported because licensed weights and authorized Colab GPU execution are not provisioned in this offline CPU environment.
+1. **Synthesized HF Is Preview, Not Original Restoration:** `dsp_harmonic_bwe_preview` improves missing-band spectral envelope distance on average (negative `Miss ΔLSD`) by transposing and harmonically exciting the upper observed octave, but it **cannot** reconstruct true lost micro-transients, unique cymbal overtones, or unpitched HF phase. Missing-band IPD error remains high (~45-55 deg across strata) because phase in the missing band is unobservable from band-limited input. On `e7-bl16k-bright-mix-48k`, where the clean reference rolls off steeply above 16 kHz (`-87.5 dB/oct`), SBR extrapolation (`-10.4 dB/oct`) slightly worsens missing-band LSD by `+0.22 dB` (`19.36 -> 19.58 dB`).
+2. **Cutoff Transition Guard Band (`-2% / +4%`):** Band-separated metrics evaluate `observed_band` over `[20 Hz, 0.98 * observed_cutoff_hz]` and `missing_band` over `[1.04 * observed_cutoff_hz, 0.92 * nyquist]` to exclude the linear-phase crossover transition skirt around `observed_cutoff_hz`; minor crossover-region differences inside `(0.98 * cutoff, 1.04 * cutoff)` are outside these two summary bands.
+3. **Role of the Full-Band Bypass Guard:** Zero false HF on `fullband_clean_control` relies on `_detect_fullband_presence` (Hann-windowed Welch PSD `hf_to_mid_db > -28 dB`). When forced with `bypass_fullband=False` (Section 3.2), DSP synthesis injects extraneous HF above 20 kHz, confirming why explicit full-band detection and opt-in user control are mandatory.
+4. **Extreme Narrowband OOD (`e7-ood-narrowband-4k-48k`):** Extending from a 4 kHz cutoff across >2.5 missing octaves via periodic SBR + harmonic excitation yields a coarse spectral approximation only and increases timbre mismatch relative to 11-16 kHz cutoffs.
+5. **Codec Roundtrip Interaction (`mp3_64k`, `opus_32k`, `ood_double_codec_8k`):** Lossy codec quantization and pre-echo present in the upper observed band (`[0.5*cutoff, cutoff]`) are transposed upward by SBR; BWE does **not** remove codec pre-echo inside the observed band.
+6. **Neural BWE Comparison Pending Weights/Colab:** No AudioSR, UniverSR, BABE-2, or SAMECFM comparison numbers are reported because licensed weights and authorized Colab GPU execution are not provisioned in this offline CPU environment.

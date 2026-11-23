@@ -20,7 +20,7 @@
     "builder_path": "research/build_e7_bwe_corpus.py",
     "builder_sha256": "2b80e00479bf0245ebc6a8a903d95853ea37730d22228979ef2152d814a8157d",
     "harness_path": "research/e7_bwe_preview.py",
-    "harness_sha256": "d8c1297b21864d506f10dea9991be1ebd8d321a3779249149f61da6bbdbdf3cb"
+    "harness_sha256": "e0b84e6c7d3db6dbe97c8964f116037cb2d5f23c44b8d84b8296e85b4e03614a"
   },
   "e4_freeze_integrity": {
     "freeze_manifest": "docs/validation/e4-freeze-manifest.json",
@@ -161,8 +161,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.019269451964646578,
-          "wall_s_per_audio_min": 0.46246684715151787
+          "wall_s": 0.01592427695868537,
+          "wall_s_per_audio_min": 0.38218264700844884
         },
         "forced": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -207,8 +207,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.10106467799050733,
-          "wall_s_per_audio_min": 2.425552271772176
+          "wall_s": 0.11473003297578543,
+          "wall_s_per_audio_min": 2.7535207914188504
         }
       },
       "e7-ctl-fullband-plucked-48k": {
@@ -255,8 +255,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.019202683004550636,
-          "wall_s_per_audio_min": 0.46086439210921526
+          "wall_s": 0.01569449802627787,
+          "wall_s_per_audio_min": 0.3766679526306689
         },
         "forced": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -301,8 +301,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.10577706800540909,
-          "wall_s_per_audio_min": 2.538649632129818
+          "wall_s": 0.11871997202979401,
+          "wall_s_per_audio_min": 2.849279328715056
         }
       },
       "e7-ctl-fullband-harmonic-48k": {
@@ -349,8 +349,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0156442949664779,
-          "wall_s_per_audio_min": 0.3754630791954696
+          "wall_s": 0.016229209024459124,
+          "wall_s_per_audio_min": 0.38950101658701897
         },
         "forced": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -395,8 +395,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.11212802497902885,
-          "wall_s_per_audio_min": 2.6910725994966924
+          "wall_s": 0.10908309003571048,
+          "wall_s_per_audio_min": 2.6179941608570516
         }
       }
     }
@@ -422,7 +422,7 @@
         "max_sub_cutoff_leakage_db": null,
         "max_pre_ringing_rise_db": 0.0,
         "false_hf_cases": 0,
-        "mean_wall_s_per_audio_min": 0.025109656155109406
+        "mean_wall_s_per_audio_min": 0.03171166405081749
       },
       "dsp_harmonic_bwe_preview": {
         "n_cases": 3,
@@ -443,7 +443,7 @@
         "max_sub_cutoff_leakage_db": -89.06822593401745,
         "max_pre_ringing_rise_db": 0.18503962954927894,
         "false_hf_cases": 0,
-        "mean_wall_s_per_audio_min": 2.796928167808801
+        "mean_wall_s_per_audio_min": 4.206102239433676
       }
     },
     "bandlimit_11k": {
@@ -466,7 +466,7 @@
         "max_sub_cutoff_leakage_db": null,
         "max_pre_ringing_rise_db": 0.0,
         "false_hf_cases": 0,
-        "mean_wall_s_per_audio_min": 0.017862840089946985
+        "mean_wall_s_per_audio_min": 0.044063656125217676
       },
       "dsp_harmonic_bwe_preview": {
         "n_cases": 3,
@@ -487,7 +487,7 @@
         "max_sub_cutoff_leakage_db": -100.5445289151609,
         "max_pre_ringing_rise_db": 0.14668369972328782,
         "false_hf_cases": 0,
-        "mean_wall_s_per_audio_min": 3.040794632397592
+        "mean_wall_s_per_audio_min": 5.131431815214455
       }
     },
     "bandlimit_16k": {
@@ -510,7 +510,7 @@
         "max_sub_cutoff_leakage_db": null,
         "max_pre_ringing_rise_db": 0.0,
         "false_hf_cases": 0,
-        "mean_wall_s_per_audio_min": 0.02140773693099618
+        "mean_wall_s_per_audio_min": 0.046895328210666776
       },
       "dsp_harmonic_bwe_preview": {
         "n_cases": 2,
@@ -531,7 +531,7 @@
         "max_sub_cutoff_leakage_db": -105.0517302802929,
         "max_pre_ringing_rise_db": 0.023928491958104654,
         "false_hf_cases": 0,
-        "mean_wall_s_per_audio_min": 3.1067429634276778
+        "mean_wall_s_per_audio_min": 6.233798556262627
       }
     },
     "codec_roundtrip": {
@@ -554,7 +554,7 @@
         "max_sub_cutoff_leakage_db": null,
         "max_pre_ringing_rise_db": 0.0,
         "false_hf_cases": 0,
-        "mean_wall_s_per_audio_min": 0.025166655890643597
+        "mean_wall_s_per_audio_min": 0.025984047912061214
       },
       "dsp_harmonic_bwe_preview": {
         "n_cases": 3,
@@ -575,7 +575,7 @@
         "max_sub_cutoff_leakage_db": -100.12040203328694,
         "max_pre_ringing_rise_db": 0.1352353891646758,
         "false_hf_cases": 0,
-        "mean_wall_s_per_audio_min": 3.7628502715379
+        "mean_wall_s_per_audio_min": 3.197601976338774
       }
     },
     "fullband_clean_control": {
@@ -598,7 +598,7 @@
         "max_sub_cutoff_leakage_db": null,
         "max_pre_ringing_rise_db": 0.0,
         "false_hf_cases": 0,
-        "mean_wall_s_per_audio_min": 0.023546863812953234
+        "mean_wall_s_per_audio_min": 0.022426567506045103
       },
       "dsp_harmonic_bwe_preview": {
         "n_cases": 3,
@@ -619,7 +619,7 @@
         "max_sub_cutoff_leakage_db": null,
         "max_pre_ringing_rise_db": 0.0,
         "false_hf_cases": 0,
-        "mean_wall_s_per_audio_min": 0.4329314394854009
+        "mean_wall_s_per_audio_min": 0.3827838720753789
       }
     },
     "ood": {
@@ -642,7 +642,7 @@
         "max_sub_cutoff_leakage_db": null,
         "max_pre_ringing_rise_db": 0.0,
         "false_hf_cases": 0,
-        "mean_wall_s_per_audio_min": 0.0171839683316648
+        "mean_wall_s_per_audio_min": 0.026960168033838272
       },
       "dsp_harmonic_bwe_preview": {
         "n_cases": 3,
@@ -663,7 +663,7 @@
         "max_sub_cutoff_leakage_db": -70.01937235774633,
         "max_pre_ringing_rise_db": 0.2713140979635641,
         "false_hf_cases": 0,
-        "mean_wall_s_per_audio_min": 3.2761632800102234
+        "mean_wall_s_per_audio_min": 2.9289104961790144
       }
     }
   },
@@ -720,8 +720,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0017378129996359348,
-          "wall_s_per_audio_min": 0.041707511991262436
+          "wall_s": 0.0020156429964117706,
+          "wall_s_per_audio_min": 0.048375431913882494
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -766,8 +766,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.11681904300348833,
-          "wall_s_per_audio_min": 2.80365703208372
+          "wall_s": 0.1561049769516103,
+          "wall_s_per_audio_min": 3.746519446838647
         }
       }
     },
@@ -823,8 +823,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0005866040010005236,
-          "wall_s_per_audio_min": 0.014078496024012566
+          "wall_s": 0.000644851999823004,
+          "wall_s_per_audio_min": 0.015476447995752096
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -869,8 +869,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.11770408297888935,
-          "wall_s_per_audio_min": 2.8248979914933443
+          "wall_s": 0.14638156001456082,
+          "wall_s_per_audio_min": 3.5131574403494596
         }
       }
     },
@@ -926,8 +926,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0008142900187522173,
-          "wall_s_per_audio_min": 0.019542960450053215
+          "wall_s": 0.0013034630101174116,
+          "wall_s_per_audio_min": 0.03128311224281788
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -972,8 +972,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.11509289499372244,
-          "wall_s_per_audio_min": 2.7622294798493385
+          "wall_s": 0.22327624296303838,
+          "wall_s_per_audio_min": 5.358629831112921
         }
       }
     },
@@ -1029,8 +1029,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0007556229829788208,
-          "wall_s_per_audio_min": 0.0181349515914917
+          "wall_s": 0.003086113021709025,
+          "wall_s_per_audio_min": 0.0740667125210166
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -1075,8 +1075,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.1341029520262964,
-          "wall_s_per_audio_min": 3.2184708486311138
+          "wall_s": 0.18730630597565323,
+          "wall_s_per_audio_min": 4.4953513434156775
         }
       }
     },
@@ -1132,8 +1132,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0005824840045534074,
-          "wall_s_per_audio_min": 0.013979616109281778
+          "wall_s": 0.0012874690000899136,
+          "wall_s_per_audio_min": 0.030899256002157927
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -1178,8 +1178,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.11787889804691076,
-          "wall_s_per_audio_min": 2.8290935531258583
+          "wall_s": 0.17625484196469188,
+          "wall_s_per_audio_min": 4.230116207152605
         }
       }
     },
@@ -1235,8 +1235,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0008947480237111449,
-          "wall_s_per_audio_min": 0.021473952569067478
+          "wall_s": 0.001134374993853271,
+          "wall_s_per_audio_min": 0.027224999852478504
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -1281,8 +1281,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.12811747897649184,
-          "wall_s_per_audio_min": 3.074819495435804
+          "wall_s": 0.2778678289614618,
+          "wall_s_per_audio_min": 6.668827895075083
         }
       }
     },
@@ -1338,8 +1338,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0008949570474214852,
-          "wall_s_per_audio_min": 0.021478969138115644
+          "wall_s": 0.001608393038623035,
+          "wall_s_per_audio_min": 0.03860143292695284
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -1384,8 +1384,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.13806684396695346,
-          "wall_s_per_audio_min": 3.313604255206883
+          "wall_s": 0.2698804790270515,
+          "wall_s_per_audio_min": 6.4771314966492355
         }
       }
     },
@@ -1441,8 +1441,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0008890210301615298,
-          "wall_s_per_audio_min": 0.021336504723876715
+          "wall_s": 0.0022995509789325297,
+          "wall_s_per_audio_min": 0.05518922349438071
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -1487,8 +1487,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.12082840298535302,
-          "wall_s_per_audio_min": 2.8998816716484725
+          "wall_s": 0.24960273399483413,
+          "wall_s_per_audio_min": 5.990465615876019
         }
       }
     },
@@ -1544,8 +1544,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0007716169930063188,
-          "wall_s_per_audio_min": 0.01851880783215165
+          "wall_s": 0.0019062699866481125,
+          "wall_s_per_audio_min": 0.0457504796795547
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -1590,8 +1590,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.13317984895547852,
-          "wall_s_per_audio_min": 3.1963163749314845
+          "wall_s": 0.14840363099938259,
+          "wall_s_per_audio_min": 3.561687143985182
         }
       }
     },
@@ -1647,8 +1647,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0013091919827274978,
-          "wall_s_per_audio_min": 0.03142060758545995
+          "wall_s": 0.0006163560319691896,
+          "wall_s_per_audio_min": 0.014792544767260551
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -1693,8 +1693,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.1589543300215155,
-          "wall_s_per_audio_min": 3.8149039205163717
+          "wall_s": 0.12862909899558872,
+          "wall_s_per_audio_min": 3.0870983758941293
         }
       }
     },
@@ -1750,8 +1750,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.001065023010596633,
-          "wall_s_per_audio_min": 0.02556055225431919
+          "wall_s": 0.0007253799703903496,
+          "wall_s_per_audio_min": 0.01740911928936839
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -1796,8 +1796,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.1782221049652435,
-          "wall_s_per_audio_min": 4.277330519165844
+          "wall_s": 0.12266751704737544,
+          "wall_s_per_audio_min": 2.9440204091370106
         }
       }
     },
@@ -1853,8 +1853,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0008486520382575691,
-          "wall_s_per_audio_min": 0.020367648918181658
+          "wall_s": 0.0008878319640643895,
+          "wall_s_per_audio_min": 0.021307967137545347
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -1899,8 +1899,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.019269451964646578,
-          "wall_s_per_audio_min": 0.46246684715151787
+          "wall_s": 0.01592427695868537,
+          "wall_s_per_audio_min": 0.38218264700844884
         }
       }
     },
@@ -1956,8 +1956,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0010521719814278185,
-          "wall_s_per_audio_min": 0.025252127554267645
+          "wall_s": 0.0010726350010372698,
+          "wall_s_per_audio_min": 0.025743240024894476
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -2002,8 +2002,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.019202683004550636,
-          "wall_s_per_audio_min": 0.46086439210921526
+          "wall_s": 0.01569449802627787,
+          "wall_s_per_audio_min": 0.3766679526306689
         }
       }
     },
@@ -2059,8 +2059,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0010425339569337666,
-          "wall_s_per_audio_min": 0.0250208149664104
+          "wall_s": 0.0008428539731539786,
+          "wall_s_per_audio_min": 0.020228495355695486
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -2105,8 +2105,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0156442949664779,
-          "wall_s_per_audio_min": 0.3754630791954696
+          "wall_s": 0.016229209024459124,
+          "wall_s_per_audio_min": 0.38950101658701897
         }
       }
     },
@@ -2162,8 +2162,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0006594500155188143,
-          "wall_s_per_audio_min": 0.015826800372451544
+          "wall_s": 0.000994969974271953,
+          "wall_s_per_audio_min": 0.023879279382526875
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -2208,8 +2208,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.11960798100335523,
-          "wall_s_per_audio_min": 2.8705915440805256
+          "wall_s": 0.13078812800813466,
+          "wall_s_per_audio_min": 3.138915072195232
         }
       }
     },
@@ -2265,8 +2265,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0008860870148055255,
-          "wall_s_per_audio_min": 0.021266088355332613
+          "wall_s": 0.001229780027642846,
+          "wall_s_per_audio_min": 0.029514720663428307
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -2311,8 +2311,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.16567300498718396,
-          "wall_s_per_audio_min": 3.976152119692415
+          "wall_s": 0.12202147801872343,
+          "wall_s_per_audio_min": 2.9285154724493623
         }
       }
     },
@@ -2368,8 +2368,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.0006024590111337602,
-          "wall_s_per_audio_min": 0.014459016267210245
+          "wall_s": 0.0011452710023149848,
+          "wall_s_per_audio_min": 0.027486504055559635
         },
         "dsp_harmonic_bwe_preview": {
           "arm": "dsp_harmonic_bwe_preview",
@@ -2414,8 +2414,8 @@
           },
           "additive_identity_max_err": 0.0,
           "input_mutated": false,
-          "wall_s": 0.12423942401073873,
-          "wall_s_per_audio_min": 2.9817461762577295
+          "wall_s": 0.11330420599551871,
+          "wall_s_per_audio_min": 2.719300943892449
         }
       }
     }

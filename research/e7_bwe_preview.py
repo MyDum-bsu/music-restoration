@@ -41,6 +41,7 @@ import json
 import os
 import platform
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -407,6 +408,8 @@ def run_dsp_harmonic_bwe_preview(
         synth = synth * min(1.0, headroom / syn_peak)
         preview = work + synth
 
+    has_synth = bool(synth.size > 0 and float(np.max(np.abs(synth))) > 0.0)
+
     if was_1d:
         preview = preview[:, 0]
         synth = synth[:, 0]
@@ -416,13 +419,13 @@ def run_dsp_harmonic_bwe_preview(
         preview=preview,
         synthesized_band=synth,
         observed_cutoff_hz=cutoff,
-        synthesized_hf_band=True,
-        is_generative_preview=True,
-        bypassed=False,
+        synthesized_hf_band=has_synth,
+        is_generative_preview=has_synth,
+        bypassed=not has_synth,
         wall_s=time.perf_counter() - t0,
         meta={
             "rate": int(sr),
-            "bypass_reason": None,
+            "bypass_reason": None if has_synth else "zero_headroom_clamped_synth",
             "detected_hf_to_mid_db": hf_mid_db,
             "crossover": "linear_phase_fft_raised_cosine",
             "transition_hz": trans_hz,
@@ -520,6 +523,19 @@ def export_bwe_preview(
     synth_path = out_dir / synth_fname
     sidecar_path = out_dir / sidecar_fname
 
+    # Fail closed BEFORE any writes: forbid symlinks at any output path and forbid
+    # any output path resolving to the same realpath as `source_path`.
+    src_real = os.path.realpath(src)
+    for out_p in (preview_path, synth_path, sidecar_path):
+        try:
+            st = os.lstat(out_p)
+        except FileNotFoundError:
+            st = None
+        if st is not None and stat.S_ISLNK(st.st_mode):
+            raise ValueError(f"refusing to write BWE output through symlink: {out_p}")
+        if os.path.realpath(out_p) == src_real:
+            raise ValueError(f"refusing to overwrite source file via output path: {out_p}")
+
     common_tags = {
         "SYNTHESIZED_HF_BAND": "true" if result.synthesized_hf_band else "false",
         "OBSERVED_CUTOFF_HZ": f"{result.observed_cutoff_hz:.1f}",
@@ -545,10 +561,6 @@ def export_bwe_preview(
         bits,
         {**common_tags, "BWE_TRACK_ROLE": "synthesized_band_only"},
     )
-
-    source_sha256_after = hashlib.sha256(src.read_bytes()).hexdigest()
-    if source_sha256_after != source_sha256_before:
-        raise RuntimeError("source file hash changed during export_bwe_preview")
 
     sidecar = {
         "schema": "e7-bwe-preview-sidecar/v1",
@@ -578,6 +590,12 @@ def export_bwe_preview(
         ),
     }
     sidecar_path.write_text(json.dumps(sidecar, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+
+    # Verify source immutability STRICTLY AFTER all three outputs (including sidecar) are written.
+    source_sha256_after = hashlib.sha256(src.read_bytes()).hexdigest()
+    if source_sha256_after != source_sha256_before:
+        raise RuntimeError("source file hash changed during export_bwe_preview")
+
     return sidecar
 
 
@@ -1146,8 +1164,8 @@ def _render_report_md(results: dict) -> str:
         "",
         "## 4. Opt-In Derivative Export & Mandatory Tagging Contract",
         "",
-        "- `export_bwe_preview()` writes **separate** opt-in files (`*.bwe_preview.flac`, `*.synthesized_band_only.flac`, and `*.bwe_preview.sidecar.json`) and verifies `source_sha256` before and after export (zero source mutation or library replacement).",
-        "- Both the FLAC Vorbis comments and the JSON sidecar embed: `synthesized_hf_band`, `observed_cutoff_hz`, `is_generative_preview`, `not_original_restoration`, `enhance_opt_in_derivative`, `source_sha256`, `derivative_sha256`, and `synthesized_band_sha256`.",
+        "- `export_bwe_preview()` writes **separate** opt-in files (`*.bwe_preview.flac`, `*.synthesized_band_only.flac`, and `*.bwe_preview.sidecar.json`), rejects any symlink or source-aliasing output path via `lstat`/`realpath` before writing, and verifies `source_sha256` before and after writing all three files (zero source mutation or library replacement).",
+        "- Both the FLAC Vorbis comments and the JSON sidecar embed `synthesized_hf_band`, `observed_cutoff_hz`, `is_generative_preview`, `not_original_restoration`, `enhance_opt_in_derivative`, and `source_sha256`; the post-tag hashes `derivative_sha256` and `synthesized_band_sha256` are recorded in the JSON sidecar.",
         "",
         "## 5. Neural BWE Arm Audit (AudioSR / UniverSR / BABE-2 / SAMECFM) & Colab Contract",
         "",
@@ -1163,11 +1181,12 @@ def _render_report_md(results: dict) -> str:
         "",
         "## 6. Limitations & Honest Method Boundaries",
         "",
-        "1. **Synthesized HF Is Preview, Not Original Restoration:** `dsp_harmonic_bwe_preview` improves missing-band spectral envelope distance (negative `Miss ΔLSD`) by transposing and harmonically exciting the upper observed octave, but it **cannot** reconstruct true lost micro-transients, unique cymbal overtones, or unpitched HF phase. Notice that missing-band IPD error remains high (~45-55 deg across strata) because phase in the missing band is unobservable from band-limited input.",
-        "2. **Role of the Full-Band Bypass Guard:** Zero false HF on `fullband_clean_control` relies on `_detect_fullband_presence` (Hann-windowed Welch PSD `hf_to_mid_db > -28 dB`). When forced with `bypass_fullband=False` (Section 3.2), DSP synthesis injects extraneous HF above 20 kHz, confirming why explicit full-band detection and opt-in user control are mandatory.",
-        "3. **Extreme Narrowband OOD (`e7-ood-narrowband-4k-48k`):** Extending from a 4 kHz cutoff across >2.5 missing octaves via periodic SBR + harmonic excitation yields a coarse spectral approximation only and increases timbre mismatch relative to 11-16 kHz cutoffs.",
-        "4. **Codec Roundtrip Interaction (`mp3_64k`, `opus_32k`, `ood_double_codec_8k`):** Lossy codec quantization and pre-echo present in the upper observed band (`[0.5*cutoff, cutoff]`) are transposed upward by SBR; BWE does **not** remove codec pre-echo inside the observed band.",
-        "5. **Neural BWE Comparison Pending Weights/Colab:** No AudioSR, UniverSR, BABE-2, or SAMECFM comparison numbers are reported because licensed weights and authorized Colab GPU execution are not provisioned in this offline CPU environment.",
+        "1. **Synthesized HF Is Preview, Not Original Restoration:** `dsp_harmonic_bwe_preview` improves missing-band spectral envelope distance on average (negative `Miss ΔLSD`) by transposing and harmonically exciting the upper observed octave, but it **cannot** reconstruct true lost micro-transients, unique cymbal overtones, or unpitched HF phase. Missing-band IPD error remains high (~45-55 deg across strata) because phase in the missing band is unobservable from band-limited input. On `e7-bl16k-bright-mix-48k`, where the clean reference rolls off steeply above 16 kHz (`-87.5 dB/oct`), SBR extrapolation (`-10.4 dB/oct`) slightly worsens missing-band LSD by `+0.22 dB` (`19.36 -> 19.58 dB`).",
+        "2. **Cutoff Transition Guard Band (`-2% / +4%`):** Band-separated metrics evaluate `observed_band` over `[20 Hz, 0.98 * observed_cutoff_hz]` and `missing_band` over `[1.04 * observed_cutoff_hz, 0.92 * nyquist]` to exclude the linear-phase crossover transition skirt around `observed_cutoff_hz`; minor crossover-region differences inside `(0.98 * cutoff, 1.04 * cutoff)` are outside these two summary bands.",
+        "3. **Role of the Full-Band Bypass Guard:** Zero false HF on `fullband_clean_control` relies on `_detect_fullband_presence` (Hann-windowed Welch PSD `hf_to_mid_db > -28 dB`). When forced with `bypass_fullband=False` (Section 3.2), DSP synthesis injects extraneous HF above 20 kHz, confirming why explicit full-band detection and opt-in user control are mandatory.",
+        "4. **Extreme Narrowband OOD (`e7-ood-narrowband-4k-48k`):** Extending from a 4 kHz cutoff across >2.5 missing octaves via periodic SBR + harmonic excitation yields a coarse spectral approximation only and increases timbre mismatch relative to 11-16 kHz cutoffs.",
+        "5. **Codec Roundtrip Interaction (`mp3_64k`, `opus_32k`, `ood_double_codec_8k`):** Lossy codec quantization and pre-echo present in the upper observed band (`[0.5*cutoff, cutoff]`) are transposed upward by SBR; BWE does **not** remove codec pre-echo inside the observed band.",
+        "6. **Neural BWE Comparison Pending Weights/Colab:** No AudioSR, UniverSR, BABE-2, or SAMECFM comparison numbers are reported because licensed weights and authorized Colab GPU execution are not provisioned in this offline CPU environment.",
     ]
     return "\n".join(lines) + "\n"
 
