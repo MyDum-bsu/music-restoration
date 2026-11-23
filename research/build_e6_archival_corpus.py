@@ -3,15 +3,17 @@
 
     python3 research/build_e6_archival_corpus.py --root corpus
 
-Creates 18 independent stereo archival-transfer dev cases across five strata:
-- clicks_only (4 cases): sparse pops, dense shellac/vinyl crackle, clicks overlaid
-  directly on sharp percussive attacks, and single-channel stylus scratches;
+Creates 20 independent stereo archival-transfer dev cases across five strata:
+- clicks_only (5 cases): sparse pops, dense shellac/vinyl crackle, clicks overlaid
+  directly on sharp percussive attacks, single-channel stylus scratches, and
+  low-level vinyl/shellac crackle (amp 0.03-0.08);
 - hiss_only (4 cases): stationary tape hiss, vinyl pink/HF hiss, amplitude-modulated
   wow/oxide hiss, and high-SNR mild archival hiss;
 - combined_archival (3 cases): vinyl transfer, tape+crackle+percussion, and 78 rpm
   narrowband shellac transfer;
-- clean_control (4 cases): sharp percussive attacks, plucked strings, clean quiet
-  reverb tail, and clean stereo tonal mix (zero defects);
+- clean_control (5 cases): sharp percussive attacks, plucked strings, clean quiet
+  reverb tail, clean stereo tonal mix (-82 dBFS floor), and a studio room-tone
+  percussive/tail control (-58 dBFS floor, zero defects);
 - ood (3 cases): wide 20-36 sample scratches, non-stationary mains hum + floor step,
   and 96 kHz ultrasonic percussion with sparse clicks.
 

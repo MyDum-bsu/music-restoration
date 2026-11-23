@@ -18,9 +18,9 @@
     "manifest_path": "corpus/dev-e6-archival-v1.json",
     "manifest_sha256": "43be9dbc1ced833b734f8a5b1339c1d8bb68123723b061213a6873f09a67a48a",
     "builder_path": "research/build_e6_archival_corpus.py",
-    "builder_sha256": "cca31046af6da002e7ceb2576cd2f1f19d6507729d528b6a4b5c8725334f5ce8",
+    "builder_sha256": "cfe13070e747a452682298dd3c6792bef0a0661735520916cc2c9f4cc650d6aa",
     "harness_path": "research/e6_declick_hiss.py",
-    "harness_sha256": "ee164cd68f0b1e48e33c774f5c475c99fcbdad144434706e403d5457bb4f7643"
+    "harness_sha256": "653eaf6d2329176c1b62ca4ff28aa79f9f7237d64977bbe7d5467b29f5bee266"
   },
   "e4_freeze_integrity": {
     "freeze_manifest": "docs/validation/e4-freeze-manifest.json",
@@ -151,8 +151,8 @@
         "outside_click_max_diff": 0.0,
         "masked_samples": 53,
         "true_click_samples": 283,
-        "wall_s": 0.18346495903097093,
-        "wall_s_per_audio_min": 3.6692991806194186
+        "wall_s": 0.18064330698689446,
+        "wall_s_per_audio_min": 3.612866139737889
       },
       "median_impulse_declick": {
         "arm": "median_impulse_declick",
@@ -179,8 +179,8 @@
         "outside_click_max_diff": 0.0,
         "masked_samples": 68,
         "true_click_samples": 283,
-        "wall_s": 0.013217984000220895,
-        "wall_s_per_audio_min": 0.2643596800044179
+        "wall_s": 0.014506628969684243,
+        "wall_s_per_audio_min": 0.29013257939368486
       }
     },
     "ood_wide_scratch": {
@@ -209,8 +209,8 @@
         "outside_click_max_diff": 0.0,
         "masked_samples": 78,
         "true_click_samples": 526,
-        "wall_s": 0.14603059203363955,
-        "wall_s_per_audio_min": 2.920611840672791
+        "wall_s": 0.13861518201883882,
+        "wall_s_per_audio_min": 2.7723036403767765
       },
       "median_impulse_declick": {
         "arm": "median_impulse_declick",
@@ -237,8 +237,8 @@
         "outside_click_max_diff": 0.0,
         "masked_samples": 40,
         "true_click_samples": 526,
-        "wall_s": 0.012086052040103823,
-        "wall_s_per_audio_min": 0.24172104080207646
+        "wall_s": 0.01208981202216819,
+        "wall_s_per_audio_min": 0.24179624044336379
       }
     },
     "roomtone_clean_control": {
@@ -260,15 +260,15 @@
         "quiet_tail_drift_db": 2.3622570115247825,
         "tail_snr_in_db": null,
         "tail_snr_out_db": 6.801629129946529,
-        "tail_snr_loss_db": 113.19837087005347,
+        "tail_snr_loss_db": null,
         "residual_rms_db": -68.19348276162187,
         "residual_identity_max_err": 8.673617379884035e-19,
         "input_mutated": false,
         "outside_click_max_diff": null,
         "masked_samples": null,
         "true_click_samples": 0,
-        "wall_s": 0.20119544595945626,
-        "wall_s_per_audio_min": 4.023908919189125
+        "wall_s": 0.17013681901153177,
+        "wall_s_per_audio_min": 3.4027363802306354
       },
       "mmse_stsa_hiss": {
         "arm": "mmse_stsa_hiss",
@@ -288,15 +288,15 @@
         "quiet_tail_drift_db": 2.1399894324989788,
         "tail_snr_in_db": null,
         "tail_snr_out_db": 7.607681757261565,
-        "tail_snr_loss_db": 112.39231824273844,
+        "tail_snr_loss_db": null,
         "residual_rms_db": -69.23258059199985,
         "residual_identity_max_err": 2.168404344971009e-19,
         "input_mutated": false,
         "outside_click_max_diff": null,
         "masked_samples": null,
         "true_click_samples": 0,
-        "wall_s": 0.2262064930400811,
-        "wall_s_per_audio_min": 4.524129860801622
+        "wall_s": 0.21753964899107814,
+        "wall_s_per_audio_min": 4.350792979821563
       }
     },
     "hiss_without_clean_bypass": {
@@ -326,8 +326,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.1861753230332397,
-          "wall_s_per_audio_min": 3.723506460664794
+          "wall_s": 0.1679113709833473,
+          "wall_s_per_audio_min": 3.358227419666946
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -354,8 +354,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.23563092801487073,
-          "wall_s_per_audio_min": 4.712618560297415
+          "wall_s": 0.20468800095841289,
+          "wall_s_per_audio_min": 4.093760019168258
         }
       },
       "clean_reverb_tail": {
@@ -377,15 +377,15 @@
           "quiet_tail_drift_db": 0.2067000813358959,
           "tail_snr_in_db": null,
           "tail_snr_out_db": 21.438853945262828,
-          "tail_snr_loss_db": 98.56114605473718,
+          "tail_snr_loss_db": null,
           "residual_rms_db": -78.07083427481412,
           "residual_identity_max_err": 1.0842021724855044e-19,
           "input_mutated": false,
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.18250113597605377,
-          "wall_s_per_audio_min": 3.6500227195210755
+          "wall_s": 0.16681240499019623,
+          "wall_s_per_audio_min": 3.3362480998039246
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -405,15 +405,15 @@
           "quiet_tail_drift_db": 0.16622182460939428,
           "tail_snr_in_db": null,
           "tail_snr_out_db": 23.711947870013127,
-          "tail_snr_loss_db": 96.28805212998688,
+          "tail_snr_loss_db": null,
           "residual_rms_db": -80.01273388107258,
           "residual_identity_max_err": 1.0842021724855044e-19,
           "input_mutated": false,
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.26483530102996156,
-          "wall_s_per_audio_min": 5.296706020599231
+          "wall_s": 0.23758587799966335,
+          "wall_s_per_audio_min": 4.751717559993267
         }
       }
     }
@@ -431,7 +431,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 0.029114700388163328
+        "mean_wall_s_per_audio_min": 0.03284005192108452
       },
       "ar_declick": {
         "n_cases": 5,
@@ -444,7 +444,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 3.9905813524965197
+        "mean_wall_s_per_audio_min": 3.7416044478304684
       },
       "median_impulse_declick": {
         "n_cases": 5,
@@ -457,7 +457,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 0.3135763523168862
+        "mean_wall_s_per_audio_min": 0.2973629115149379
       },
       "wiener_hiss": {
         "n_cases": 5,
@@ -470,7 +470,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 3.1679900879971683
+        "mean_wall_s_per_audio_min": 3.0544378282502294
       },
       "mmse_stsa_hiss": {
         "n_cases": 5,
@@ -483,7 +483,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 3.1560923322103918
+        "mean_wall_s_per_audio_min": 3.1145579318981618
       },
       "ar_declick_wiener_hiss": {
         "n_cases": 5,
@@ -496,7 +496,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 7.404574352083728
+        "mean_wall_s_per_audio_min": 7.266423971857876
       },
       "ar_declick_mmse_stsa": {
         "n_cases": 5,
@@ -509,7 +509,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 7.506109812296927
+        "mean_wall_s_per_audio_min": 7.5645769441034645
       }
     },
     "hiss_only": {
@@ -524,7 +524,7 @@
         "mean_quiet_tail_drift_db": 20.190952428415095,
         "max_quiet_tail_drift_db": 23.024132691046646,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 0.018993235134985298
+        "mean_wall_s_per_audio_min": 0.03270636487286538
       },
       "ar_declick": {
         "n_cases": 4,
@@ -537,7 +537,7 @@
         "mean_quiet_tail_drift_db": 20.190952428415095,
         "max_quiet_tail_drift_db": 23.024132691046646,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 2.8231449602753855
+        "mean_wall_s_per_audio_min": 3.294938864710275
       },
       "median_impulse_declick": {
         "n_cases": 4,
@@ -550,7 +550,7 @@
         "mean_quiet_tail_drift_db": 20.190952428415095,
         "max_quiet_tail_drift_db": 23.024132691046646,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 0.2345164550933987
+        "mean_wall_s_per_audio_min": 0.26086208963533863
       },
       "wiener_hiss": {
         "n_cases": 4,
@@ -563,7 +563,7 @@
         "mean_quiet_tail_drift_db": 11.282244216036974,
         "max_quiet_tail_drift_db": 13.922051294447321,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 4.916551829664968
+        "mean_wall_s_per_audio_min": 3.9011716647655703
       },
       "mmse_stsa_hiss": {
         "n_cases": 4,
@@ -576,7 +576,7 @@
         "mean_quiet_tail_drift_db": 13.595775906840766,
         "max_quiet_tail_drift_db": 16.297835468009204,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 5.972698104742449
+        "mean_wall_s_per_audio_min": 5.296062114939559
       },
       "ar_declick_wiener_hiss": {
         "n_cases": 4,
@@ -589,7 +589,7 @@
         "mean_quiet_tail_drift_db": 11.282244216036974,
         "max_quiet_tail_drift_db": 13.922051294447321,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 7.807213594787754
+        "mean_wall_s_per_audio_min": 7.053156969777774
       },
       "ar_declick_mmse_stsa": {
         "n_cases": 4,
@@ -602,7 +602,7 @@
         "mean_quiet_tail_drift_db": 13.595775906840766,
         "max_quiet_tail_drift_db": 16.297835468009204,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 9.177767410001252
+        "mean_wall_s_per_audio_min": 7.788037234568037
       }
     },
     "combined_archival": {
@@ -617,7 +617,7 @@
         "mean_quiet_tail_drift_db": 25.089294713349148,
         "max_quiet_tail_drift_db": 26.27931825998658,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 0.022293166257441044
+        "mean_wall_s_per_audio_min": 0.029515747058515746
       },
       "ar_declick": {
         "n_cases": 3,
@@ -630,7 +630,7 @@
         "mean_quiet_tail_drift_db": 25.089294713349148,
         "max_quiet_tail_drift_db": 26.27931825998658,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 3.2750227802898735
+        "mean_wall_s_per_audio_min": 3.3929780327404537
       },
       "median_impulse_declick": {
         "n_cases": 3,
@@ -643,7 +643,7 @@
         "mean_quiet_tail_drift_db": 25.089294713349148,
         "max_quiet_tail_drift_db": 26.27931825998658,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 0.2654482866637409
+        "mean_wall_s_per_audio_min": 0.256324327007557
       },
       "wiener_hiss": {
         "n_cases": 3,
@@ -656,7 +656,7 @@
         "mean_quiet_tail_drift_db": 15.60936499522861,
         "max_quiet_tail_drift_db": 16.508576097678905,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 3.7037700127499797
+        "mean_wall_s_per_audio_min": 3.3825571198637285
       },
       "mmse_stsa_hiss": {
         "n_cases": 3,
@@ -669,7 +669,7 @@
         "mean_quiet_tail_drift_db": 17.9346348468357,
         "max_quiet_tail_drift_db": 18.81015803446421,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 4.897746474016458
+        "mean_wall_s_per_audio_min": 4.569582732704778
       },
       "ar_declick_wiener_hiss": {
         "n_cases": 3,
@@ -682,7 +682,7 @@
         "mean_quiet_tail_drift_db": 15.73140979573311,
         "max_quiet_tail_drift_db": 16.63409901561979,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 6.915384919848293
+        "mean_wall_s_per_audio_min": 6.503918186450998
       },
       "ar_declick_mmse_stsa": {
         "n_cases": 3,
@@ -695,7 +695,7 @@
         "mean_quiet_tail_drift_db": 18.07884460023014,
         "max_quiet_tail_drift_db": 18.967994595957137,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 8.232782766378174
+        "mean_wall_s_per_audio_min": 7.763373340324809
       }
     },
     "clean_control": {
@@ -710,7 +710,7 @@
         "mean_quiet_tail_drift_db": 0.0,
         "max_quiet_tail_drift_db": 0.0,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 0.02476631593890488
+        "mean_wall_s_per_audio_min": 0.02107611997053027
       },
       "ar_declick": {
         "n_cases": 5,
@@ -723,7 +723,7 @@
         "mean_quiet_tail_drift_db": 0.0,
         "max_quiet_tail_drift_db": 0.0,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 3.2777046200353652
+        "mean_wall_s_per_audio_min": 3.0380719238892198
       },
       "median_impulse_declick": {
         "n_cases": 5,
@@ -736,7 +736,7 @@
         "mean_quiet_tail_drift_db": 0.0,
         "max_quiet_tail_drift_db": 0.0,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 0.2783934841863811
+        "mean_wall_s_per_audio_min": 0.2506916157435626
       },
       "wiener_hiss": {
         "n_cases": 5,
@@ -748,8 +748,8 @@
         "mean_clean_attack_residual_energy_db": -48.449504144516105,
         "mean_quiet_tail_drift_db": 1.1811285057623913,
         "max_quiet_tail_drift_db": 2.3622570115247825,
-        "mean_tail_snr_loss_db": 56.59918543502673,
-        "mean_wall_s_per_audio_min": 3.056479483610019
+        "mean_tail_snr_loss_db": 0.0,
+        "mean_wall_s_per_audio_min": 2.7506894438993186
       },
       "mmse_stsa_hiss": {
         "n_cases": 5,
@@ -761,8 +761,8 @@
         "mean_clean_attack_residual_energy_db": -48.6843703431137,
         "mean_quiet_tail_drift_db": 1.0699947162494894,
         "max_quiet_tail_drift_db": 2.1399894324989788,
-        "mean_tail_snr_loss_db": 56.19615912136922,
-        "mean_wall_s_per_audio_min": 3.133110051974654
+        "mean_tail_snr_loss_db": 0.0,
+        "mean_wall_s_per_audio_min": 2.8801731241401285
       },
       "ar_declick_wiener_hiss": {
         "n_cases": 5,
@@ -774,8 +774,8 @@
         "mean_clean_attack_residual_energy_db": -48.44854133021657,
         "mean_quiet_tail_drift_db": 1.1811317692320884,
         "max_quiet_tail_drift_db": 2.362263538464177,
-        "mean_tail_snr_loss_db": 56.59920330796763,
-        "mean_wall_s_per_audio_min": 6.40622882777825
+        "mean_tail_snr_loss_db": 0.0,
+        "mean_wall_s_per_audio_min": 5.598217799793929
       },
       "ar_declick_mmse_stsa": {
         "n_cases": 5,
@@ -787,8 +787,8 @@
         "mean_clean_attack_residual_energy_db": -48.683389692049275,
         "mean_quiet_tail_drift_db": 1.0700029628025227,
         "max_quiet_tail_drift_db": 2.1400059256050454,
-        "mean_tail_snr_loss_db": 56.19620547056644,
-        "mean_wall_s_per_audio_min": 6.678666724124923
+        "mean_tail_snr_loss_db": 0.0,
+        "mean_wall_s_per_audio_min": 5.750609688227996
       }
     },
     "ood": {
@@ -803,7 +803,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 0.0599758195069929
+        "mean_wall_s_per_audio_min": 0.0326958968071267
       },
       "ar_declick": {
         "n_cases": 3,
@@ -816,7 +816,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 4.013743153579223
+        "mean_wall_s_per_audio_min": 3.634156189703693
       },
       "median_impulse_declick": {
         "n_cases": 3,
@@ -829,7 +829,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 0.38033846047862124
+        "mean_wall_s_per_audio_min": 0.348306880138504
       },
       "wiener_hiss": {
         "n_cases": 3,
@@ -842,7 +842,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 4.771873377224741
+        "mean_wall_s_per_audio_min": 4.179381793946959
       },
       "mmse_stsa_hiss": {
         "n_cases": 3,
@@ -855,7 +855,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 4.950166053604335
+        "mean_wall_s_per_audio_min": 4.5452225431411835
       },
       "ar_declick_wiener_hiss": {
         "n_cases": 3,
@@ -868,7 +868,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 8.429351979866624
+        "mean_wall_s_per_audio_min": 7.947578079959688
       },
       "ar_declick_mmse_stsa": {
         "n_cases": 3,
@@ -881,7 +881,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 9.071497599749515
+        "mean_wall_s_per_audio_min": 8.312091596696215
       }
     }
   },
@@ -920,8 +920,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 80,
-          "wall_s": 0.002118733013048768,
-          "wall_s_per_audio_min": 0.04237466026097536
+          "wall_s": 0.0019803039613179862,
+          "wall_s_per_audio_min": 0.039606079226359725
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -948,8 +948,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 61,
           "true_click_samples": 80,
-          "wall_s": 0.17319724900880828,
-          "wall_s_per_audio_min": 3.4639449801761657
+          "wall_s": 0.14488714101025835,
+          "wall_s_per_audio_min": 2.897742820205167
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -976,8 +976,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 89,
           "true_click_samples": 80,
-          "wall_s": 0.014559722039848566,
-          "wall_s_per_audio_min": 0.2911944407969713
+          "wall_s": 0.011786556977313012,
+          "wall_s_per_audio_min": 0.23573113954626024
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -1004,8 +1004,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 80,
-          "wall_s": 0.15893686999334022,
-          "wall_s_per_audio_min": 3.1787373998668045
+          "wall_s": 0.11955707805464044,
+          "wall_s_per_audio_min": 2.391141561092809
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -1032,8 +1032,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 80,
-          "wall_s": 0.14485926902852952,
-          "wall_s_per_audio_min": 2.8971853805705905
+          "wall_s": 0.11698081204667687,
+          "wall_s_per_audio_min": 2.3396162409335375
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -1060,8 +1060,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 61,
           "true_click_samples": 80,
-          "wall_s": 0.3866493710083887,
-          "wall_s_per_audio_min": 7.732987420167774
+          "wall_s": 0.2565714749507606,
+          "wall_s_per_audio_min": 5.131429499015212
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -1088,8 +1088,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 61,
           "true_click_samples": 80,
-          "wall_s": 0.3455112029914744,
-          "wall_s_per_audio_min": 6.910224059829488
+          "wall_s": 0.2644794899970293,
+          "wall_s_per_audio_min": 5.289589799940586
         }
       }
     },
@@ -1127,8 +1127,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 268,
-          "wall_s": 0.0016922070062719285,
-          "wall_s_per_audio_min": 0.03384414012543857
+          "wall_s": 0.0014613770181313157,
+          "wall_s_per_audio_min": 0.029227540362626314
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -1155,8 +1155,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 224,
           "true_click_samples": 268,
-          "wall_s": 0.22613846702734008,
-          "wall_s_per_audio_min": 4.522769340546802
+          "wall_s": 0.18055467697558925,
+          "wall_s_per_audio_min": 3.611093539511785
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -1183,8 +1183,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 363,
           "true_click_samples": 268,
-          "wall_s": 0.01534872903721407,
-          "wall_s_per_audio_min": 0.3069745807442814
+          "wall_s": 0.012497130956035107,
+          "wall_s_per_audio_min": 0.24994261912070215
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -1211,8 +1211,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 268,
-          "wall_s": 0.17612356698373333,
-          "wall_s_per_audio_min": 3.5224713396746665
+          "wall_s": 0.12641676201019436,
+          "wall_s_per_audio_min": 2.5283352402038872
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -1239,8 +1239,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 268,
-          "wall_s": 0.1495648860000074,
-          "wall_s_per_audio_min": 2.991297720000148
+          "wall_s": 0.12237353099044412,
+          "wall_s_per_audio_min": 2.4474706198088825
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -1267,8 +1267,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 224,
           "true_click_samples": 268,
-          "wall_s": 0.3848358479444869,
-          "wall_s_per_audio_min": 7.696716958889738
+          "wall_s": 0.3030196320032701,
+          "wall_s_per_audio_min": 6.060392640065402
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -1295,8 +1295,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 224,
           "true_click_samples": 268,
-          "wall_s": 0.4178987230407074,
-          "wall_s_per_audio_min": 8.357974460814148
+          "wall_s": 0.3085367410094477,
+          "wall_s_per_audio_min": 6.1707348201889545
         }
       }
     },
@@ -1334,8 +1334,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 112,
-          "wall_s": 0.0013862280175089836,
-          "wall_s_per_audio_min": 0.027724560350179672
+          "wall_s": 0.0011265529901720583,
+          "wall_s_per_audio_min": 0.022531059803441167
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -1362,8 +1362,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 80,
           "true_click_samples": 112,
-          "wall_s": 0.2280723280273378,
-          "wall_s_per_audio_min": 4.561446560546756
+          "wall_s": 0.18413101299665868,
+          "wall_s_per_audio_min": 3.6826202599331737
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -1390,8 +1390,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 2181,
           "true_click_samples": 112,
-          "wall_s": 0.02077351202024147,
-          "wall_s_per_audio_min": 0.4154702404048294
+          "wall_s": 0.019653294992167503,
+          "wall_s_per_audio_min": 0.39306589984335005
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -1418,8 +1418,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 112,
-          "wall_s": 0.15496445604367182,
-          "wall_s_per_audio_min": 3.0992891208734363
+          "wall_s": 0.15368620201479644,
+          "wall_s_per_audio_min": 3.0737240402959287
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -1446,8 +1446,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 112,
-          "wall_s": 0.14626623899675906,
-          "wall_s_per_audio_min": 2.925324779935181
+          "wall_s": 0.19706542597850785,
+          "wall_s_per_audio_min": 3.941308519570157
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -1474,8 +1474,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 80,
           "true_click_samples": 112,
-          "wall_s": 0.40964561101282015,
-          "wall_s_per_audio_min": 8.192912220256403
+          "wall_s": 0.5268233480164781,
+          "wall_s_per_audio_min": 10.536466960329562
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -1502,8 +1502,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 80,
           "true_click_samples": 112,
-          "wall_s": 0.40851472603389993,
-          "wall_s_per_audio_min": 8.170294520677999
+          "wall_s": 0.5370366409770213,
+          "wall_s_per_audio_min": 10.740732819540426
         }
       }
     },
@@ -1541,8 +1541,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 123,
-          "wall_s": 0.0009206600370816886,
-          "wall_s_per_audio_min": 0.018413200741633773
+          "wall_s": 0.001442520006094128,
+          "wall_s_per_audio_min": 0.028850400121882558
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -1569,8 +1569,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 99,
           "true_click_samples": 123,
-          "wall_s": 0.18677233502967283,
-          "wall_s_per_audio_min": 3.7354467005934566
+          "wall_s": 0.24518497398821637,
+          "wall_s_per_audio_min": 4.903699479764327
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -1597,8 +1597,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 120,
           "true_click_samples": 123,
-          "wall_s": 0.014494140981696546,
-          "wall_s_per_audio_min": 0.2898828196339309
+          "wall_s": 0.015897115983534604,
+          "wall_s_per_audio_min": 0.3179423196706921
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -1625,8 +1625,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 123,
-          "wall_s": 0.141620336973574,
-          "wall_s_per_audio_min": 2.8324067394714803
+          "wall_s": 0.19593894196441397,
+          "wall_s_per_audio_min": 3.9187788392882794
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -1653,8 +1653,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 123,
-          "wall_s": 0.21455807401798666,
-          "wall_s_per_audio_min": 4.291161480359733
+          "wall_s": 0.17873389396118,
+          "wall_s_per_audio_min": 3.5746778792236
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -1681,8 +1681,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 99,
           "true_click_samples": 123,
-          "wall_s": 0.33126074203755707,
-          "wall_s_per_audio_min": 6.625214840751141
+          "wall_s": 0.3149880589917302,
+          "wall_s_per_audio_min": 6.299761179834604
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -1709,8 +1709,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 99,
           "true_click_samples": 123,
-          "wall_s": 0.3610708560445346,
-          "wall_s_per_audio_min": 7.221417120890692
+          "wall_s": 0.36858518701046705,
+          "wall_s_per_audio_min": 7.371703740209341
         }
       }
     },
@@ -1748,8 +1748,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 283,
-          "wall_s": 0.0011608470231294632,
-          "wall_s_per_audio_min": 0.023216940462589264
+          "wall_s": 0.0021992590045556426,
+          "wall_s_per_audio_min": 0.04398518009111285
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -1776,8 +1776,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 53,
           "true_click_samples": 283,
-          "wall_s": 0.18346495903097093,
-          "wall_s_per_audio_min": 3.6692991806194186
+          "wall_s": 0.18064330698689446,
+          "wall_s_per_audio_min": 3.612866139737889
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -1804,8 +1804,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 68,
           "true_click_samples": 283,
-          "wall_s": 0.013217984000220895,
-          "wall_s_per_audio_min": 0.2643596800044179
+          "wall_s": 0.014506628969684243,
+          "wall_s_per_audio_min": 0.29013257939368486
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -1832,8 +1832,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 283,
-          "wall_s": 0.1603522920049727,
-          "wall_s_per_audio_min": 3.207045840099454
+          "wall_s": 0.16801047301851213,
+          "wall_s_per_audio_min": 3.3602094603702426
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -1860,8 +1860,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 283,
-          "wall_s": 0.1337746150093153,
-          "wall_s_per_audio_min": 2.6754923001863062
+          "wall_s": 0.1634858199977316,
+          "wall_s_per_audio_min": 3.269716399954632
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -1888,8 +1888,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 53,
           "true_click_samples": 283,
-          "wall_s": 0.3387520160176791,
-          "wall_s_per_audio_min": 6.7750403203535825
+          "wall_s": 0.41520347900222987,
+          "wall_s_per_audio_min": 8.304069580044597
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -1916,8 +1916,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 53,
           "true_click_samples": 283,
-          "wall_s": 0.3435319449636154,
-          "wall_s_per_audio_min": 6.870638899272308
+          "wall_s": 0.41250617703190073,
+          "wall_s_per_audio_min": 8.250123540638015
         }
       }
     },
@@ -1955,8 +1955,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.0008581510046496987,
-          "wall_s_per_audio_min": 0.017163020092993975
+          "wall_s": 0.0011177529813721776,
+          "wall_s_per_audio_min": 0.022355059627443552
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -1983,8 +1983,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.13609770499169827,
-          "wall_s_per_audio_min": 2.7219540998339653
+          "wall_s": 0.19212856597732753,
+          "wall_s_per_audio_min": 3.8425713195465505
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -2011,8 +2011,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.011334619019180536,
-          "wall_s_per_audio_min": 0.22669238038361073
+          "wall_s": 0.014253031986299902,
+          "wall_s_per_audio_min": 0.28506063972599804
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -2039,8 +2039,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.3076846019830555,
-          "wall_s_per_audio_min": 6.1536920396611094
+          "wall_s": 0.19351206894498318,
+          "wall_s_per_audio_min": 3.8702413788996637
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -2067,8 +2067,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.2849367919843644,
-          "wall_s_per_audio_min": 5.698735839687288
+          "wall_s": 0.2699771839543246,
+          "wall_s_per_audio_min": 5.3995436790864915
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -2095,8 +2095,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.3458590169902891,
-          "wall_s_per_audio_min": 6.917180339805782
+          "wall_s": 0.38895471300929785,
+          "wall_s_per_audio_min": 7.779094260185957
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -2123,8 +2123,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.4317304790019989,
-          "wall_s_per_audio_min": 8.634609580039978
+          "wall_s": 0.4174308860092424,
+          "wall_s_per_audio_min": 8.348617720184848
         }
       }
     },
@@ -2162,8 +2162,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.0008713509887456894,
-          "wall_s_per_audio_min": 0.017427019774913788
+          "wall_s": 0.0027565290220081806,
+          "wall_s_per_audio_min": 0.05513058044016361
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -2190,8 +2190,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.13503009802661836,
-          "wall_s_per_audio_min": 2.7006019605323672
+          "wall_s": 0.16873494599713013,
+          "wall_s_per_audio_min": 3.3746989199426025
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -2218,8 +2218,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.01179166603833437,
-          "wall_s_per_audio_min": 0.2358333207666874
+          "wall_s": 0.012705050990916789,
+          "wall_s_per_audio_min": 0.25410101981833577
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -2246,8 +2246,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.26559860596898943,
-          "wall_s_per_audio_min": 5.311972119379789
+          "wall_s": 0.20790688000852242,
+          "wall_s_per_audio_min": 4.158137600170448
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -2274,8 +2274,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.3326696679578163,
-          "wall_s_per_audio_min": 6.6533933591563255
+          "wall_s": 0.2626520030316897,
+          "wall_s_per_audio_min": 5.2530400606337935
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -2302,8 +2302,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.4425908699631691,
-          "wall_s_per_audio_min": 8.851817399263382
+          "wall_s": 0.3173186229541898,
+          "wall_s_per_audio_min": 6.3463724590837955
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -2330,8 +2330,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.47941593296127394,
-          "wall_s_per_audio_min": 9.588318659225479
+          "wall_s": 0.4016569719533436,
+          "wall_s_per_audio_min": 8.033139439066872
         }
       }
     },
@@ -2369,8 +2369,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.0009573270217515528,
-          "wall_s_per_audio_min": 0.019146540435031056
+          "wall_s": 0.0013079330092296004,
+          "wall_s_per_audio_min": 0.02615866018459201
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -2397,8 +2397,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.1377533139893785,
-          "wall_s_per_audio_min": 2.7550662797875702
+          "wall_s": 0.1504664809908718,
+          "wall_s_per_audio_min": 3.0093296198174357
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -2425,8 +2425,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.011506430979352444,
-          "wall_s_per_audio_min": 0.2301286195870489
+          "wall_s": 0.012852347979787737,
+          "wall_s_per_audio_min": 0.25704695959575474
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -2453,8 +2453,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.1985994119895622,
-          "wall_s_per_audio_min": 3.9719882397912443
+          "wall_s": 0.17941743897972628,
+          "wall_s_per_audio_min": 3.5883487795945257
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -2481,8 +2481,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.2519909730181098,
-          "wall_s_per_audio_min": 5.039819460362196
+          "wall_s": 0.22313937899889424,
+          "wall_s_per_audio_min": 4.462787579977885
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -2509,8 +2509,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.3567845009965822,
-          "wall_s_per_audio_min": 7.135690019931644
+          "wall_s": 0.29637450602604076,
+          "wall_s_per_audio_min": 5.927490120520815
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -2537,8 +2537,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.4301487630000338,
-          "wall_s_per_audio_min": 8.602975260000676
+          "wall_s": 0.35819170298054814,
+          "wall_s_per_audio_min": 7.163834059610963
         }
       }
     },
@@ -2576,8 +2576,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.0011118180118501186,
-          "wall_s_per_audio_min": 0.022236360237002373
+          "wall_s": 0.0013590579619631171,
+          "wall_s_per_audio_min": 0.027181159239262342
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -2604,8 +2604,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.15574787504738197,
-          "wall_s_per_audio_min": 3.1149575009476393
+          "wall_s": 0.14765777997672558,
+          "wall_s_per_audio_min": 2.9531555995345116
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -2632,8 +2632,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.012270574981812388,
-          "wall_s_per_audio_min": 0.24541149963624775
+          "wall_s": 0.012361986970063299,
+          "wall_s_per_audio_min": 0.24723973940126598
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -2660,8 +2660,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.21142774599138647,
-          "wall_s_per_audio_min": 4.2285549198277295
+          "wall_s": 0.19939794501988217,
+          "wall_s_per_audio_min": 3.9879589003976434
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -2688,8 +2688,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.3249421879881993,
-          "wall_s_per_audio_min": 6.498843759763986
+          "wall_s": 0.30344385700300336,
+          "wall_s_per_audio_min": 6.068877140060067
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -2716,8 +2716,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.4162083310075104,
-          "wall_s_per_audio_min": 8.324166620150208
+          "wall_s": 0.4079835519660264,
+          "wall_s_per_audio_min": 8.159671039320529
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -2744,8 +2744,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.49425830703694373,
-          "wall_s_per_audio_min": 9.885166140738875
+          "wall_s": 0.3803278859704733,
+          "wall_s_per_audio_min": 7.606557719409466
         }
       }
     },
@@ -2783,8 +2783,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 126,
-          "wall_s": 0.0008283989736810327,
-          "wall_s_per_audio_min": 0.016567979473620653
+          "wall_s": 0.0013070260174572468,
+          "wall_s_per_audio_min": 0.026140520349144936
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -2811,8 +2811,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 53,
           "true_click_samples": 126,
-          "wall_s": 0.14915931300492957,
-          "wall_s_per_audio_min": 2.9831862600985914
+          "wall_s": 0.15046997397439554,
+          "wall_s_per_audio_min": 3.009399479487911
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -2839,8 +2839,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 77,
           "true_click_samples": 126,
-          "wall_s": 0.01243959297426045,
-          "wall_s_per_audio_min": 0.248791859485209
+          "wall_s": 0.011622917023487389,
+          "wall_s_per_audio_min": 0.23245834046974778
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -2867,8 +2867,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 126,
-          "wall_s": 0.18025403295177966,
-          "wall_s_per_audio_min": 3.6050806590355933
+          "wall_s": 0.15717446902999654,
+          "wall_s_per_audio_min": 3.143489380599931
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -2895,8 +2895,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 126,
-          "wall_s": 0.2422667050268501,
-          "wall_s_per_audio_min": 4.845334100537002
+          "wall_s": 0.2158309599617496,
+          "wall_s_per_audio_min": 4.316619199234992
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -2923,8 +2923,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 53,
           "true_click_samples": 126,
-          "wall_s": 0.35482626501470804,
-          "wall_s_per_audio_min": 7.096525300294161
+          "wall_s": 0.30715093802427873,
+          "wall_s_per_audio_min": 6.143018760485575
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -2951,8 +2951,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 53,
           "true_click_samples": 126,
-          "wall_s": 0.4124350369675085,
-          "wall_s_per_audio_min": 8.24870073935017
+          "wall_s": 0.3800223970320076,
+          "wall_s_per_audio_min": 7.6004479406401515
         }
       }
     },
@@ -2990,8 +2990,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 106,
-          "wall_s": 0.00079647998791188,
-          "wall_s_per_audio_min": 0.0159295997582376
+          "wall_s": 0.002364365034736693,
+          "wall_s_per_audio_min": 0.04728730069473386
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -3018,8 +3018,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 36,
           "true_click_samples": 106,
-          "wall_s": 0.16526052204426378,
-          "wall_s_per_audio_min": 3.3052104408852756
+          "wall_s": 0.18957597797270864,
+          "wall_s_per_audio_min": 3.791519559454173
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -3046,8 +3046,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 804,
           "true_click_samples": 106,
-          "wall_s": 0.014774208015296608,
-          "wall_s_per_audio_min": 0.29548416030593216
+          "wall_s": 0.0148825190262869,
+          "wall_s_per_audio_min": 0.297650380525738
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -3074,8 +3074,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 106,
-          "wall_s": 0.21876382996561006,
-          "wall_s_per_audio_min": 4.375276599312201
+          "wall_s": 0.19575484097003937,
+          "wall_s_per_audio_min": 3.9150968194007874
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -3102,8 +3102,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 106,
-          "wall_s": 0.2748645000392571,
-          "wall_s_per_audio_min": 5.497290000785142
+          "wall_s": 0.2589238319778815,
+          "wall_s_per_audio_min": 5.17847663955763
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -3130,8 +3130,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 36,
           "true_click_samples": 106,
-          "wall_s": 0.35331425099866465,
-          "wall_s_per_audio_min": 7.066285019973293
+          "wall_s": 0.3493515069712885,
+          "wall_s_per_audio_min": 6.9870301394257694
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -3158,8 +3158,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 36,
           "true_click_samples": 106,
-          "wall_s": 0.4253647819859907,
-          "wall_s_per_audio_min": 8.507295639719814
+          "wall_s": 0.4041977610322647,
+          "wall_s_per_audio_min": 8.083955220645294
         }
       }
     },
@@ -3197,8 +3197,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 305,
-          "wall_s": 0.001719095977023244,
-          "wall_s_per_audio_min": 0.03438191954046488
+          "wall_s": 0.0007559710065834224,
+          "wall_s_per_audio_min": 0.015119420131668448
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -3225,8 +3225,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 161,
           "true_click_samples": 305,
-          "wall_s": 0.17683358199428767,
-          "wall_s_per_audio_min": 3.5366716398857534
+          "wall_s": 0.1689007529639639,
+          "wall_s_per_audio_min": 3.378015059279278
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -3253,8 +3253,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 244,
           "true_click_samples": 305,
-          "wall_s": 0.012603442010004073,
-          "wall_s_per_audio_min": 0.25206884020008147
+          "wall_s": 0.011943213001359254,
+          "wall_s_per_audio_min": 0.23886426002718508
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -3281,8 +3281,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 305,
-          "wall_s": 0.15654763899510726,
-          "wall_s_per_audio_min": 3.1309527799021453
+          "wall_s": 0.1544542579795234,
+          "wall_s_per_audio_min": 3.089085159590468
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -3309,8 +3309,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 305,
-          "wall_s": 0.21753076603636146,
-          "wall_s_per_audio_min": 4.350615320727229
+          "wall_s": 0.21068261796608567,
+          "wall_s_per_audio_min": 4.2136523593217134
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -3337,8 +3337,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 161,
           "true_click_samples": 305,
-          "wall_s": 0.32916722196387127,
-          "wall_s_per_audio_min": 6.583344439277425
+          "wall_s": 0.3190852829720825,
+          "wall_s_per_audio_min": 6.38170565944165
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -3365,8 +3365,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 161,
           "true_click_samples": 305,
-          "wall_s": 0.39711759600322694,
-          "wall_s_per_audio_min": 7.942351920064539
+          "wall_s": 0.3802858429844491,
+          "wall_s_per_audio_min": 7.605716859688982
         }
       }
     },
@@ -3404,8 +3404,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.0007395590073429048,
-          "wall_s_per_audio_min": 0.014791180146858096
+          "wall_s": 0.0010840899776667356,
+          "wall_s_per_audio_min": 0.021681799553334713
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -3432,8 +3432,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 5,
           "true_click_samples": 0,
-          "wall_s": 0.16273069800809026,
-          "wall_s_per_audio_min": 3.254613960161805
+          "wall_s": 0.18289788399124518,
+          "wall_s_per_audio_min": 3.6579576798249036
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -3460,8 +3460,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 1448,
           "true_click_samples": 0,
-          "wall_s": 0.014912495040334761,
-          "wall_s_per_audio_min": 0.2982499008066952
+          "wall_s": 0.013325877953320742,
+          "wall_s_per_audio_min": 0.26651755906641483
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -3488,8 +3488,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.14389404997928068,
-          "wall_s_per_audio_min": 2.8778809995856136
+          "wall_s": 0.12589245999697596,
+          "wall_s_per_audio_min": 2.517849199939519
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -3516,8 +3516,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.14792918198509142,
-          "wall_s_per_audio_min": 2.9585836397018284
+          "wall_s": 0.12472602701745927,
+          "wall_s_per_audio_min": 2.4945205403491855
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -3544,8 +3544,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 5,
           "true_click_samples": 0,
-          "wall_s": 0.34186229697661474,
-          "wall_s_per_audio_min": 6.837245939532295
+          "wall_s": 0.2876909669721499,
+          "wall_s_per_audio_min": 5.753819339442998
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -3572,8 +3572,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 5,
           "true_click_samples": 0,
-          "wall_s": 0.3524226450244896,
-          "wall_s_per_audio_min": 7.048452900489792
+          "wall_s": 0.2867694000015035,
+          "wall_s_per_audio_min": 5.7353880000300705
         }
       }
     },
@@ -3611,8 +3611,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.0024711560108698905,
-          "wall_s_per_audio_min": 0.04942312021739781
+          "wall_s": 0.000904315966181457,
+          "wall_s_per_audio_min": 0.01808631932362914
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -3639,8 +3639,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.1611435340018943,
-          "wall_s_per_audio_min": 3.222870680037886
+          "wall_s": 0.1535357650136575,
+          "wall_s_per_audio_min": 3.07071530027315
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -3667,8 +3667,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 43,
           "true_click_samples": 0,
-          "wall_s": 0.011443433002568781,
-          "wall_s_per_audio_min": 0.22886866005137563
+          "wall_s": 0.012434064003173262,
+          "wall_s_per_audio_min": 0.24868128006346524
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -3695,8 +3695,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.12576336599886417,
-          "wall_s_per_audio_min": 2.5152673199772835
+          "wall_s": 0.13947759196162224,
+          "wall_s_per_audio_min": 2.7895518392324448
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -3723,8 +3723,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.13561223301803693,
-          "wall_s_per_audio_min": 2.7122446603607386
+          "wall_s": 0.1289074050146155,
+          "wall_s_per_audio_min": 2.57814810029231
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -3751,8 +3751,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.26212479500100017,
-          "wall_s_per_audio_min": 5.242495900020003
+          "wall_s": 0.26081816101213917,
+          "wall_s_per_audio_min": 5.216363220242783
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -3779,8 +3779,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.3045067120110616,
-          "wall_s_per_audio_min": 6.090134240221232
+          "wall_s": 0.24990672600688413,
+          "wall_s_per_audio_min": 4.998134520137683
         }
       }
     },
@@ -3818,8 +3818,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.0012088979710824788,
-          "wall_s_per_audio_min": 0.024177959421649575
+          "wall_s": 0.001627112040296197,
+          "wall_s_per_audio_min": 0.03254224080592394
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -3846,8 +3846,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.18435265199514106,
-          "wall_s_per_audio_min": 3.687053039902821
+          "wall_s": 0.13670297397766262,
+          "wall_s_per_audio_min": 2.7340594795532525
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -3874,8 +3874,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.013301933999173343,
-          "wall_s_per_audio_min": 0.26603867998346686
+          "wall_s": 0.011706728022545576,
+          "wall_s_per_audio_min": 0.23413456045091152
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -3902,8 +3902,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.15024382196133956,
-          "wall_s_per_audio_min": 3.0048764392267913
+          "wall_s": 0.133845383010339,
+          "wall_s_per_audio_min": 2.67690766020678
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -3930,8 +3930,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.1385869499645196,
-          "wall_s_per_audio_min": 2.771738999290392
+          "wall_s": 0.12895804102299735,
+          "wall_s_per_audio_min": 2.579160820459947
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -3958,8 +3958,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.3080697819823399,
-          "wall_s_per_audio_min": 6.161395639646798
+          "wall_s": 0.2661051409668289,
+          "wall_s_per_audio_min": 5.322102819336578
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -3986,8 +3986,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.29319835297064856,
-          "wall_s_per_audio_min": 5.863967059412971
+          "wall_s": 0.26323490898357704,
+          "wall_s_per_audio_min": 5.264698179671541
         }
       }
     },
@@ -4025,8 +4025,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.0008776370086707175,
-          "wall_s_per_audio_min": 0.01755274017341435
+          "wall_s": 0.0008735849987715483,
+          "wall_s_per_audio_min": 0.017471699975430965
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -4053,8 +4053,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.14510630001313984,
-          "wall_s_per_audio_min": 2.902126000262797
+          "wall_s": 0.12791404000017792,
+          "wall_s_per_audio_min": 2.5582808000035584
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -4081,8 +4081,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.01304044498829171,
-          "wall_s_per_audio_min": 0.2608088997658342
+          "wall_s": 0.010771472007036209,
+          "wall_s_per_audio_min": 0.21542944014072418
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -4109,8 +4109,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.1430231870035641,
-          "wall_s_per_audio_min": 2.860463740071282
+          "wall_s": 0.11832010699436069,
+          "wall_s_per_audio_min": 2.3664021398872137
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -4137,8 +4137,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.1349426549859345,
-          "wall_s_per_audio_min": 2.69885309971869
+          "wall_s": 0.11991215898888186,
+          "wall_s_per_audio_min": 2.398243179777637
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -4165,8 +4165,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.2791596539900638,
-          "wall_s_per_audio_min": 5.583193079801276
+          "wall_s": 0.2511780629865825,
+          "wall_s_per_audio_min": 5.02356125973165
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -4193,8 +4193,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.28704847005428746,
-          "wall_s_per_audio_min": 5.740969401085749
+          "wall_s": 0.2524088900536299,
+          "wall_s_per_audio_min": 5.0481778010725975
         }
       }
     },
@@ -4232,8 +4232,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.0008943289867602289,
-          "wall_s_per_audio_min": 0.017886579735204577
+          "wall_s": 0.00077992700971663,
+          "wall_s_per_audio_min": 0.0155985401943326
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -4260,8 +4260,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 1,
           "true_click_samples": 0,
-          "wall_s": 0.16609297099057585,
-          "wall_s_per_audio_min": 3.321859419811517
+          "wall_s": 0.1584673179895617,
+          "wall_s_per_audio_min": 3.169346359791234
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -4288,8 +4288,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 1272,
           "true_click_samples": 0,
-          "wall_s": 0.01690006401622668,
-          "wall_s_per_audio_min": 0.3380012803245336
+          "wall_s": 0.014434761949814856,
+          "wall_s_per_audio_min": 0.2886952389962971
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -4309,15 +4309,15 @@
           "quiet_tail_drift_db": 2.3622570115247825,
           "tail_snr_in_db": null,
           "tail_snr_out_db": 6.801629129946529,
-          "tail_snr_loss_db": 113.19837087005347,
+          "tail_snr_loss_db": null,
           "residual_rms_db": -68.19348276162187,
           "residual_identity_max_err": 8.673617379884035e-19,
           "input_mutated": false,
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.20119544595945626,
-          "wall_s_per_audio_min": 4.023908919189125
+          "wall_s": 0.17013681901153177,
+          "wall_s_per_audio_min": 3.4027363802306354
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -4337,15 +4337,15 @@
           "quiet_tail_drift_db": 2.1399894324989788,
           "tail_snr_in_db": null,
           "tail_snr_out_db": 7.607681757261565,
-          "tail_snr_loss_db": 112.39231824273844,
+          "tail_snr_loss_db": null,
           "residual_rms_db": -69.23258059199985,
           "residual_identity_max_err": 2.168404344971009e-19,
           "input_mutated": false,
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.2262064930400811,
-          "wall_s_per_audio_min": 4.524129860801622
+          "wall_s": 0.21753964899107814,
+          "wall_s_per_audio_min": 4.350792979821563
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -4365,15 +4365,15 @@
           "quiet_tail_drift_db": 2.362263538464177,
           "tail_snr_in_db": null,
           "tail_snr_out_db": 6.8015933840647484,
-          "tail_snr_loss_db": 113.19840661593526,
+          "tail_snr_loss_db": null,
           "residual_rms_db": -68.18928782081574,
           "residual_identity_max_err": 8.673617379884035e-19,
           "input_mutated": false,
           "outside_click_max_diff": null,
           "masked_samples": 1,
           "true_click_samples": 0,
-          "wall_s": 0.41034067899454385,
-          "wall_s_per_audio_min": 8.206813579890877
+          "wall_s": 0.3337621180107817,
+          "wall_s_per_audio_min": 6.675242360215634
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -4393,15 +4393,15 @@
           "quiet_tail_drift_db": 2.1400059256050454,
           "tail_snr_in_db": null,
           "tail_snr_out_db": 7.607589058867124,
-          "tail_snr_loss_db": 112.39241094113288,
+          "tail_snr_loss_db": null,
           "residual_rms_db": -69.22722282094435,
           "residual_identity_max_err": 2.168404344971009e-19,
           "input_mutated": false,
           "outside_click_max_diff": null,
           "masked_samples": 1,
           "true_click_samples": 0,
-          "wall_s": 0.4324905009707436,
-          "wall_s_per_audio_min": 8.649810019414872
+          "wall_s": 0.3853324970114045,
+          "wall_s_per_audio_min": 7.70664994022809
         }
       }
     },
@@ -4439,8 +4439,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 526,
-          "wall_s": 0.0017193749663420022,
-          "wall_s_per_audio_min": 0.03438749932684004
+          "wall_s": 0.0013569630100391805,
+          "wall_s_per_audio_min": 0.02713926020078361
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -4467,8 +4467,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 78,
           "true_click_samples": 526,
-          "wall_s": 0.14603059203363955,
-          "wall_s_per_audio_min": 2.920611840672791
+          "wall_s": 0.13861518201883882,
+          "wall_s_per_audio_min": 2.7723036403767765
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -4495,8 +4495,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 40,
           "true_click_samples": 526,
-          "wall_s": 0.012086052040103823,
-          "wall_s_per_audio_min": 0.24172104080207646
+          "wall_s": 0.01208981202216819,
+          "wall_s_per_audio_min": 0.24179624044336379
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -4523,8 +4523,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 526,
-          "wall_s": 0.12790801003575325,
-          "wall_s_per_audio_min": 2.558160200715065
+          "wall_s": 0.11916603503050283,
+          "wall_s_per_audio_min": 2.3833207006100565
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -4551,8 +4551,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 526,
-          "wall_s": 0.12299838301260024,
-          "wall_s_per_audio_min": 2.459967660252005
+          "wall_s": 0.11765793396625668,
+          "wall_s_per_audio_min": 2.3531586793251336
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -4579,8 +4579,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 78,
           "true_click_samples": 526,
-          "wall_s": 0.2578373219585046,
-          "wall_s_per_audio_min": 5.156746439170092
+          "wall_s": 0.27696880500297993,
+          "wall_s_per_audio_min": 5.539376100059599
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -4607,8 +4607,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 78,
           "true_click_samples": 526,
-          "wall_s": 0.2758705060114153,
-          "wall_s_per_audio_min": 5.5174101202283055
+          "wall_s": 0.2618269619997591,
+          "wall_s_per_audio_min": 5.236539239995182
         }
       }
     },
@@ -4646,8 +4646,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.0009210089920088649,
-          "wall_s_per_audio_min": 0.018420179840177298
+          "wall_s": 0.0009668950224295259,
+          "wall_s_per_audio_min": 0.019337900448590517
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -4674,8 +4674,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.148449017025996,
-          "wall_s_per_audio_min": 2.96898034051992
+          "wall_s": 0.13295824895612895,
+          "wall_s_per_audio_min": 2.659164979122579
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -4702,8 +4702,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.012540164985693991,
-          "wall_s_per_audio_min": 0.2508032997138798
+          "wall_s": 0.011720975046046078,
+          "wall_s_per_audio_min": 0.23441950092092156
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -4730,8 +4730,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.18923161801649258,
-          "wall_s_per_audio_min": 3.7846323603298515
+          "wall_s": 0.1680373650160618,
+          "wall_s_per_audio_min": 3.3607473003212363
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -4758,8 +4758,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 0,
-          "wall_s": 0.24871237098705024,
-          "wall_s_per_audio_min": 4.974247419741005
+          "wall_s": 0.23520223598461598,
+          "wall_s_per_audio_min": 4.70404471969232
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -4786,8 +4786,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.3380765009787865,
-          "wall_s_per_audio_min": 6.76153001957573
+          "wall_s": 0.3047051400062628,
+          "wall_s_per_audio_min": 6.094102800125256
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -4814,8 +4814,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 0,
           "true_click_samples": 0,
-          "wall_s": 0.4067356340237893,
-          "wall_s_per_audio_min": 8.134712680475786
+          "wall_s": 0.3710142340278253,
+          "wall_s_per_audio_min": 7.420284680556506
         }
       }
     },
@@ -4853,8 +4853,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 0,
           "true_click_samples": 67,
-          "wall_s": 0.004237325978465378,
-          "wall_s_per_audio_min": 0.12711977935396135
+          "wall_s": 0.0017203509924001992,
+          "wall_s_per_audio_min": 0.051610529772005975
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -4881,8 +4881,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 17,
           "true_click_samples": 67,
-          "wall_s": 0.2050545759848319,
-          "wall_s_per_audio_min": 6.151637279544957
+          "wall_s": 0.18236666498705745,
+          "wall_s_per_audio_min": 5.470999949611723
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -4909,8 +4909,8 @@
           "outside_click_max_diff": 0.0,
           "masked_samples": 5140,
           "true_click_samples": 67,
-          "wall_s": 0.02161636803066358,
-          "wall_s_per_audio_min": 0.6484910409199074
+          "wall_s": 0.018956829968374223,
+          "wall_s_per_audio_min": 0.5687048990512267
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -4937,8 +4937,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 67,
-          "wall_s": 0.26576091902097687,
-          "wall_s_per_audio_min": 7.972827570629306
+          "wall_s": 0.22646924603031948,
+          "wall_s_per_audio_min": 6.7940773809095845
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -4965,8 +4965,8 @@
           "outside_click_max_diff": null,
           "masked_samples": null,
           "true_click_samples": 67,
-          "wall_s": 0.24720943602733314,
-          "wall_s_per_audio_min": 7.416283080819994
+          "wall_s": 0.2192821410135366,
+          "wall_s_per_audio_min": 6.578464230406098
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -4993,8 +4993,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 17,
           "true_click_samples": 67,
-          "wall_s": 0.4456593160284683,
-          "wall_s_per_audio_min": 13.36977948085405
+          "wall_s": 0.406975177989807,
+          "wall_s_per_audio_min": 12.20925533969421
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -5021,8 +5021,8 @@
           "outside_click_max_diff": null,
           "masked_samples": 17,
           "true_click_samples": 67,
-          "wall_s": 0.4520789999514818,
-          "wall_s_per_audio_min": 13.562369998544455
+          "wall_s": 0.4093150289845653,
+          "wall_s_per_audio_min": 12.279450869536959
         }
       }
     }

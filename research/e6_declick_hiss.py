@@ -908,9 +908,11 @@ def evaluate_e6_case(
                 tail_snr_loss_db = float(max(0.0, tail_snr_in_db - tail_snr_out_db))
             elif tail_snr_in_db is None and tail_snr_out_db is None:
                 tail_snr_loss_db = 0.0
-            elif tail_snr_in_db is None and tail_snr_out_db is not None:
-                # Clean tail was degraded from infinite SNR to finite SNR.
-                tail_snr_loss_db = float(max(0.0, 120.0 - tail_snr_out_db))
+            else:
+                # Input tail SNR is infinite (clean control) while output SNR is finite:
+                # leave loss as None (N/A) rather than using a surrogate cap; report
+                # actual tail_snr_out_db and quiet_tail_drift_db directly.
+                tail_snr_loss_db = None
 
     # Residual energy & unmodified-outside-mask check.
     residual_rms_db = _rms_db(r)
@@ -1042,21 +1044,30 @@ def _render_report_md(results: dict) -> str:
             f"{_fmt(s_clk['mean_wall_s_per_audio_min'], '.2f')} |"
         )
 
+    # Separate clean-tail controls so bypassed (-82 dBFS) and active room-tone (-58 dBFS)
+    # are never averaged together into a misleading mixed figure.
+    case_by_id = {c["id"]: c["arms"] for c in results["cases"]}
+    ctl_tail_clean = case_by_id["e6-ctl-clean-reverb-tail-48k"]
+    ctl_tail_room = case_by_id["e6-ctl-clean-roomtone-tail-48k"]
+
     lines += [
         "",
         f"### 2.2 Stationary & Modulated Hiss (`hiss_only`, n={n_hiss}) + Reverb Tail Preservation",
         "",
-        "| Arm | Mean ΔSNR (dB) | Mean SI-SDRi (dB) | Hiss Tail Drift (dB) | Clean Tail Drift (dB) | Clean Tail SNR Loss (dB) | Wall (s/min) |",
-        "|---|---:|---:|---:|---:|---:|---:|",
+        "| Arm | Mean ΔSNR (dB) | Mean SI-SDRi (dB) | Hiss Tail Drift (dB) | Clean Tail Drift (-82 dBFS) | Room-Tone Tail Drift (-58 dBFS) | Room-Tone Tail SNR Out (dB) | Wall (s/min) |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for arm in DSP_ARMS:
         s_hiss = results["summary_by_stratum"]["hiss_only"][arm]
-        s_ctl = results["summary_by_stratum"]["clean_control"][arm]
+        m_clean_tail = ctl_tail_clean[arm]
+        m_room_tail = ctl_tail_room[arm]
+        rt_snr_out = "∞ (no edit)" if m_room_tail["tail_snr_out_db"] is None else f"{m_room_tail['tail_snr_out_db']:.2f}"
         lines.append(
             f"| `{arm}` | {_fmt(s_hiss['mean_delta_snr_db'])} | {_fmt(s_hiss['mean_si_sdri_db'])} | "
             f"{_fmt(s_hiss['mean_quiet_tail_drift_db'], '.2f')} | "
-            f"{_fmt(s_ctl['mean_quiet_tail_drift_db'], '.2f')} | "
-            f"{_fmt(s_ctl['mean_tail_snr_loss_db'], '.2f')} | "
+            f"{_fmt(m_clean_tail['quiet_tail_drift_db'], '.2f')} | "
+            f"{_fmt(m_room_tail['quiet_tail_drift_db'], '.2f')} | "
+            f"{rt_snr_out} | "
             f"{_fmt(s_hiss['mean_wall_s_per_audio_min'], '.2f')} |"
         )
 
@@ -1121,7 +1132,7 @@ def _render_report_md(results: dict) -> str:
         "",
         "### 3.3 Active Wiener / MMSE-STSA Without Bypass vs Room-Tone Clean Control",
         "",
-        "| Case / Mode | Arm | Bypassed Ch | Attack FP (`|r|>1e-3`) | Attack Residual (dB) | Quiet Tail Drift (dB) | Tail SNR Loss (dB) |",
+        "| Case / Mode | Arm | Bypassed Ch | Attack FP (`abs(r) > 1e-3`) | Attack Residual (dB) | Quiet Tail Drift (dB) | Tail SNR Out (dB) |",
         "|---|---|---:|---:|---:|---:|---:|",
     ]
     for label, entry in (
@@ -1132,11 +1143,16 @@ def _render_report_md(results: dict) -> str:
         for arm in ("wiener_hiss", "mmse_stsa_hiss"):
             m = entry[arm]
             fp_pct = None if m["transient_fp_rate"] is None else 100.0 * m["transient_fp_rate"]
+            t_snr = (
+                "-"
+                if m["quiet_tail_drift_db"] is None
+                else ("∞ (no edit)" if m["tail_snr_out_db"] is None else f"{m['tail_snr_out_db']:.2f}")
+            )
             lines.append(
                 f"| {label} | `{arm}` | {m['bypassed_channels']}/2 | "
                 f"{_fmt(fp_pct, '.2f', '%')} | "
                 f"{_fmt_res_db(m['clean_attack_residual_energy_db'], has_zero_residual=bool(m['clean_attack_zero_residual']))} | "
-                f"{_fmt(m['quiet_tail_drift_db'], '.2f')} | {_fmt(m['tail_snr_loss_db'], '.2f')} |"
+                f"{_fmt(m['quiet_tail_drift_db'], '.2f')} | {t_snr} |"
             )
 
     lines += [

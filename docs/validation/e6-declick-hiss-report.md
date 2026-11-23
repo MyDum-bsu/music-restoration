@@ -8,8 +8,8 @@
 - **Frozen E4 Preserve hard-declip pipeline:** `18/18` SHA-256 pins verified untouched (`all_untouched = True`).
 - **Preserve promotion / Colab automation:** `False` (isolated research study only; does not extend Preserve stereo).
 - **Manifest SHA-256 (`corpus/dev-e6-archival-v1.json`):** `43be9dbc1ced833b734f8a5b1339c1d8bb68123723b061213a6873f09a67a48a`
-- **Corpus Builder SHA-256 (`research/build_e6_archival_corpus.py`):** `cca31046af6da002e7ceb2576cd2f1f19d6507729d528b6a4b5c8725334f5ce8`
-- **E6 Harness SHA-256 (`research/e6_declick_hiss.py`):** `ee164cd68f0b1e48e33c774f5c475c99fcbdad144434706e403d5457bb4f7643`
+- **Corpus Builder SHA-256 (`research/build_e6_archival_corpus.py`):** `cfe13070e747a452682298dd3c6792bef0a0661735520916cc2c9f4cc650d6aa`
+- **E6 Harness SHA-256 (`research/e6_declick_hiss.py`):** `653eaf6d2329176c1b62ca4ff28aa79f9f7237d64977bbe7d5467b29f5bee266`
 - **Residual & Immutability Contract:** `140/140` runs passed `restored + residual == input` (`max_err = 1.11e-16`) with `0` input mutations.
 
 ---
@@ -23,24 +23,24 @@
 | Arm | Mean ΔSNR (dB) | Mean SI-SDRi (dB) | Click F1 | Clean Attack FP Rate | Clean Attack Residual (dB) | Wall (s/min) |
 |---|---:|---:|---:|---:|---:|---:|
 | `identity` | +0.00 | +0.00 | 0.000 | 0.0000% | 0 (no edit) | 0.03 |
-| `ar_declick` | +16.74 | +16.74 | 0.709 | 0.0000% | 0 (no edit) | 3.99 |
-| `median_impulse_declick` | +9.40 | +9.38 | 0.456 | 3.8910% | -19.8 | 0.31 |
-| `wiener_hiss` | +0.00 | +0.00 | - | 3.0542% | -48.4 | 3.17 |
-| `mmse_stsa_hiss` | +0.00 | +0.00 | - | 2.8900% | -48.7 | 3.16 |
-| `ar_declick_wiener_hiss` | +16.74 | +16.74 | 0.709 | 0.0000% | -48.4 | 7.40 |
-| `ar_declick_mmse_stsa` | +16.74 | +16.74 | 0.709 | 0.0000% | -48.7 | 7.51 |
+| `ar_declick` | +16.74 | +16.74 | 0.709 | 0.0000% | 0 (no edit) | 3.74 |
+| `median_impulse_declick` | +9.40 | +9.38 | 0.456 | 3.8910% | -19.8 | 0.30 |
+| `wiener_hiss` | +0.00 | +0.00 | - | 3.0542% | -48.4 | 3.05 |
+| `mmse_stsa_hiss` | +0.00 | +0.00 | - | 2.8900% | -48.7 | 3.11 |
+| `ar_declick_wiener_hiss` | +16.74 | +16.74 | 0.709 | 0.0000% | -48.4 | 7.27 |
+| `ar_declick_mmse_stsa` | +16.74 | +16.74 | 0.709 | 0.0000% | -48.7 | 7.56 |
 
 ### 2.2 Stationary & Modulated Hiss (`hiss_only`, n=4) + Reverb Tail Preservation
 
-| Arm | Mean ΔSNR (dB) | Mean SI-SDRi (dB) | Hiss Tail Drift (dB) | Clean Tail Drift (dB) | Clean Tail SNR Loss (dB) | Wall (s/min) |
-|---|---:|---:|---:|---:|---:|---:|
-| `identity` | +0.00 | +0.00 | 20.19 | 0.00 | 0.00 | 0.02 |
-| `ar_declick` | +0.00 | +0.00 | 20.19 | 0.00 | 0.00 | 2.82 |
-| `median_impulse_declick` | +0.00 | +0.00 | 20.19 | 0.00 | 0.00 | 0.23 |
-| `wiener_hiss` | +8.59 | +8.58 | 11.28 | 1.18 | 56.60 | 4.92 |
-| `mmse_stsa_hiss` | +6.45 | +6.45 | 13.60 | 1.07 | 56.20 | 5.97 |
-| `ar_declick_wiener_hiss` | +8.59 | +8.58 | 11.28 | 1.18 | 56.60 | 7.81 |
-| `ar_declick_mmse_stsa` | +6.45 | +6.45 | 13.60 | 1.07 | 56.20 | 9.18 |
+| Arm | Mean ΔSNR (dB) | Mean SI-SDRi (dB) | Hiss Tail Drift (dB) | Clean Tail Drift (-82 dBFS) | Room-Tone Tail Drift (-58 dBFS) | Room-Tone Tail SNR Out (dB) | Wall (s/min) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `identity` | +0.00 | +0.00 | 20.19 | 0.00 | 0.00 | ∞ (no edit) | 0.03 |
+| `ar_declick` | +0.00 | +0.00 | 20.19 | 0.00 | 0.00 | ∞ (no edit) | 3.29 |
+| `median_impulse_declick` | +0.00 | +0.00 | 20.19 | 0.00 | 0.00 | ∞ (no edit) | 0.26 |
+| `wiener_hiss` | +8.59 | +8.58 | 11.28 | 0.00 | 2.36 | 6.80 | 3.90 |
+| `mmse_stsa_hiss` | +6.45 | +6.45 | 13.60 | 0.00 | 2.14 | 7.61 | 5.30 |
+| `ar_declick_wiener_hiss` | +8.59 | +8.58 | 11.28 | 0.00 | 2.36 | 6.80 | 7.05 |
+| `ar_declick_mmse_stsa` | +6.45 | +6.45 | 13.60 | 0.00 | 2.14 | 7.61 | 7.79 |
 
 ### 2.3 Combined Archival Transfers (`combined_archival`, n=3) & OOD Stress Cases (`ood`, n=3)
 
@@ -74,14 +74,14 @@
 
 ### 3.3 Active Wiener / MMSE-STSA Without Bypass vs Room-Tone Clean Control
 
-| Case / Mode | Arm | Bypassed Ch | Attack FP (`|r|>1e-3`) | Attack Residual (dB) | Quiet Tail Drift (dB) | Tail SNR Loss (dB) |
+| Case / Mode | Arm | Bypassed Ch | Attack FP (`abs(r) > 1e-3`) | Attack Residual (dB) | Quiet Tail Drift (dB) | Tail SNR Out (dB) |
 |---|---|---:|---:|---:|---:|---:|
 | `e6-ctl-clean-percussion-48k` (bypass disabled) | `wiener_hiss` | 0/2 | 92.59% | -23.0 | - | - |
 | `e6-ctl-clean-percussion-48k` (bypass disabled) | `mmse_stsa_hiss` | 0/2 | 90.16% | -24.3 | - | - |
-| `e6-ctl-clean-reverb-tail-48k` (bypass disabled) | `wiener_hiss` | 0/2 | - | - | 0.21 | 98.56 |
-| `e6-ctl-clean-reverb-tail-48k` (bypass disabled) | `mmse_stsa_hiss` | 0/2 | - | - | 0.17 | 96.29 |
-| `e6-ctl-clean-roomtone-tail-48k` (`-58 dBFS` room-tone, default) | `wiener_hiss` | 0/2 | 9.16% | -48.4 | 2.36 | 113.20 |
-| `e6-ctl-clean-roomtone-tail-48k` (`-58 dBFS` room-tone, default) | `mmse_stsa_hiss` | 0/2 | 8.67% | -48.7 | 2.14 | 112.39 |
+| `e6-ctl-clean-reverb-tail-48k` (bypass disabled) | `wiener_hiss` | 0/2 | - | - | 0.21 | 21.44 |
+| `e6-ctl-clean-reverb-tail-48k` (bypass disabled) | `mmse_stsa_hiss` | 0/2 | - | - | 0.17 | 23.71 |
+| `e6-ctl-clean-roomtone-tail-48k` (`-58 dBFS` room-tone, default) | `wiener_hiss` | 0/2 | 9.16% | -48.4 | 2.36 | 6.80 |
+| `e6-ctl-clean-roomtone-tail-48k` (`-58 dBFS` room-tone, default) | `mmse_stsa_hiss` | 0/2 | 8.67% | -48.7 | 2.14 | 7.61 |
 
 ---
 
