@@ -6,11 +6,11 @@
 
 - **Sealed corpora (`corpus/sealed-v1.json`, `corpus/sealed-e5-v1.json`):** `sealed_corpora_opened = False` (strictly untouched).
 - **Frozen E4 Preserve files:** `18/18` SHA-256 pins verified untouched (`all_untouched = True`).
-- **Static AST import audit (Preserve ↔ ML bidirectional):** `static_audit_passed = True` (`preserve_modules_checked = 23`, `ml_modules_checked = 9`, `preserve_to_ml_violations = 0`, `ml_to_preserve_violations = 0`).
+- **Static AST import audit (Preserve ↔ ML bidirectional):** `static_audit_passed = True` (`preserve_modules_checked = 24`, `ml_modules_checked = 9`, `preserve_to_ml_violations = 0`, `ml_to_preserve_violations = 0`).
 - **Isolated Preserve E2E smoke (ML libs + network hard-blocked):** `e2e_smoke_passed = True` (`loaded_forbidden_modules = []`).
 - **ML-target governance schema:** `e9-ml-governance/v1` (`stages = approved_labels, dev_selection, promotion, sealed_test`, fail-closed deduplication and split isolation).
 - **Production dependencies & GPU policy:** Zero new production dependencies added; no training launched; GPU remains Google Colab-only under separate authorization.
-- **Results SHA-256:** `63a28a41d95e738bf63707263386aa2e73b7684dcf27c932722958b3dcd7c9d4`
+- **Results SHA-256:** `261711b84efa43533bc5453f5786122259fa8ee5cb4eef3019aff0fd9c9ce473`
 
 ## 2. Legacy Runners, Dependencies & Migration Inventory
 
@@ -44,7 +44,7 @@
 
 | Check | Result | Evidence |
 |---|---|---|
-| Preserve static AST audit | `PASS` | 23 Preserve modules, 0 forbidden imports (`joblib`, `torch`, `sklearn`, `rnext.ml`, `research`, `lab`) |
+| Preserve static AST audit | `PASS` | 24 Preserve modules, 0 forbidden imports (`joblib`, `torch`, `sklearn`, `rnext.ml`, `research`, `lab`) |
 | ML -> Preserve reverse AST audit | `PASS` | 9 ML modules, 0 imports of Preserve declip/delivery entrypoints |
 | Isolated E2E clean control FLAC | `PASS` | `status=kept_original`, `byte_identical=True` |
 | Isolated E2E hard-clipped FLAC | `PASS` | `status=processed_candidate`, `tp_dbfs=-1.0`, `clip_samples=0` |

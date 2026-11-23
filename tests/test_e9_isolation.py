@@ -259,14 +259,31 @@ def test_ml_governance_versioning_fail_closed_rules():
         GOV.verify_versioned_result(bad_sealed)
 
     bad_dv = {k: v for k, v in valid.items() if k != "results_sha256"}
-    bad_dv["dataset_version"] = "   "
+    bad_dv["dataset_version"] = "garbage"
     bad_dv["results_sha256"] = GOV.compute_sha256_json(bad_dv)
-    with pytest.raises(GOV.GovernanceError, match="dataset_version"):
+    with pytest.raises(GOV.GovernanceError, match="Invalid dataset_version"):
         GOV.verify_versioned_result(bad_dv)
+
+    bad_sha = {k: v for k, v in valid.items() if k != "results_sha256"}
+    bad_sha["model_sha256"] = "not-a-sha"
+    bad_sha["results_sha256"] = GOV.compute_sha256_json(bad_sha)
+    with pytest.raises(GOV.GovernanceError, match="Invalid model_sha256"):
+        GOV.verify_versioned_result(bad_sha)
+
+    with pytest.raises(GOV.GovernanceError, match="model_sha256"):
+        GOV.build_versioned_result(
+            stage="dev_selection",
+            records=_valid_four_stage_records(),
+            metrics={"median_abs_err_db": 0.3},
+            model_id="m1",
+            model_sha256="not-a-sha",
+        )
 
 
 def test_sealed_symlink_alias_and_resolve_oserror_fail_closed(tmp_path, monkeypatch):
-    """Blocker #3: symlink aliases to sealed manifests and resolve() OSError fail closed."""
+    """Blocker #3: symlink aliases to sealed manifests and resolve()/lstat OSError/EACCES fail closed."""
+    import os
+
     sealed_real = REPO_ROOT / "corpus" / "sealed-v1.json"
     alias = tmp_path / "harmless_dev_alias.json"
     alias.symlink_to(sealed_real)
@@ -277,16 +294,18 @@ def test_sealed_symlink_alias_and_resolve_oserror_fail_closed(tmp_path, monkeypa
     with pytest.raises(ValueError, match="sealed corpus"):
         AUDIT._assert_not_sealed_path(alias)
 
-    def _boom(self, *args, **kwargs):
-        raise OSError("simulated resolve failure")
+    def _eacces(_path):
+        raise PermissionError(13, "Permission denied")
 
-    monkeypatch.setattr(Path, "resolve", _boom)
+    monkeypatch.setattr(os, "lstat", _eacces)
     with pytest.raises(ValueError, match="Fail-closed: unable to resolve path"):
         AUDIT._assert_not_sealed_path(tmp_path / "any_out.json")
+    with pytest.raises(GOV.GovernanceError, match="Fail-closed: unable to resolve source_manifest"):
+        GOV.assert_not_sealed_source(tmp_path / "any_dev.json", stage="dev_selection")
 
 
 def test_ast_import_audit_catches_from_rnext_import_ml_and_transitive_leak(tmp_path):
-    """Blocker #4: `from pkg import name` expands to `pkg.name` and walks transitive local modules."""
+    """Blocker #4: `from pkg import name` expands to `pkg.name` and walks transitive local modules + parent __init__.py."""
     # Minimal synthetic repo with Preserve seed -> local helper -> `from rnext import ml`.
     for rel in GOV.PRESERVE_CORE_MODULES:
         p = tmp_path / rel
@@ -314,9 +333,27 @@ def test_ast_import_audit_catches_from_rnext_import_ml_and_transitive_leak(tmp_p
         for v in audit["preserve_to_ml_violations"]
     )
 
+    # Also verify parent package __init__.py is always audited when importing a clean submodule.
+    (tmp_path / "rnext" / "helper_transitive.py").write_text("# clean\n", encoding="utf-8")
+    subpkg = tmp_path / "rnext" / "subpkg"
+    subpkg.mkdir(parents=True, exist_ok=True)
+    (subpkg / "__init__.py").write_text("import joblib\n", encoding="utf-8")
+    (subpkg / "leaf.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (tmp_path / "rnext" / "features.py").write_text(
+        "from rnext.subpkg.leaf import VALUE\n", encoding="utf-8"
+    )
+
+    audit_init = GOV.audit_ml_preserve_boundary(tmp_path)
+    assert audit_init["bidirectional_isolation_passed"] is False
+    assert "rnext/subpkg/__init__.py" in audit_init["preserve_transitive_modules"]
+    assert any(
+        v["file"] == "rnext/subpkg/__init__.py" and v["import"] == "joblib"
+        for v in audit_init["preserve_to_ml_violations"]
+    )
+
 
 def test_resume_sh_fails_closed_when_data_root_unresolved(tmp_path):
-    """Blocker #5: research/resume.sh exits non-zero when workspace.data_root() fails."""
+    """Blocker #5: research/resume.sh exits non-zero on unresolved data_root or missing MR_DATA_ROOT without calling udisksctl."""
     import os
     import subprocess
 
@@ -325,6 +362,12 @@ def test_resume_sh_fails_closed_when_data_root_unresolved(tmp_path):
     fake_py = fake_bin / "python3"
     fake_py.write_text("#!/usr/bin/env bash\nexit 1\n", encoding="utf-8")
     fake_py.chmod(0o755)
+    marker = tmp_path / "udisksctl_called"
+    fake_udisks = fake_bin / "udisksctl"
+    fake_udisks.write_text(
+        f"#!/usr/bin/env bash\ntouch '{marker}'\nexit 0\n", encoding="utf-8"
+    )
+    fake_udisks.chmod(0o755)
 
     env = os.environ.copy()
     env.pop("MR_DATA_ROOT", None)
@@ -341,6 +384,24 @@ def test_resume_sh_fails_closed_when_data_root_unresolved(tmp_path):
     )
     assert proc.returncode != 0
     assert "failed to resolve data_root" in proc.stderr
+    assert not marker.exists()
+
+    # Custom MR_DATA_ROOT pointing to non-existent directory must fail closed without udisksctl.
+    env_custom = os.environ.copy()
+    env_custom["MR_DATA_ROOT"] = str(tmp_path / "does_not_exist")
+    env_custom["PATH"] = f"{fake_bin}:{env_custom.get('PATH', '')}"
+    proc_custom = subprocess.run(
+        ["bash", str(REPO_ROOT / "research" / "resume.sh")],
+        cwd=str(REPO_ROOT),
+        env=env_custom,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert proc_custom.returncode != 0
+    assert "custom MR_DATA_ROOT does not exist" in proc_custom.stderr
+    assert not marker.exists()
 
 
 # ── 4. Security, Freeze, Portability & Report Integrity ──────────────────────

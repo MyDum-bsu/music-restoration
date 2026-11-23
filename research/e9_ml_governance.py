@@ -21,6 +21,7 @@ import ast
 import hashlib
 import json
 import os
+import re
 import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -39,6 +40,10 @@ STAGE_ORDER = {stage: idx for idx, stage in enumerate(ALLOWED_STAGES)}
 
 ALLOWED_LABEL_STATUSES = ("approved", "provisional", "unlabeled", "rejected")
 SEALED_CORPUS_NAMES = ("sealed-v1.json", "sealed-e5-v1.json")
+DATASET_VERSION_RE = re.compile(
+    r"^[a-z0-9][a-z0-9_-]*-(?:v\d+|\d{4}-\d{2}-\d{2})(?:-[0-9a-f]{8,64})?$"
+)
+SHA256_HEX_RE = re.compile(r"^[0-9a-f]{64}$")
 
 # Modules that belong strictly to the Preserve local CPU delivery contour.
 PRESERVE_CORE_MODULES = (
@@ -139,6 +144,10 @@ def assert_not_sealed_source(path_or_name: str | Path, stage: str) -> None:
     raw = str(path_or_name)
     candidates = [raw, Path(raw).name]
     try:
+        try:
+            os.lstat(raw)
+        except FileNotFoundError:
+            pass
         real = os.path.realpath(raw)
         resolved = str(Path(raw).resolve(strict=False))
         candidates.extend([real, Path(real).name, resolved, Path(resolved).name])
@@ -365,8 +374,13 @@ def build_versioned_result(
         raise GovernanceError(
             f"sealed_audio_opened=True is forbidden for stage '{stage}'"
         )
-    if not model_id.strip() or not model_sha256.strip():
-        raise GovernanceError("model_id and model_sha256 must be non-empty")
+    if not model_id.strip() or not isinstance(model_sha256, str):
+        raise GovernanceError("model_id must be non-empty and model_sha256 must be a 64-hex string")
+    norm_model_sha = model_sha256.strip().lower()
+    if not SHA256_HEX_RE.fullmatch(norm_model_sha):
+        raise GovernanceError(
+            f"model_sha256 must be 64 lowercase hex characters, got '{model_sha256}'"
+        )
 
     summary = validate_split_boundaries(records)
     if summary["stage_counts"].get(stage, 0) <= 0:
@@ -380,7 +394,7 @@ def build_versioned_result(
         "dataset_version": summary["dataset_version"],
         "stage_counts": summary["stage_counts"],
         "model_id": model_id,
-        "model_sha256": model_sha256.strip().lower(),
+        "model_sha256": norm_model_sha,
         "git_commit": git_commit,
         "preserve_isolated": True,
         "sealed_audio_opened": bool(sealed_audio_opened),
@@ -391,7 +405,7 @@ def build_versioned_result(
 
 
 def verify_versioned_result(payload: dict[str, Any]) -> bool:
-    """Verify schema_version, dataset_version, sealed flags, and results_sha256 integrity."""
+    """Verify schema_version, dataset_version, model_sha256, sealed flags, and results_sha256 integrity."""
     required = (
         "schema_version",
         "stage",
@@ -418,8 +432,18 @@ def verify_versioned_result(payload: dict[str, Any]) -> bool:
         raise GovernanceError(f"Invalid stage '{stage}'")
 
     dataset_version = payload["dataset_version"]
-    if not isinstance(dataset_version, str) or not dataset_version.strip():
-        raise GovernanceError("dataset_version must be a non-empty string")
+    if not isinstance(dataset_version, str) or not DATASET_VERSION_RE.fullmatch(dataset_version):
+        raise GovernanceError(
+            f"Invalid dataset_version '{dataset_version}'; expected versioned identifier"
+        )
+
+    model_sha = payload["model_sha256"]
+    if model_sha is not None and (
+        not isinstance(model_sha, str) or not SHA256_HEX_RE.fullmatch(model_sha)
+    ):
+        raise GovernanceError(
+            f"Invalid model_sha256 '{model_sha}'; expected 64 lowercase hex characters"
+        )
 
     if not isinstance(payload["sealed_audio_opened"], bool):
         raise GovernanceError("sealed_audio_opened must be a boolean")
@@ -555,6 +579,17 @@ def audit_ml_preserve_boundary(repo_root: Path = REPO_ROOT) -> dict[str, Any]:
         if not p.is_file():
             preserve_violations.append({"file": rel, "error": "missing_module"})
             continue
+
+        # Python always executes every parent package's __init__.py when importing
+        # a submodule, so enqueue all parent __init__.py files into the closure.
+        parent = p.parent
+        while parent != repo_root and parent.is_relative_to(repo_root):
+            init_py = parent / "__init__.py"
+            if init_py.is_file():
+                init_rel = str(init_py.relative_to(repo_root))
+                if init_rel not in visited_preserve:
+                    queue.append(init_rel)
+            parent = parent.parent
 
         # scripts/restore_one.py is imported by scripts/restore_safe.py solely for
         # `encode_flac`; check its top-level imports here (its lazy opt-in ML import

@@ -10,7 +10,7 @@
     "mismatches": []
   },
   "static_import_audit": {
-    "preserve_modules_checked": 23,
+    "preserve_modules_checked": 24,
     "ml_modules_checked": 9,
     "preserve_to_ml_violations": [],
     "ml_to_preserve_violations": [],
@@ -319,5 +319,5 @@
     "bidirectional_isolation_passed": true
   },
   "all_checks_passed": true,
-  "results_sha256": "63a28a41d95e738bf63707263386aa2e73b7684dcf27c932722958b3dcd7c9d4"
+  "results_sha256": "261711b84efa43533bc5453f5786122259fa8ee5cb4eef3019aff0fd9c9ce473"
 }

@@ -229,6 +229,10 @@ def _assert_not_sealed_path(path: Path) -> None:
     """Fail closed if a target path (or symlink alias) points to a sealed corpus manifest."""
     candidates = [str(path), path.name]
     try:
+        try:
+            os.lstat(path)
+        except FileNotFoundError:
+            pass
         resolved = path.resolve(strict=False)
         real = os.path.realpath(str(path))
         candidates.extend([str(resolved), resolved.name, real, Path(real).name])

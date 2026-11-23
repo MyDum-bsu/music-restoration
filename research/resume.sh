@@ -8,8 +8,14 @@
 set -u
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
+CUSTOM_DATA_ROOT=0
 if [ -n "${MR_DATA_ROOT:-}" ]; then
   DATA_ROOT="$MR_DATA_ROOT"
+  CUSTOM_DATA_ROOT=1
+  if [ ! -d "$DATA_ROOT" ]; then
+    echo "ERROR: custom MR_DATA_ROOT does not exist: $DATA_ROOT" >&2
+    exit 1
+  fi
 else
   if ! DATA_ROOT="$(python3 -c 'from rnext import workspace; print(workspace.data_root())')"; then
     echo "ERROR: failed to resolve data_root via rnext.workspace (set config/workspace.json or MR_DATA_ROOT)." >&2
@@ -25,7 +31,9 @@ DATA="${MR_DATA_MOUNT:-$(dirname "$(dirname "$DATA_ROOT")")}"
 say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 
 say "1/5 flash drive"
-if mountpoint -q "$DATA"; then
+if [ "$CUSTOM_DATA_ROOT" -eq 1 ]; then
+  echo "using custom MR_DATA_ROOT: $DATA_ROOT"
+elif mountpoint -q "$DATA"; then
   echo "already mounted: $DATA"
 else
   echo "not mounted — trying udisksctl"
