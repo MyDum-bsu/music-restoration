@@ -1172,6 +1172,42 @@ def render_freeze_report(freeze: dict) -> str:
     a1 = sb["album_all_clipped"]
     a2 = sb["album_mixed_kept"]
     g_cln = a1["gapless_part1_part2_vs_clean"]
+    tracks_reused = sc.get("tracks_reused_from_sha256")
+    suites_reused = freeze["e4_verification"].get("suites_a_b_reused_from_sha256")
+    if tracks_reused and suites_reused:
+        suite_c_provenance = [
+            "",
+            (
+                f"> **Provenance note:** The 10 single-track 5-minute rows below (`tracks` and 5-min aggregate) "
+                f"were reused from freeze run `{tracks_reused}` after verifying byte-identical "
+                "SHA-256 hashes of all 4 core DSP modules (`rnext/dsp/clip_detector.py`, "
+                "`rnext/dsp/declip_methods.py`, `rnext/dsp/contour.py`, `rnext/features.py`); "
+                f"Suites A, B, and the 10-minute `album_benchmark` were carried over unchanged from "
+                f"freeze run `{suites_reused}` (only report rendering / metadata changed in this revision)."
+            ),
+        ]
+    elif tracks_reused:
+        suite_c_provenance = [
+            "",
+            (
+                f"> **Provenance note:** The 10 single-track 5-minute rows below (`tracks` and 5-min aggregate) "
+                f"were reused from freeze run `{tracks_reused}` after verifying byte-identical "
+                "SHA-256 hashes of all 4 core DSP modules (`rnext/dsp/clip_detector.py`, "
+                "`rnext/dsp/declip_methods.py`, `rnext/dsp/contour.py`, `rnext/features.py`); "
+                "Suites A, B, and the 10-minute `album_benchmark` were re-measured in full on the current revision."
+            ),
+        ]
+    elif suites_reused:
+        suite_c_provenance = [
+            "",
+            (
+                f"> **Provenance note:** Suites A, B, and the 10-minute `album_benchmark` were carried over "
+                f"unchanged from freeze run `{suites_reused}` (only report rendering / metadata changed in this revision)."
+            ),
+        ]
+    else:
+        suite_c_provenance = []
+
     lines += [
         "",
         "### 2.2 Real Multi-Track Stereo FLAC Albums (`restore_safe.py --album-headroom` + `evaluate_album.py`)",
@@ -1191,20 +1227,7 @@ def render_freeze_report(freeze: dict) -> str:
         "## 3. Suite C — Local CPU Profiling (Cold/Warm, 5-Minute Stereo FLAC Tracks & Album)",
         "",
         "All timings and peak RSS values were measured in **isolated fresh subprocesses** (`OPENBLAS_NUM_THREADS=1`, `OMP_NUM_THREADS=1`) on real stereo FLAC files via `/proc/self/status` `VmHWM` (true post-`execve` resident high-water mark, zero parent/synthesis contamination; chunked 4x polyphase `true_peak_dbfs`).",
-        *(
-            [
-                "",
-                (
-                    f"> **Provenance note:** The 10 single-track 5-minute rows below (`tracks` and 5-min aggregate) "
-                    f"were reused from freeze run `{sc['tracks_reused_from_sha256']}` after verifying byte-identical "
-                    "SHA-256 hashes of all 4 core DSP modules (`rnext/dsp/clip_detector.py`, "
-                    "`rnext/dsp/declip_methods.py`, `rnext/dsp/contour.py`, `rnext/features.py`); "
-                    "Suites A, B, and the 10-minute `album_benchmark` were re-measured in full on the current revision."
-                ),
-            ]
-            if sc.get("tracks_reused_from_sha256")
-            else []
-        ),
+        *suite_c_provenance,
         "",
         "| Track | Rate / Bits | Dur (s) | Masked (%) | Run | Decode (s) | Detect (s) | Repair (s) | Headroom (s) | Encode+QC (s) | Total (s) | RTF | s / audio min | Peak RSS (MiB) |",
         "|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",

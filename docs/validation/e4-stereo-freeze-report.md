@@ -3,7 +3,7 @@
 **Card:** Board #1127 · **Spec:** E0 charter + spec v1 (sections 3, 4, E4) · **Freeze status:** `frozen_for_e5` · **Sealed audio opened:** `false` (custodian-held; `corpus/sealed-v1.json` metadata inspected post-pilot for group-leakage audit only, audio never accessed or executed).
 
 - **Frozen Candidate:** `aspade_mit__v2_windowed` (`detect_hard_clip_v2` + `declip_aspade` + unified `-1.0 dBTP` headroom)
-- **Freeze SHA-256:** `ee4cdc8cec0a4f6a365b4784e6b694b64febac202f1ce31528f66a38a416f09c`
+- **Freeze SHA-256:** `7c4847d4d572321cb93b4d126dfde009e832890d6b652700047287fb6dff0e55`
 - **Reference CPU:** `x86_64` (8 logical cores, single-threaded BLAS/OpenMP `= 1`)
 - **Toolchain Pins:** Python `3.12.3`, NumPy `2.5.2`, SciPy `1.17.1`, FFmpeg `125907-ga7e72069f1-20260802`, libflac `1.4.3`
 - **Cross-manifest group leakage (`smoke/dev/dev-e3/sealed`):** `0` errors
@@ -59,7 +59,7 @@
 
 All timings and peak RSS values were measured in **isolated fresh subprocesses** (`OPENBLAS_NUM_THREADS=1`, `OMP_NUM_THREADS=1`) on real stereo FLAC files via `/proc/self/status` `VmHWM` (true post-`execve` resident high-water mark, zero parent/synthesis contamination; chunked 4x polyphase `true_peak_dbfs`).
 
-> **Provenance note:** The 10 single-track 5-minute rows below (`tracks` and 5-min aggregate) were reused from freeze run `6ebc11f22a6b8ff71d62c6abe02f205ee393fdbb2395f5fee93586bd99dbc7b5` after verifying byte-identical SHA-256 hashes of all 4 core DSP modules (`rnext/dsp/clip_detector.py`, `rnext/dsp/declip_methods.py`, `rnext/dsp/contour.py`, `rnext/features.py`); Suites A, B, and the 10-minute `album_benchmark` were re-measured in full on the current revision.
+> **Provenance note:** The 10 single-track 5-minute rows below (`tracks` and 5-min aggregate) were reused from freeze run `6ebc11f22a6b8ff71d62c6abe02f205ee393fdbb2395f5fee93586bd99dbc7b5` after verifying byte-identical SHA-256 hashes of all 4 core DSP modules (`rnext/dsp/clip_detector.py`, `rnext/dsp/declip_methods.py`, `rnext/dsp/contour.py`, `rnext/features.py`); Suites A, B, and the 10-minute `album_benchmark` were carried over unchanged from freeze run `61dca03e31303c201a1ad42ed1629ad0c5df222d9f8e8c265aac7704a799ae9f` (only report rendering / metadata changed in this revision).
 
 | Track | Rate / Bits | Dur (s) | Masked (%) | Run | Decode (s) | Detect (s) | Repair (s) | Headroom (s) | Encode+QC (s) | Total (s) | RTF | s / audio min | Peak RSS (MiB) |
 |---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
