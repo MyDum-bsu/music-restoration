@@ -27,6 +27,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import subprocess
 import sys
 import tempfile
@@ -226,16 +227,26 @@ RUNBOOK_UPDATES: tuple[dict[str, str], ...] = (
 
 
 def _assert_not_sealed_path(path: Path) -> None:
-    """Fail closed if a target path (or symlink alias) points to a sealed corpus manifest."""
+    """Fail closed if a target path points to a sealed corpus manifest, contains any symlink, or cannot be stat/resolved."""
     candidates = [str(path), path.name]
     try:
-        try:
-            os.lstat(path)
-        except FileNotFoundError:
-            pass
+        abs_path = Path(os.path.abspath(str(path)))
+        prefix = Path(abs_path.anchor) if abs_path.anchor else Path(".")
+        for part in abs_path.parts[1:] if abs_path.anchor else abs_path.parts:
+            prefix = prefix / part
+            try:
+                st = os.lstat(prefix)
+            except FileNotFoundError:
+                break
+            if stat.S_ISLNK(st.st_mode):
+                raise ValueError(
+                    f"Fail-closed: refusing symlink component '{prefix}' in path '{path}'"
+                )
         resolved = path.resolve(strict=False)
         real = os.path.realpath(str(path))
         candidates.extend([str(resolved), resolved.name, real, Path(real).name])
+    except ValueError:
+        raise
     except OSError as exc:
         raise ValueError(
             f"Fail-closed: unable to resolve path '{path}' for sealed check: {exc}"

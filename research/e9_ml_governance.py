@@ -22,6 +22,7 @@ import hashlib
 import json
 import os
 import re
+import stat
 import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -138,19 +139,30 @@ def compute_sha256_json(obj: Any) -> str:
 
 
 def assert_not_sealed_source(path_or_name: str | Path, stage: str) -> None:
-    """Fail closed if a sealed corpus path (or symlink alias) is referenced outside `sealed_test`."""
+    """Fail closed if a sealed corpus path, any symlink component, or unresolvable path is referenced outside `sealed_test`."""
     if stage == "sealed_test":
         return
     raw = str(path_or_name)
     candidates = [raw, Path(raw).name]
     try:
-        try:
-            os.lstat(raw)
-        except FileNotFoundError:
-            pass
+        abs_path = Path(os.path.abspath(raw))
+        prefix = Path(abs_path.anchor) if abs_path.anchor else Path(".")
+        for part in abs_path.parts[1:] if abs_path.anchor else abs_path.parts:
+            prefix = prefix / part
+            try:
+                st = os.lstat(prefix)
+            except FileNotFoundError:
+                break
+            if stat.S_ISLNK(st.st_mode):
+                raise GovernanceError(
+                    f"Fail-closed: symlink component '{prefix}' in source_manifest '{raw}' "
+                    f"is forbidden in stage '{stage}'"
+                )
         real = os.path.realpath(raw)
         resolved = str(Path(raw).resolve(strict=False))
         candidates.extend([real, Path(real).name, resolved, Path(resolved).name])
+    except GovernanceError:
+        raise
     except OSError as exc:
         raise GovernanceError(
             f"Fail-closed: unable to resolve source_manifest '{raw}' in stage '{stage}': {exc}"
@@ -438,9 +450,7 @@ def verify_versioned_result(payload: dict[str, Any]) -> bool:
         )
 
     model_sha = payload["model_sha256"]
-    if model_sha is not None and (
-        not isinstance(model_sha, str) or not SHA256_HEX_RE.fullmatch(model_sha)
-    ):
+    if not isinstance(model_sha, str) or not SHA256_HEX_RE.fullmatch(model_sha):
         raise GovernanceError(
             f"Invalid model_sha256 '{model_sha}'; expected 64 lowercase hex characters"
         )

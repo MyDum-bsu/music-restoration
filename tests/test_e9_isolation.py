@@ -270,6 +270,12 @@ def test_ml_governance_versioning_fail_closed_rules():
     with pytest.raises(GOV.GovernanceError, match="Invalid model_sha256"):
         GOV.verify_versioned_result(bad_sha)
 
+    null_sha = {k: v for k, v in valid.items() if k != "results_sha256"}
+    null_sha["model_sha256"] = None
+    null_sha["results_sha256"] = GOV.compute_sha256_json(null_sha)
+    with pytest.raises(GOV.GovernanceError, match="Invalid model_sha256"):
+        GOV.verify_versioned_result(null_sha)
+
     with pytest.raises(GOV.GovernanceError, match="model_sha256"):
         GOV.build_versioned_result(
             stage="dev_selection",
@@ -281,18 +287,24 @@ def test_ml_governance_versioning_fail_closed_rules():
 
 
 def test_sealed_symlink_alias_and_resolve_oserror_fail_closed(tmp_path, monkeypatch):
-    """Blocker #3: symlink aliases to sealed manifests and resolve()/lstat OSError/EACCES fail closed."""
+    """Blocker #3: any symlink component and resolve()/lstat OSError/EACCES fail closed."""
     import os
 
     sealed_real = REPO_ROOT / "corpus" / "sealed-v1.json"
     alias = tmp_path / "harmless_dev_alias.json"
     alias.symlink_to(sealed_real)
 
-    with pytest.raises(GOV.GovernanceError, match="Sealed corpus reference"):
+    with pytest.raises(GOV.GovernanceError, match="symlink component"):
         GOV.assert_not_sealed_source(alias, stage="dev_selection")
 
-    with pytest.raises(ValueError, match="sealed corpus"):
+    with pytest.raises(ValueError, match="symlink component"):
         AUDIT._assert_not_sealed_path(alias)
+
+    # Even a symlink inside a parent directory component is rejected fail-closed.
+    dir_link = tmp_path / "dir_alias"
+    dir_link.symlink_to(REPO_ROOT / "corpus")
+    with pytest.raises(ValueError, match="symlink component"):
+        AUDIT._assert_not_sealed_path(dir_link / "any_file.json")
 
     def _eacces(_path):
         raise PermissionError(13, "Permission denied")
