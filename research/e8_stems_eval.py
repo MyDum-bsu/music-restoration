@@ -1035,7 +1035,7 @@ def render_combined_e8_report_md(combined: dict) -> str:
         f"- **Contour A Evaluator SHA-256 (`research/e8_voice_eval.py`):** `{v['provenance']['evaluator_sha256']}`",
         f"- **Contour B Manifest SHA-256 (`{s['provenance']['manifest_path']}`):** `{s['provenance']['manifest_sha256']}`",
         f"- **Contour B Evaluator SHA-256 (`research/e8_stems_eval.py`):** `{s['provenance']['evaluator_sha256']}`",
-        f"- **Contour B Exact Additive Mix Invariant (float64):** `max(|sum(true_stems) - mix|) = {s['invariants']['max_corpus_additive_err']:.2e}`, `max(|sum(est_stems) - mix|) = {s['invariants']['max_mix_recon_err']:.2e}` (note: 16-bit PCM WAV export introduces per-stem quantization rounding up to `<= 4 LSB`).",
+        f"- **Contour B Exact Additive Mix Invariant (float64):** `max(|sum(true_stems) - mix|) = {s['invariants']['max_corpus_additive_err']:.2e}`, `max(|sum(est_stems) - mix|) = {s['invariants']['max_mix_recon_err']:.2e}` (note: 16-bit PCM WAV export introduces per-stem quantization rounding up to `<= 5 LSB`).",
         "",
         "> **Strict Non-Generalization Warning:** Contour A (Voice) and Contour B (Stems) are **two independent feasibility contours**. Results from speech enhancement or 4-stem source separation **MUST NOT** be generalized to full-mix stereo music mastering (`Preserve` hard-declipping).",
         "",
@@ -1166,7 +1166,7 @@ def render_combined_e8_report_md(combined: dict) -> str:
         "2. **Neural GPU Arms Blocked Locally:** `DeepFilterNet3`, `SGMSE+`, flow-matching speech restoration, `DNSMOS`, `HTDemucs`, `SCNet`, and `BS-RoFormer` are all honestly reported as `blocked_external_weights_or_colab` with zero fabricated numbers. All GPU inference/benchmarks require separate Google Colab authorization.",
         "3. **Licensed Perceptual Metrics:** Official ITU-T P.862 `PESQ` is marked `license_required_for_pesq`; local voice evaluation uses `stoi_proxy_envelope_corr`, `formant_drift_hz`, `spectral_lsd_db`, and `syllable_env_corr` as transparent CPU proxies.",
         "4. **Oracle IRM Is an Oracle Mask Reference, Not a Deployable Separator or Proven SI-SDR Ceiling:** `oracle_irm_upper_bound` accesses ground-truth clean stems to provide a magnitude-only oracle mask reference on `dev-e8-stems-v1` (phase-aware/complex oracle masks can exceed real-valued IRM SI-SDR); real separators have no access to clean stems. `Mean Active Leakage (dB)` in Table 3.1 averages over active stems only; inactive stems in `sparse_clean_stem_control` are tracked separately via `false_leakage_dbfs` in the JSON results.",
-        "5. **Float64 vs PCM16 WAV Additivity:** `mix == sum(stems)` holds exactly in `float64` (`max_err = 0.00e+00`) during synthesis and evaluation; when stems and mix are quantized independently to 16-bit PCM WAV files for manifest SHA-256 digests, per-stem quantization rounding can differ by up to `<= 4 LSB`.",
+        "5. **Float64 vs PCM16 WAV Additivity:** `mix == sum(stems)` holds exactly in `float64` (`max_err = 0.00e+00`) during synthesis and evaluation; when stems and mix are quantized independently to 16-bit PCM WAV files for manifest SHA-256 digests, per-stem quantization rounding can differ by up to `<= 5 LSB`.",
         "6. **OOD Failure Modes Exposed Honestly:** In Contour A, heavy hall reverb at 2 dB SNR and non-stationary babble degrade CPU spectral enhancement; in Contour B, spectral clash (`e8-stems-ood-vocal-other-clash-44k`) and mono collapse (`e8-stems-ood-mono-collapsed-mix-44k`) sharply reduce `hpss_band_separator_cpu` vocal/other separation because spatial Mid/Side cues vanish.",
         "7. **Zero Generalization to Preserve Stereo Mastering:** Neither voice dereverberation/denoising nor 4-stem source separation validates or improves stereo hard-declipping (`Preserve`). Frozen E4 files remain `18/18` untouched.",
     ]
@@ -1180,6 +1180,10 @@ def run_e8_combined_report(
     out_md: Path,
 ) -> dict:
     """Run Contour A and Contour B independently and emit combined E8 report & JSON."""
+    e8_voice_eval.assert_not_sealed_path(voice_manifest)
+    e8_voice_eval.assert_not_sealed_path(stems_manifest)
+    e8_voice_eval.assert_not_sealed_path(out_json)
+    e8_voice_eval.assert_not_sealed_path(out_md)
     voice_res = e8_voice_eval.run_e8_voice_eval(voice_manifest)
     stems_res = run_e8_stems_eval(stems_manifest)
     e4_check = _verify_e4_freeze_untouched()
@@ -1233,8 +1237,12 @@ def main(argv: list[str] | None = None) -> int:
 
     voice_manifest = Path(args.voice_manifest)
     stems_manifest = Path(args.stems_manifest)
+    out_json = Path(args.out_json)
+    out_md = Path(args.out_md)
     e8_voice_eval.assert_not_sealed_path(stems_manifest)
     e8_voice_eval.assert_not_sealed_path(voice_manifest)
+    e8_voice_eval.assert_not_sealed_path(out_json)
+    e8_voice_eval.assert_not_sealed_path(out_md)
 
     if args.build_manifest:
         build_stems_manifest(stems_manifest)

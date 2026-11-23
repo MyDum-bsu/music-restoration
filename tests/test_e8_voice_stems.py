@@ -309,6 +309,21 @@ def test_sealed_path_rejected_before_io(tmp_path: Path) -> None:
         e8_stems_eval.main(["--stems-manifest", str(sealed_fake), "--build-manifest"])
     assert not sealed_fake.exists()
 
+    # Sealed output paths (--out-json / --out-md) are rejected before any write.
+    sealed_out_json = tmp_path / "sealed-out.json"
+    sealed_out_md = tmp_path / "sealed-out.md"
+    with pytest.raises(ValueError, match="sealed_corpus_forbidden_in_e8"):
+        e8_voice_eval.main(["--out-json", str(sealed_out_json)])
+    assert not sealed_out_json.exists()
+
+    with pytest.raises(ValueError, match="sealed_corpus_forbidden_in_e8"):
+        e8_stems_eval.main(["--write-combined", "--out-json", str(sealed_out_json)])
+    assert not sealed_out_json.exists()
+
+    with pytest.raises(ValueError, match="sealed_corpus_forbidden_in_e8"):
+        e8_stems_eval.main(["--write-combined", "--out-md", str(sealed_out_md)])
+    assert not sealed_out_md.exists()
+
 
 def test_missing_manifest_and_disguised_tier_fail_closed(tmp_path: Path) -> None:
     """Missing manifests raise FileNotFoundError and tier=='sealed' JSON is rejected before decoding."""
