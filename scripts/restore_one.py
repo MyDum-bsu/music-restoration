@@ -12,7 +12,7 @@ come from the model (`--ml-snapshot auto`); then the healthy threshold agrees
 with training.
 
 Mutex: running two restores in parallel once swapped the machine to death, so
-we take an flock on /media/.../restore/.restore.lock (non-blocking; --wait to wait).
+we take an flock on `state_dir() / "restore.lock"` (non-blocking; --wait to wait).
 """
 import argparse
 import dataclasses
@@ -187,7 +187,7 @@ def main() -> int:
                     help="material class → policy (enabled by default)")
     ap.add_argument("--no-auto", dest="auto_policy", action="store_false",
                     help="disable auto-policy, work by manual --mode/--target/--adaptive")
-    ap.add_argument("--eq-curve", default="", help="JSON with the tilt curve (scripts/fit_tilt.py)")
+    ap.add_argument("--eq-curve", default="", help="JSON with the tilt curve (research/fit_tilt.py)")
     ap.add_argument("--eq-scale", type=float, default=1.0, help="tilt curve scale")
     ap.add_argument("--eq-match", action="store_true",
                     help="closed-loop EQ: measure per-band delta, trim the difference to the curve")

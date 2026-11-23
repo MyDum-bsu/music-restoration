@@ -1,0 +1,3523 @@
+{
+  "schema": "e8-voice-stems-results/v1",
+  "board_card": 1135,
+  "sealed_corpora_opened": false,
+  "preserve_pipeline_modified": false,
+  "colab_launched": false,
+  "production_dependencies_added": false,
+  "non_generalization_policy": "Contour A (Voice) and Contour B (Stems) are strictly separate feasibility evaluations and must not be generalized to stereo music mastering (Preserve).",
+  "e4_freeze_integrity": {
+    "freeze_manifest": "docs/validation/e4-freeze-manifest.json",
+    "total_pinned_files": 18,
+    "matched_files": 18,
+    "all_untouched": true,
+    "mismatches": []
+  },
+  "provenance": {
+    "voice_manifest_path": "corpus/dev-e8-voice-v1.json",
+    "voice_manifest_sha256": "fbc22f9a2a4f6937d890485a8b78ea67fa3d8700a9658dd8b527d47188d51eec",
+    "voice_evaluator_path": "research/e8_voice_eval.py",
+    "voice_evaluator_sha256": "447a9a87f40d3734cc8a75aca2b6e6af10fa1511ec76a66aea295f16239f9052",
+    "stems_manifest_path": "corpus/dev-e8-stems-v1.json",
+    "stems_manifest_sha256": "b6e3ce4c623a355c0e9f5bb2ec6d0090547778442592428eb83812700ae63c07",
+    "stems_evaluator_path": "research/e8_stems_eval.py",
+    "stems_evaluator_sha256": "53b7090011802df395cfbd69330b087dd05a893331bd37e17ccdd6dc7189422c"
+  },
+  "go_no_go_decisions": {
+    "go_no_go_1_voice": {
+      "decision_id": "go_no_go_1_voice_profile",
+      "contour": "A_voice",
+      "production_verdict": "no_go",
+      "colab_research_verdict": "conditional_go",
+      "preserve_stereo_music_generalization": "forbidden",
+      "rationale": "CPU WPE + spectral speech enhancement baselines validate the evaluation harness with positive SI-SDRi on reverberant/noisy synthetic speech and 0.0 error on clean voice negative controls, but production adoption is NO-GO because: (1) real speech corpora (DAPS, VoiceBank+DEMAND) are not provisioned on host, (2) neural speech models (DeepFilterNet3, SGMSE+, Flow) and DNSMOS are blocked pending authorized Colab GPU + checkpoint audit, (3) PESQ requires explicit license clearance, and (4) speech enhancement must never be generalized to stereo music Preserve.",
+      "cpu_harness_verified": true,
+      "decision_inputs_for_colab_voice_stage": [
+        "Provision licensed DAPS and VoiceBank+DEMAND dev splits with speaker-disjoint manifests and SHA-256 pins.",
+        "Authorize Google Colab GPU session (separate ticket) with pinned DeepFilterNet3 (MIT/Apache-2.0) and SGMSE+ (MIT) checkpoints.",
+        "Clear ITU-T P.862 license for PESQ or standardize on open-licensed DNSMOS P.835 + Whisper WER / phoneme-drop hallucination checks.",
+        "Require >= +3.0 dB SI-SDRi and positive STOI/DNSMOS gain over CPU WPE+Wiener on DAPS/VoiceBank with 0 regressions on clean anechoic controls.",
+        "Keep any future voice profile strictly isolated from Preserve stereo music mastering (separate opt-in voice route only after product approval)."
+      ],
+      "external_blockers": [
+        "no_local_licensed_voice_weights_deepfilternet_sgmse_flow",
+        "unverified_checkpoint_licenses_and_sha256",
+        "no_local_cuda_gpu",
+        "colab_connection_not_authorized_or_configured"
+      ]
+    },
+    "go_no_go_2_stems": {
+      "decision_id": "go_no_go_2_stems_restoration",
+      "contour": "B_stems",
+      "production_verdict": "no_go",
+      "colab_research_verdict": "conditional_go",
+      "preserve_stereo_music_generalization": "forbidden",
+      "non_generalization_warning": "STRICT BOUNDARY: Neither Contour A (Voice) nor Contour B (Stems) results may be generalized to stereo music mastering (`Preserve` hard-declipping). Stem separation and re-summing introduces inter-stem bleed and phase/masking artifacts incompatible with Preserve's untouched-outside-mask stereo fidelity contract.",
+      "rationale": "The 4-stem CPU harness verifies exact additive mix integrity (`mix == sum(stems)`), shows deterministic HPSS+band separation improves over identity while trailing the Oracle IRM upper bound, and exposes OOD collapse when vocal/other spectra clash or stereo cues vanish (mono collapse). Production stem restoration is NO-GO because: (1) neural stem separators (HTDemucs, SCNet, BS-RoFormer) are blocked pending authorized Colab GPU + checkpoint license verification, (2) MUSDB18-HQ is not provisioned on host, and (3) stem separation is outside the Preserve stereo release.",
+      "cpu_harness_verified": true,
+      "decision_inputs_for_colab_stems_stage": [
+        "Provision licensed MUSDB18-HQ dev split (non-commercial research check) with SHA-256 manifest.",
+        "Authorize Google Colab T4/L4 GPU session (separate ticket) with pinned HTDemucs v4 (MIT), SCNet (MIT), and license-verified BS-RoFormer checkpoints.",
+        "Measure per-stem SI-SDR, inter-stem leakage (dB), and exact mix reconstruction error (`sum(est_stems) - mix`) on both dev-e8-stems-v1 and MUSDB18-HQ.",
+        "Audit stereo phase/IPD preservation and bleed-through artifacts before any opt-in Enhance stem-repair prototype is proposed.",
+        "Do NOT route stereo mastering (`Preserve`) through stem separation or generalize stem SI-SDR to full-mix hard-declipping."
+      ],
+      "external_blockers": [
+        "no_local_licensed_stem_weights_htdemucs_scnet_bsroformer",
+        "unverified_checkpoint_licenses_and_sha256",
+        "no_local_cuda_gpu",
+        "colab_connection_not_authorized_or_configured"
+      ]
+    }
+  },
+  "contour_a_voice": {
+    "schema": "e8-voice-results/v1",
+    "contour": "A_voice",
+    "board_card": 1135,
+    "dataset_version": "dev-e8-voice-2026-11-23",
+    "n_cases": 15,
+    "sealed_corpora_opened": false,
+    "preserve_pipeline_modified": false,
+    "colab_launched": false,
+    "toolchain": {
+      "python": "3.12.3",
+      "numpy": "2.5.2",
+      "scipy": "1.17.1",
+      "ffmpeg": "125907-ga7e72069f1-20260802",
+      "libflac": "1.4.3",
+      "platform": "x86_64"
+    },
+    "provenance": {
+      "manifest_path": "corpus/dev-e8-voice-v1.json",
+      "manifest_sha256": "fbc22f9a2a4f6937d890485a8b78ea67fa3d8700a9658dd8b527d47188d51eec",
+      "evaluator_path": "research/e8_voice_eval.py",
+      "evaluator_sha256": "447a9a87f40d3734cc8a75aca2b6e6af10fa1511ec76a66aea295f16239f9052"
+    },
+    "invariants": {
+      "total_runs": 45,
+      "any_input_mutated": false
+    },
+    "cpu_arms": [
+      "identity",
+      "wpe_dereverb_cpu",
+      "spectral_speech_enhancer_cpu"
+    ],
+    "external_audit": {
+      "contour": "A_voice",
+      "neural_arm_status": "blocked_external_weights_or_colab",
+      "executed": false,
+      "production_dependency_added": false,
+      "blocked_reasons": [
+        "no_local_licensed_voice_weights_deepfilternet_sgmse_flow",
+        "unverified_checkpoint_licenses_and_sha256",
+        "no_local_cuda_gpu",
+        "colab_connection_not_authorized_or_configured"
+      ],
+      "environment_audit": {
+        "torch_version": "2.14.1+cpu",
+        "cuda_available": false,
+        "local_voice_weights_found": [],
+        "colab_authorized": false
+      },
+      "external_datasets": [
+        {
+          "id": "daps",
+          "name": "DAPS (Device and Produced Speech)",
+          "status": "not_provisioned_on_host",
+          "license_note": "CC-BY-NC-4.0 / research terms \u2014 verify license before download or Colab upload",
+          "required_action": "Download externally with license verification; keep strictly out of sealed music corpora"
+        },
+        {
+          "id": "voicebank_demand",
+          "name": "VoiceBank + DEMAND (28/56 speakers)",
+          "status": "not_provisioned_on_host",
+          "license_note": "CC-BY-4.0 \u2014 verify split integrity (no speaker overlap between train/test)",
+          "required_action": "Provision on authorized Colab session or approved dev storage with SHA-256 manifest"
+        }
+      ],
+      "external_neural_models": [
+        {
+          "id": "deepfilternet3",
+          "status": "blocked_external_weights_or_colab",
+          "local_weights_found": [],
+          "license_verified": false,
+          "blocked_reasons": [
+            "no_local_weights_for_deepfilternet3",
+            "unverified_checkpoint_license_and_sha256_for_deepfilternet3",
+            "no_local_cuda_gpu",
+            "colab_connection_not_authorized_or_configured"
+          ],
+          "version_pin": "DeepFilterNet 0.5.6 (DeepFilterNet3 48 kHz)",
+          "license": "MIT / Apache-2.0 dual-licensed",
+          "colab_budget_estimate": "T4/L4 GPU (~1-2 GB VRAM, ~1-3 s/min audio; also CPU-capable after weight audit)",
+          "target_role": "Real-time / low-latency noise suppression + mild dereverberation"
+        },
+        {
+          "id": "sgmse_plus",
+          "status": "blocked_external_weights_or_colab",
+          "local_weights_found": [],
+          "license_verified": false,
+          "blocked_reasons": [
+            "no_local_weights_for_sgmse_plus",
+            "unverified_checkpoint_license_and_sha256_for_sgmse_plus",
+            "no_local_cuda_gpu",
+            "colab_connection_not_authorized_or_configured"
+          ],
+          "version_pin": "SGMSE+ (Richter et al. 2023, score-based diffusion)",
+          "license": "MIT (verify checkpoint release terms)",
+          "colab_budget_estimate": "T4/L4 GPU (~4-6 GB VRAM, ~15-40 s/min audio for 30-step reverse SDE)",
+          "target_role": "Generative speech dereverberation & enhancement (requires hallucination/word-drop audit)"
+        },
+        {
+          "id": "flow_matching_speech",
+          "status": "blocked_external_weights_or_colab",
+          "local_weights_found": [],
+          "license_verified": false,
+          "blocked_reasons": [
+            "no_local_weights_for_flow_matching_speech",
+            "unverified_checkpoint_license_and_sha256_for_flow_matching_speech",
+            "no_local_cuda_gpu",
+            "colab_connection_not_authorized_or_configured"
+          ],
+          "version_pin": "FlowSE / conditional flow-matching speech restoration (pin commit + SHA-256)",
+          "license": "Verify repository & checkpoint SPDX before download",
+          "colab_budget_estimate": "T4/L4 GPU (~4-8 GB VRAM, ~8-20 s/min audio for 5-10 ODE steps)",
+          "target_role": "Low-step generative speech enhancement (strictly Enhance preview, never Preserve)"
+        }
+      ],
+      "external_perceptual_metrics": [
+        {
+          "id": "pesq",
+          "name": "PESQ (ITU-T P.862)",
+          "status": "license_required_for_pesq",
+          "license_note": "Proprietary / patent-encumbered ITU-T reference implementation; requires license check before install",
+          "local_proxy_used": "stoi_proxy_envelope_corr + formant_drift_hz + syllable_env_corr"
+        },
+        {
+          "id": "dnsmos",
+          "name": "DNSMOS P.835 (SIG/BAK/OVRL)",
+          "status": "blocked_external_weights_or_colab",
+          "license_note": "Microsoft ONNX weights (CC-BY-4.0 / MSR terms) not provisioned locally",
+          "local_proxy_used": "si_sdri_db + spectral_lsd_db + stoi_proxy_envelope_corr"
+        }
+      ],
+      "colab_handoff_spec": {
+        "permitted_inputs": "corpus/dev-e8-voice-v1.json + licensed DAPS/VoiceBank dev split ONLY",
+        "forbidden_inputs": [
+          "corpus/sealed-v1.json",
+          "corpus/sealed-e5-v1.json",
+          "private_masters"
+        ],
+        "required_run_manifest_fields": [
+          "gpu_model",
+          "cuda_version",
+          "torch_version",
+          "model_id",
+          "checkpoint_sha256",
+          "license_spdx",
+          "dataset_sha256",
+          "wall_s_per_audio_min",
+          "peak_vram_gb"
+        ]
+      }
+    },
+    "go_no_go_voice": {
+      "decision_id": "go_no_go_1_voice_profile",
+      "contour": "A_voice",
+      "production_verdict": "no_go",
+      "colab_research_verdict": "conditional_go",
+      "preserve_stereo_music_generalization": "forbidden",
+      "rationale": "CPU WPE + spectral speech enhancement baselines validate the evaluation harness with positive SI-SDRi on reverberant/noisy synthetic speech and 0.0 error on clean voice negative controls, but production adoption is NO-GO because: (1) real speech corpora (DAPS, VoiceBank+DEMAND) are not provisioned on host, (2) neural speech models (DeepFilterNet3, SGMSE+, Flow) and DNSMOS are blocked pending authorized Colab GPU + checkpoint audit, (3) PESQ requires explicit license clearance, and (4) speech enhancement must never be generalized to stereo music Preserve.",
+      "cpu_harness_verified": true,
+      "decision_inputs_for_colab_voice_stage": [
+        "Provision licensed DAPS and VoiceBank+DEMAND dev splits with speaker-disjoint manifests and SHA-256 pins.",
+        "Authorize Google Colab GPU session (separate ticket) with pinned DeepFilterNet3 (MIT/Apache-2.0) and SGMSE+ (MIT) checkpoints.",
+        "Clear ITU-T P.862 license for PESQ or standardize on open-licensed DNSMOS P.835 + Whisper WER / phoneme-drop hallucination checks.",
+        "Require >= +3.0 dB SI-SDRi and positive STOI/DNSMOS gain over CPU WPE+Wiener on DAPS/VoiceBank with 0 regressions on clean anechoic controls.",
+        "Keep any future voice profile strictly isolated from Preserve stereo music mastering (separate opt-in voice route only after product approval)."
+      ],
+      "external_blockers": [
+        "no_local_licensed_voice_weights_deepfilternet_sgmse_flow",
+        "unverified_checkpoint_licenses_and_sha256",
+        "no_local_cuda_gpu",
+        "colab_connection_not_authorized_or_configured"
+      ]
+    },
+    "summary_by_stratum": {
+      "reverb_only": {
+        "identity": {
+          "n_cases": 3,
+          "bypassed_cases": 3,
+          "mean_si_sdr_in_db": -1.8895904469341704,
+          "mean_si_sdr_out_db": -1.8895904469341704,
+          "mean_si_sdri_db": 0.0,
+          "mean_stoi_proxy_in": 0.89055312373072,
+          "mean_stoi_proxy_out": 0.89055312373072,
+          "mean_delta_stoi_proxy": 0.0,
+          "mean_formant_drift_in_hz": 113.12279541446208,
+          "mean_formant_drift_out_hz": 113.12279541446208,
+          "mean_delta_formant_drift_hz": 0.0,
+          "mean_spectral_lsd_out_db": 21.962228469550507,
+          "mean_delta_spectral_lsd_db": 0.0,
+          "mean_syllable_env_corr_in": 0.7308063035576705,
+          "mean_syllable_env_corr_out": 0.7308063035576705,
+          "mean_delta_syllable_env_corr": 0.0,
+          "max_clean_control_err": null,
+          "mean_wall_s_per_audio_min": 0.0005844398401677608
+        },
+        "wpe_dereverb_cpu": {
+          "n_cases": 3,
+          "bypassed_cases": 0,
+          "mean_si_sdr_in_db": -1.8895904469341704,
+          "mean_si_sdr_out_db": -1.238785212326835,
+          "mean_si_sdri_db": 0.6508052346073355,
+          "mean_stoi_proxy_in": 0.89055312373072,
+          "mean_stoi_proxy_out": 0.8944054803063576,
+          "mean_delta_stoi_proxy": 0.003852356575637502,
+          "mean_formant_drift_in_hz": 113.12279541446208,
+          "mean_formant_drift_out_hz": 105.13117283950618,
+          "mean_delta_formant_drift_hz": -7.991622574955907,
+          "mean_spectral_lsd_out_db": 20.708826096418434,
+          "mean_delta_spectral_lsd_db": -1.2534023731320694,
+          "mean_syllable_env_corr_in": 0.7308063035576705,
+          "mean_syllable_env_corr_out": 0.7810918168039667,
+          "mean_delta_syllable_env_corr": 0.05028551324629601,
+          "max_clean_control_err": null,
+          "mean_wall_s_per_audio_min": 2.319920376408845
+        },
+        "spectral_speech_enhancer_cpu": {
+          "n_cases": 3,
+          "bypassed_cases": 0,
+          "mean_si_sdr_in_db": -1.8895904469341704,
+          "mean_si_sdr_out_db": -1.8921307237991865,
+          "mean_si_sdri_db": -0.0025402768650160112,
+          "mean_stoi_proxy_in": 0.89055312373072,
+          "mean_stoi_proxy_out": 0.8870844751238548,
+          "mean_delta_stoi_proxy": -0.00346864860686528,
+          "mean_formant_drift_in_hz": 113.12279541446208,
+          "mean_formant_drift_out_hz": 115.27226631393297,
+          "mean_delta_formant_drift_hz": 2.1494708994708986,
+          "mean_spectral_lsd_out_db": 21.452997630819606,
+          "mean_delta_spectral_lsd_db": -0.5092308387308963,
+          "mean_syllable_env_corr_in": 0.7308063035576705,
+          "mean_syllable_env_corr_out": 0.7312013495638805,
+          "mean_delta_syllable_env_corr": 0.00039504600620987596,
+          "max_clean_control_err": null,
+          "mean_wall_s_per_audio_min": 0.3333997684530914
+        }
+      },
+      "noise_only": {
+        "identity": {
+          "n_cases": 3,
+          "bypassed_cases": 3,
+          "mean_si_sdr_in_db": 9.988129522347238,
+          "mean_si_sdr_out_db": 9.988129522347238,
+          "mean_si_sdri_db": 0.0,
+          "mean_stoi_proxy_in": 0.9527368058387395,
+          "mean_stoi_proxy_out": 0.9527368058387395,
+          "mean_delta_stoi_proxy": 0.0,
+          "mean_formant_drift_in_hz": 57.264109347442684,
+          "mean_formant_drift_out_hz": 57.264109347442684,
+          "mean_delta_formant_drift_hz": 0.0,
+          "mean_spectral_lsd_out_db": 29.74629228243756,
+          "mean_delta_spectral_lsd_db": 0.0,
+          "mean_syllable_env_corr_in": 0.9945455871413751,
+          "mean_syllable_env_corr_out": 0.9945455871413751,
+          "mean_delta_syllable_env_corr": 0.0,
+          "max_clean_control_err": null,
+          "mean_wall_s_per_audio_min": 0.0004000556655228138
+        },
+        "wpe_dereverb_cpu": {
+          "n_cases": 3,
+          "bypassed_cases": 0,
+          "mean_si_sdr_in_db": 9.988129522347238,
+          "mean_si_sdr_out_db": 8.937142998262663,
+          "mean_si_sdri_db": -1.0509865240845748,
+          "mean_stoi_proxy_in": 0.9527368058387395,
+          "mean_stoi_proxy_out": 0.9447166495295272,
+          "mean_delta_stoi_proxy": -0.008020156309212378,
+          "mean_formant_drift_in_hz": 57.264109347442684,
+          "mean_formant_drift_out_hz": 61.067019400352734,
+          "mean_delta_formant_drift_hz": 3.8029100529100517,
+          "mean_spectral_lsd_out_db": 29.401173928100473,
+          "mean_delta_spectral_lsd_db": -0.34511835433709,
+          "mean_syllable_env_corr_in": 0.9945455871413751,
+          "mean_syllable_env_corr_out": 0.9882573037303946,
+          "mean_delta_syllable_env_corr": -0.006288283410980496,
+          "max_clean_control_err": null,
+          "mean_wall_s_per_audio_min": 2.1759049920365214
+        },
+        "spectral_speech_enhancer_cpu": {
+          "n_cases": 3,
+          "bypassed_cases": 0,
+          "mean_si_sdr_in_db": 9.988129522347238,
+          "mean_si_sdr_out_db": 12.230729018464165,
+          "mean_si_sdri_db": 2.242599496116927,
+          "mean_stoi_proxy_in": 0.9527368058387395,
+          "mean_stoi_proxy_out": 0.9509407262312052,
+          "mean_delta_stoi_proxy": -0.0017960796075342511,
+          "mean_formant_drift_in_hz": 57.264109347442684,
+          "mean_formant_drift_out_hz": 47.50881834215167,
+          "mean_delta_formant_drift_hz": -9.755291005291008,
+          "mean_spectral_lsd_out_db": 25.938817513145697,
+          "mean_delta_spectral_lsd_db": -3.8074747692918627,
+          "mean_syllable_env_corr_in": 0.9945455871413751,
+          "mean_syllable_env_corr_out": 0.9965307425266711,
+          "mean_delta_syllable_env_corr": 0.001985155385296015,
+          "max_clean_control_err": null,
+          "mean_wall_s_per_audio_min": 0.31932011153548956
+        }
+      },
+      "reverb_plus_noise": {
+        "identity": {
+          "n_cases": 3,
+          "bypassed_cases": 3,
+          "mean_si_sdr_in_db": -1.1881779311179645,
+          "mean_si_sdr_out_db": -1.1881779311179645,
+          "mean_si_sdri_db": 0.0,
+          "mean_stoi_proxy_in": 0.8804286054516602,
+          "mean_stoi_proxy_out": 0.8804286054516602,
+          "mean_delta_stoi_proxy": 0.0,
+          "mean_formant_drift_in_hz": 146.16402116402116,
+          "mean_formant_drift_out_hz": 146.16402116402116,
+          "mean_delta_formant_drift_hz": 0.0,
+          "mean_spectral_lsd_out_db": 31.269493386117745,
+          "mean_delta_spectral_lsd_db": 0.0,
+          "mean_syllable_env_corr_in": 0.8178956043836269,
+          "mean_syllable_env_corr_out": 0.8178956043836269,
+          "mean_delta_syllable_env_corr": 0.0,
+          "max_clean_control_err": null,
+          "mean_wall_s_per_audio_min": 0.0005984082818031311
+        },
+        "wpe_dereverb_cpu": {
+          "n_cases": 3,
+          "bypassed_cases": 0,
+          "mean_si_sdr_in_db": -1.1881779311179645,
+          "mean_si_sdr_out_db": -0.8098691186086003,
+          "mean_si_sdri_db": 0.37830881250936416,
+          "mean_stoi_proxy_in": 0.8804286054516602,
+          "mean_stoi_proxy_out": 0.8814246469196845,
+          "mean_delta_stoi_proxy": 0.0009960414680241965,
+          "mean_formant_drift_in_hz": 146.16402116402116,
+          "mean_formant_drift_out_hz": 138.2826278659612,
+          "mean_delta_formant_drift_hz": -7.8813932980599715,
+          "mean_spectral_lsd_out_db": 30.458194184829324,
+          "mean_delta_spectral_lsd_db": -0.811299201288417,
+          "mean_syllable_env_corr_in": 0.8178956043836269,
+          "mean_syllable_env_corr_out": 0.8447959385469516,
+          "mean_delta_syllable_env_corr": 0.02690033416332464,
+          "max_clean_control_err": null,
+          "mean_wall_s_per_audio_min": 2.574233496095985
+        },
+        "spectral_speech_enhancer_cpu": {
+          "n_cases": 3,
+          "bypassed_cases": 0,
+          "mean_si_sdr_in_db": -1.1881779311179645,
+          "mean_si_sdr_out_db": -1.0486577699908544,
+          "mean_si_sdri_db": 0.13952016112711027,
+          "mean_stoi_proxy_in": 0.8804286054516602,
+          "mean_stoi_proxy_out": 0.8703846589215679,
+          "mean_delta_stoi_proxy": -0.01004394653009233,
+          "mean_formant_drift_in_hz": 146.16402116402116,
+          "mean_formant_drift_out_hz": 143.62874779541445,
+          "mean_delta_formant_drift_hz": -2.5352733686067097,
+          "mean_spectral_lsd_out_db": 27.756622883421983,
+          "mean_delta_spectral_lsd_db": -3.512870502695764,
+          "mean_syllable_env_corr_in": 0.8178956043836269,
+          "mean_syllable_env_corr_out": 0.8171364651842223,
+          "mean_delta_syllable_env_corr": -0.0007591391994045867,
+          "max_clean_control_err": null,
+          "mean_wall_s_per_audio_min": 0.3332874560728669
+        }
+      },
+      "clean_voice_control": {
+        "identity": {
+          "n_cases": 3,
+          "bypassed_cases": 3,
+          "mean_si_sdr_in_db": 60.0,
+          "mean_si_sdr_out_db": 60.0,
+          "mean_si_sdri_db": 0.0,
+          "mean_stoi_proxy_in": 0.9999999999999997,
+          "mean_stoi_proxy_out": 0.9999999999999997,
+          "mean_delta_stoi_proxy": 0.0,
+          "mean_formant_drift_in_hz": 0.0,
+          "mean_formant_drift_out_hz": 0.0,
+          "mean_delta_formant_drift_hz": 0.0,
+          "mean_spectral_lsd_out_db": 0.0,
+          "mean_delta_spectral_lsd_db": 0.0,
+          "mean_syllable_env_corr_in": 1.0,
+          "mean_syllable_env_corr_out": 1.0,
+          "mean_delta_syllable_env_corr": 0.0,
+          "max_clean_control_err": 0.0,
+          "mean_wall_s_per_audio_min": 0.00048553571105003357
+        },
+        "wpe_dereverb_cpu": {
+          "n_cases": 3,
+          "bypassed_cases": 3,
+          "mean_si_sdr_in_db": 60.0,
+          "mean_si_sdr_out_db": 60.0,
+          "mean_si_sdri_db": 0.0,
+          "mean_stoi_proxy_in": 0.9999999999999997,
+          "mean_stoi_proxy_out": 0.9999999999999997,
+          "mean_delta_stoi_proxy": 0.0,
+          "mean_formant_drift_in_hz": 0.0,
+          "mean_formant_drift_out_hz": 0.0,
+          "mean_delta_formant_drift_hz": 0.0,
+          "mean_spectral_lsd_out_db": 0.0,
+          "mean_delta_spectral_lsd_db": 0.0,
+          "mean_syllable_env_corr_in": 1.0,
+          "mean_syllable_env_corr_out": 1.0,
+          "mean_delta_syllable_env_corr": 0.0,
+          "max_clean_control_err": 0.0,
+          "mean_wall_s_per_audio_min": 0.02704069623723626
+        },
+        "spectral_speech_enhancer_cpu": {
+          "n_cases": 3,
+          "bypassed_cases": 3,
+          "mean_si_sdr_in_db": 60.0,
+          "mean_si_sdr_out_db": 60.0,
+          "mean_si_sdri_db": 0.0,
+          "mean_stoi_proxy_in": 0.9999999999999997,
+          "mean_stoi_proxy_out": 0.9999999999999997,
+          "mean_delta_stoi_proxy": 0.0,
+          "mean_formant_drift_in_hz": 0.0,
+          "mean_formant_drift_out_hz": 0.0,
+          "mean_delta_formant_drift_hz": 0.0,
+          "mean_spectral_lsd_out_db": 0.0,
+          "mean_delta_spectral_lsd_db": 0.0,
+          "mean_syllable_env_corr_in": 1.0,
+          "mean_syllable_env_corr_out": 1.0,
+          "mean_delta_syllable_env_corr": 0.0,
+          "max_clean_control_err": 0.0,
+          "mean_wall_s_per_audio_min": 0.027706727851182222
+        }
+      },
+      "ood_voice": {
+        "identity": {
+          "n_cases": 3,
+          "bypassed_cases": 3,
+          "mean_si_sdr_in_db": -3.2835442998110627,
+          "mean_si_sdr_out_db": -3.2835442998110627,
+          "mean_si_sdri_db": 0.0,
+          "mean_stoi_proxy_in": 0.8611304471997082,
+          "mean_stoi_proxy_out": 0.8611304471997082,
+          "mean_delta_stoi_proxy": 0.0,
+          "mean_formant_drift_in_hz": 177.93761022927688,
+          "mean_formant_drift_out_hz": 177.93761022927688,
+          "mean_delta_formant_drift_hz": 0.0,
+          "mean_spectral_lsd_out_db": 32.330493716565776,
+          "mean_delta_spectral_lsd_db": 0.0,
+          "mean_syllable_env_corr_in": 0.7036243948334523,
+          "mean_syllable_env_corr_out": 0.7036243948334523,
+          "mean_delta_syllable_env_corr": 0.0,
+          "max_clean_control_err": null,
+          "mean_wall_s_per_audio_min": 0.00027043186128139496
+        },
+        "wpe_dereverb_cpu": {
+          "n_cases": 3,
+          "bypassed_cases": 0,
+          "mean_si_sdr_in_db": -3.2835442998110627,
+          "mean_si_sdr_out_db": -2.821560654292488,
+          "mean_si_sdri_db": 0.46198364551857446,
+          "mean_stoi_proxy_in": 0.8611304471997082,
+          "mean_stoi_proxy_out": 0.8637294559578192,
+          "mean_delta_stoi_proxy": 0.0025990087581109953,
+          "mean_formant_drift_in_hz": 177.93761022927688,
+          "mean_formant_drift_out_hz": 175.07164902998235,
+          "mean_delta_formant_drift_hz": -2.8659611992945315,
+          "mean_spectral_lsd_out_db": 31.712687036092515,
+          "mean_delta_spectral_lsd_db": -0.6178066804732651,
+          "mean_syllable_env_corr_in": 0.7036243948334523,
+          "mean_syllable_env_corr_out": 0.7730260491701081,
+          "mean_delta_syllable_env_corr": 0.06940165433665561,
+          "max_clean_control_err": null,
+          "mean_wall_s_per_audio_min": 2.36956426454708
+        },
+        "spectral_speech_enhancer_cpu": {
+          "n_cases": 3,
+          "bypassed_cases": 0,
+          "mean_si_sdr_in_db": -3.2835442998110627,
+          "mean_si_sdr_out_db": -3.0469036720480442,
+          "mean_si_sdri_db": 0.23664062776301842,
+          "mean_stoi_proxy_in": 0.8611304471997082,
+          "mean_stoi_proxy_out": 0.8438496817133504,
+          "mean_delta_stoi_proxy": -0.01728076548635778,
+          "mean_formant_drift_in_hz": 177.93761022927688,
+          "mean_formant_drift_out_hz": 177.08333333333334,
+          "mean_delta_formant_drift_hz": -0.8542768959435515,
+          "mean_spectral_lsd_out_db": 29.24535414808805,
+          "mean_delta_spectral_lsd_db": -3.0851395684777265,
+          "mean_syllable_env_corr_in": 0.7036243948334523,
+          "mean_syllable_env_corr_out": 0.7005694522173286,
+          "mean_delta_syllable_env_corr": -0.0030549426161237867,
+          "max_clean_control_err": null,
+          "mean_wall_s_per_audio_min": 0.3681225599721074
+        }
+      }
+    },
+    "cases": [
+      {
+        "id": "e8-voice-rev-baritone-small-16k",
+        "stratum": "reverb_only",
+        "speaker": "baritone_male_synth",
+        "rt60_s": 0.28,
+        "noise_snr_db": null,
+        "is_clean_control": false,
+        "degradation_meta": {
+          "rir_applied": true,
+          "noise_applied": false
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": false,
+            "si_sdr_in_db": 2.127492398614846,
+            "si_sdr_out_db": 2.127492398614846,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.9220049745361567,
+            "stoi_proxy_out": 0.9220049745361567,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 125.41335978835978,
+            "formant_drift_out_hz": 125.41335978835978,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 14.111418750781537,
+            "spectral_lsd_out_db": 14.111418750781537,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 0.9089470837375511,
+            "syllable_env_corr_out": 0.9089470837375511,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 1.1035008355975151e-05,
+            "wall_s_per_audio_min": 0.0002648402005434036
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": 2.127492398614846,
+            "si_sdr_out_db": 2.7637106054316125,
+            "si_sdri_db": 0.6362182068167663,
+            "stoi_proxy_in": 0.9220049745361567,
+            "stoi_proxy_out": 0.9289057268146904,
+            "delta_stoi_proxy": 0.006900752278533706,
+            "formant_drift_in_hz": 125.41335978835978,
+            "formant_drift_out_hz": 111.35912698412699,
+            "delta_formant_drift_hz": -14.054232804232797,
+            "spectral_lsd_in_db": 14.111418750781537,
+            "spectral_lsd_out_db": 12.781367276924897,
+            "delta_spectral_lsd_db": -1.3300514738566402,
+            "syllable_env_corr_in": 0.9089470837375511,
+            "syllable_env_corr_out": 0.9106749080614481,
+            "delta_syllable_env_corr": 0.0017278243238970648,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.09237174899317324,
+            "wall_s_per_audio_min": 2.216921975836158
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": 2.127492398614846,
+            "si_sdr_out_db": 2.132749876990066,
+            "si_sdri_db": 0.005257478375219726,
+            "stoi_proxy_in": 0.9220049745361567,
+            "stoi_proxy_out": 0.9217865670227853,
+            "delta_stoi_proxy": -0.0002184075133714325,
+            "formant_drift_in_hz": 125.41335978835978,
+            "formant_drift_out_hz": 125.24801587301587,
+            "delta_formant_drift_hz": -0.1653439153439109,
+            "spectral_lsd_in_db": 14.111418750781537,
+            "spectral_lsd_out_db": 13.808762588164992,
+            "delta_spectral_lsd_db": -0.30265616261654493,
+            "syllable_env_corr_in": 0.9089470837375511,
+            "syllable_env_corr_out": 0.9091035613738582,
+            "delta_syllable_env_corr": 0.00015647763630710632,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.013251737982500345,
+            "wall_s_per_audio_min": 0.31804171158000827
+          }
+        }
+      },
+      {
+        "id": "e8-voice-rev-alto-medium-16k",
+        "stratum": "reverb_only",
+        "speaker": "alto_female_synth",
+        "rt60_s": 0.55,
+        "noise_snr_db": null,
+        "is_clean_control": false,
+        "degradation_meta": {
+          "rir_applied": true,
+          "noise_applied": false
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": false,
+            "si_sdr_in_db": -4.002965919814946,
+            "si_sdr_out_db": -4.002965919814946,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.8889996569213395,
+            "stoi_proxy_out": 0.8889996569213395,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 85.89616402116403,
+            "formant_drift_out_hz": 85.89616402116403,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 22.77916636748582,
+            "spectral_lsd_out_db": 22.77916636748582,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 0.6608681520807294,
+            "syllable_env_corr_out": 0.6608681520807294,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 3.0101975426077843e-05,
+            "wall_s_per_audio_min": 0.0007224474102258682
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -4.002965919814946,
+            "si_sdr_out_db": -3.4207464363039364,
+            "si_sdri_db": 0.5822194835110093,
+            "stoi_proxy_in": 0.8889996569213395,
+            "stoi_proxy_out": 0.8933518715760376,
+            "delta_stoi_proxy": 0.004352214654698039,
+            "formant_drift_in_hz": 85.89616402116403,
+            "formant_drift_out_hz": 85.40013227513228,
+            "delta_formant_drift_hz": -0.49603174603174693,
+            "spectral_lsd_in_db": 22.77916636748582,
+            "spectral_lsd_out_db": 21.449129721804372,
+            "delta_spectral_lsd_db": -1.3300366456814494,
+            "syllable_env_corr_in": 0.6608681520807294,
+            "syllable_env_corr_out": 0.7138277910989449,
+            "delta_syllable_env_corr": 0.05295963901821554,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.09703770402120426,
+            "wall_s_per_audio_min": 2.3289048965089023
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -4.002965919814946,
+            "si_sdr_out_db": -4.013872634297984,
+            "si_sdri_db": -0.010906714483038371,
+            "stoi_proxy_in": 0.8889996569213395,
+            "stoi_proxy_out": 0.8831355953839737,
+            "delta_stoi_proxy": -0.00586406153736585,
+            "formant_drift_in_hz": 85.89616402116403,
+            "formant_drift_out_hz": 90.0297619047619,
+            "delta_formant_drift_hz": 4.133597883597872,
+            "spectral_lsd_in_db": 22.77916636748582,
+            "spectral_lsd_out_db": 22.37434808032078,
+            "delta_spectral_lsd_db": -0.40481828716504253,
+            "syllable_env_corr_in": 0.6608681520807294,
+            "syllable_env_corr_out": 0.6617608648030661,
+            "delta_syllable_env_corr": 0.0008927127223367082,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.014695030055008829,
+            "wall_s_per_audio_min": 0.3526807213202119
+          }
+        }
+      },
+      {
+        "id": "e8-voice-rev-soprano-hall-16k",
+        "stratum": "reverb_only",
+        "speaker": "soprano_female_synth",
+        "rt60_s": 0.9,
+        "noise_snr_db": null,
+        "is_clean_control": false,
+        "degradation_meta": {
+          "rir_applied": true,
+          "noise_applied": false
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": false,
+            "si_sdr_in_db": -3.793297819602412,
+            "si_sdr_out_db": -3.793297819602412,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.8606547397346639,
+            "stoi_proxy_out": 0.8606547397346639,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 128.05886243386243,
+            "formant_drift_out_hz": 128.05886243386243,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 28.996100290384152,
+            "spectral_lsd_out_db": 28.996100290384152,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 0.6226036748547313,
+            "syllable_env_corr_out": 0.6226036748547313,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 3.191799623891711e-05,
+            "wall_s_per_audio_min": 0.0007660319097340107
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -3.793297819602412,
+            "si_sdr_out_db": -3.059319806108181,
+            "si_sdri_db": 0.7339780134942311,
+            "stoi_proxy_in": 0.8606547397346639,
+            "stoi_proxy_out": 0.8609588425283446,
+            "delta_stoi_proxy": 0.00030410279368076054,
+            "formant_drift_in_hz": 128.05886243386243,
+            "formant_drift_out_hz": 118.63425925925925,
+            "delta_formant_drift_hz": -9.424603174603178,
+            "spectral_lsd_in_db": 28.996100290384152,
+            "spectral_lsd_out_db": 27.895981290526034,
+            "delta_spectral_lsd_db": -1.1001189998581182,
+            "syllable_env_corr_in": 0.6226036748547313,
+            "syllable_env_corr_out": 0.7187727512515067,
+            "delta_syllable_env_corr": 0.09616907639677541,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.10058059403672814,
+            "wall_s_per_audio_min": 2.4139342568814754
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -3.793297819602412,
+            "si_sdr_out_db": -3.7952694140896415,
+            "si_sdri_db": -0.001971594487229389,
+            "stoi_proxy_in": 0.8606547397346639,
+            "stoi_proxy_out": 0.8563312629648053,
+            "delta_stoi_proxy": -0.0043234767698585586,
+            "formant_drift_in_hz": 128.05886243386243,
+            "formant_drift_out_hz": 130.53902116402116,
+            "delta_formant_drift_hz": 2.4801587301587347,
+            "spectral_lsd_in_db": 28.996100290384152,
+            "spectral_lsd_out_db": 28.17588222397305,
+            "delta_spectral_lsd_db": -0.8202180664111012,
+            "syllable_env_corr_in": 0.6226036748547313,
+            "syllable_env_corr_out": 0.6227396225147172,
+            "delta_syllable_env_corr": 0.00013594765998581337,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.01372820301912725,
+            "wall_s_per_audio_min": 0.329476872459054
+          }
+        }
+      },
+      {
+        "id": "e8-voice-noise-baritone-15db-16k",
+        "stratum": "noise_only",
+        "speaker": "baritone_male_synth",
+        "rt60_s": null,
+        "noise_snr_db": 15.0,
+        "is_clean_control": false,
+        "degradation_meta": {
+          "rir_applied": false,
+          "noise_applied": true
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": false,
+            "si_sdr_in_db": 15.014130726510936,
+            "si_sdr_out_db": 15.014130726510936,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.9799351501691601,
+            "stoi_proxy_out": 0.9799351501691601,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 21.742724867724867,
+            "formant_drift_out_hz": 21.742724867724867,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 26.078311457416405,
+            "spectral_lsd_out_db": 26.078311457416405,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 0.998754060933161,
+            "syllable_env_corr_out": 0.998754060933161,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 1.4388002455234528e-05,
+            "wall_s_per_audio_min": 0.00034531205892562866
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": 15.014130726510936,
+            "si_sdr_out_db": 13.378499079700942,
+            "si_sdri_db": -1.635631646809994,
+            "stoi_proxy_in": 0.9799351501691601,
+            "stoi_proxy_out": 0.9731034911382028,
+            "delta_stoi_proxy": -0.006831659030957282,
+            "formant_drift_in_hz": 21.742724867724867,
+            "formant_drift_out_hz": 23.396164021164022,
+            "delta_formant_drift_hz": 1.6534391534391553,
+            "spectral_lsd_in_db": 26.078311457416405,
+            "spectral_lsd_out_db": 25.761503274513966,
+            "delta_spectral_lsd_db": -0.31680818290243806,
+            "syllable_env_corr_in": 0.998754060933161,
+            "syllable_env_corr_out": 0.9941149144969066,
+            "delta_syllable_env_corr": -0.004639146436254404,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.09317130397539586,
+            "wall_s_per_audio_min": 2.2361112954095006
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": 15.014130726510936,
+            "si_sdr_out_db": 17.029548848819765,
+            "si_sdri_db": 2.0154181223088283,
+            "stoi_proxy_in": 0.9799351501691601,
+            "stoi_proxy_out": 0.9808079210601264,
+            "delta_stoi_proxy": 0.0008727708909662679,
+            "formant_drift_in_hz": 21.742724867724867,
+            "formant_drift_out_hz": 14.632936507936508,
+            "delta_formant_drift_hz": -7.109788359788359,
+            "spectral_lsd_in_db": 26.078311457416405,
+            "spectral_lsd_out_db": 22.211511579069015,
+            "delta_spectral_lsd_db": -3.86679987834739,
+            "syllable_env_corr_in": 0.998754060933161,
+            "syllable_env_corr_out": 0.9991380172298359,
+            "delta_syllable_env_corr": 0.00038395629667486997,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.012654446996748447,
+            "wall_s_per_audio_min": 0.30370672792196274
+          }
+        }
+      },
+      {
+        "id": "e8-voice-noise-alto-10db-16k",
+        "stratum": "noise_only",
+        "speaker": "alto_female_synth",
+        "rt60_s": null,
+        "noise_snr_db": 10.0,
+        "is_clean_control": false,
+        "degradation_meta": {
+          "rir_applied": false,
+          "noise_applied": true
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": false,
+            "si_sdr_in_db": 9.987580987375107,
+            "si_sdr_out_db": 9.987580987375107,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.9491964343956996,
+            "stoi_proxy_out": 0.9491964343956996,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 53.57142857142857,
+            "formant_drift_out_hz": 53.57142857142857,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 27.203637102436943,
+            "spectral_lsd_out_db": 27.203637102436943,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 0.9977312306369112,
+            "syllable_env_corr_out": 0.9977312306369112,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 1.5992962289601564e-05,
+            "wall_s_per_audio_min": 0.00038383109495043755
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": 9.987580987375107,
+            "si_sdr_out_db": 8.838894921081257,
+            "si_sdri_db": -1.14868606629385,
+            "stoi_proxy_in": 0.9491964343956996,
+            "stoi_proxy_out": 0.9387603733422818,
+            "delta_stoi_proxy": -0.010436061053417767,
+            "formant_drift_in_hz": 53.57142857142857,
+            "formant_drift_out_hz": 54.067460317460316,
+            "delta_formant_drift_hz": 0.49603174603174693,
+            "spectral_lsd_in_db": 27.203637102436943,
+            "spectral_lsd_out_db": 26.913658639240246,
+            "delta_spectral_lsd_db": -0.2899784631966966,
+            "syllable_env_corr_in": 0.9977312306369112,
+            "syllable_env_corr_out": 0.9874391627921939,
+            "delta_syllable_env_corr": -0.010292067844717256,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.0913628070265986,
+            "wall_s_per_audio_min": 2.1927073686383665
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": 9.987580987375107,
+            "si_sdr_out_db": 12.383264425240979,
+            "si_sdri_db": 2.3956834378658716,
+            "stoi_proxy_in": 0.9491964343956996,
+            "stoi_proxy_out": 0.947043449975539,
+            "delta_stoi_proxy": -0.002152984420160542,
+            "formant_drift_in_hz": 53.57142857142857,
+            "formant_drift_out_hz": 46.70965608465608,
+            "delta_formant_drift_hz": -6.861772486772487,
+            "spectral_lsd_in_db": 27.203637102436943,
+            "spectral_lsd_out_db": 23.517325669826445,
+            "delta_spectral_lsd_db": -3.6863114326104984,
+            "syllable_env_corr_in": 0.9977312306369112,
+            "syllable_env_corr_out": 0.9982304512654249,
+            "delta_syllable_env_corr": 0.000499220628513708,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.014391982986126095,
+            "wall_s_per_audio_min": 0.3454075916670263
+          }
+        }
+      },
+      {
+        "id": "e8-voice-noise-soprano-5db-16k",
+        "stratum": "noise_only",
+        "speaker": "soprano_female_synth",
+        "rt60_s": null,
+        "noise_snr_db": 5.0,
+        "is_clean_control": false,
+        "degradation_meta": {
+          "rir_applied": false,
+          "noise_applied": true
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": false,
+            "si_sdr_in_db": 4.962676853155669,
+            "si_sdr_out_db": 4.962676853155669,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.929078832951359,
+            "stoi_proxy_out": 0.929078832951359,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 96.47817460317461,
+            "formant_drift_out_hz": 96.47817460317461,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 35.956928287459334,
+            "spectral_lsd_out_db": 35.956928287459334,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 0.987151469854053,
+            "syllable_env_corr_out": 0.987151469854053,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 1.9625993445515633e-05,
+            "wall_s_per_audio_min": 0.0004710238426923752
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": 4.962676853155669,
+            "si_sdr_out_db": 4.5940349940057885,
+            "si_sdri_db": -0.36864185914988035,
+            "stoi_proxy_in": 0.929078832951359,
+            "stoi_proxy_out": 0.9222860841080969,
+            "delta_stoi_proxy": -0.006792748843262086,
+            "formant_drift_in_hz": 96.47817460317461,
+            "formant_drift_out_hz": 105.73743386243386,
+            "delta_formant_drift_hz": 9.259259259259252,
+            "spectral_lsd_in_db": 35.956928287459334,
+            "spectral_lsd_out_db": 35.5283598705472,
+            "delta_spectral_lsd_db": -0.4285684169121353,
+            "syllable_env_corr_in": 0.987151469854053,
+            "syllable_env_corr_out": 0.9832178339020832,
+            "delta_syllable_env_corr": -0.003933635951969827,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.08745401300257072,
+            "wall_s_per_audio_min": 2.0988963120616972
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": 4.962676853155669,
+            "si_sdr_out_db": 7.279373781331749,
+            "si_sdri_db": 2.3166969281760803,
+            "stoi_proxy_in": 0.929078832951359,
+            "stoi_proxy_out": 0.9249708076579505,
+            "delta_stoi_proxy": -0.004108025293408479,
+            "formant_drift_in_hz": 96.47817460317461,
+            "formant_drift_out_hz": 81.18386243386243,
+            "delta_formant_drift_hz": -15.294312169312178,
+            "spectral_lsd_in_db": 35.956928287459334,
+            "spectral_lsd_out_db": 32.087615290541635,
+            "delta_spectral_lsd_db": -3.8693129969176994,
+            "syllable_env_corr_in": 0.987151469854053,
+            "syllable_env_corr_out": 0.9922237590847525,
+            "delta_syllable_env_corr": 0.005072289230699467,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.012868583959061652,
+            "wall_s_per_audio_min": 0.30884601501747966
+          }
+        }
+      },
+      {
+        "id": "e8-voice-revnoise-baritone-mild-16k",
+        "stratum": "reverb_plus_noise",
+        "speaker": "baritone_male_synth",
+        "rt60_s": 0.35,
+        "noise_snr_db": 14.0,
+        "is_clean_control": false,
+        "degradation_meta": {
+          "rir_applied": true,
+          "noise_applied": true
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": false,
+            "si_sdr_in_db": 2.7037804812094524,
+            "si_sdr_out_db": 2.7037804812094524,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.9018496395288818,
+            "stoi_proxy_out": 0.9018496395288818,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 131.4484126984127,
+            "formant_drift_out_hz": 131.4484126984127,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 27.125273365874737,
+            "spectral_lsd_out_db": 27.125273365874737,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 0.9421766898617732,
+            "syllable_env_corr_out": 0.9421766898617732,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 3.429304342716932e-05,
+            "wall_s_per_audio_min": 0.0008230330422520638
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": 2.7037804812094524,
+            "si_sdr_out_db": 3.2779274520433805,
+            "si_sdri_db": 0.5741469708339282,
+            "stoi_proxy_in": 0.9018496395288818,
+            "stoi_proxy_out": 0.9016321958185946,
+            "delta_stoi_proxy": -0.00021744371028720177,
+            "formant_drift_in_hz": 131.4484126984127,
+            "formant_drift_out_hz": 109.78835978835978,
+            "delta_formant_drift_hz": -21.660052910052926,
+            "spectral_lsd_in_db": 27.125273365874737,
+            "spectral_lsd_out_db": 26.242644132489705,
+            "delta_spectral_lsd_db": -0.8826292333850319,
+            "syllable_env_corr_in": 0.9421766898617732,
+            "syllable_env_corr_out": 0.9352293373703773,
+            "delta_syllable_env_corr": -0.006947352491395886,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.09430547198280692,
+            "wall_s_per_audio_min": 2.263331327587366
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": 2.7037804812094524,
+            "si_sdr_out_db": 2.840532605169022,
+            "si_sdri_db": 0.1367521239595697,
+            "stoi_proxy_in": 0.9018496395288818,
+            "stoi_proxy_out": 0.8926408896091417,
+            "delta_stoi_proxy": -0.009208749919740078,
+            "formant_drift_in_hz": 131.4484126984127,
+            "formant_drift_out_hz": 135.41666666666666,
+            "delta_formant_drift_hz": 3.968253968253947,
+            "spectral_lsd_in_db": 27.125273365874737,
+            "spectral_lsd_out_db": 23.55900935889941,
+            "delta_spectral_lsd_db": -3.5662640069753273,
+            "syllable_env_corr_in": 0.9421766898617732,
+            "syllable_env_corr_out": 0.9385788140172565,
+            "delta_syllable_env_corr": -0.0035978758445166514,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.014747131965123117,
+            "wall_s_per_audio_min": 0.3539311671629548
+          }
+        }
+      },
+      {
+        "id": "e8-voice-revnoise-alto-mod-16k",
+        "stratum": "reverb_plus_noise",
+        "speaker": "alto_female_synth",
+        "rt60_s": 0.55,
+        "noise_snr_db": 10.0,
+        "is_clean_control": false,
+        "degradation_meta": {
+          "rir_applied": true,
+          "noise_applied": true
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": false,
+            "si_sdr_in_db": -2.5105950018353833,
+            "si_sdr_out_db": -2.5105950018353833,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.8813711059091456,
+            "stoi_proxy_out": 0.8813711059091456,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 131.6137566137566,
+            "formant_drift_out_hz": 131.6137566137566,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 29.779689975357222,
+            "spectral_lsd_out_db": 29.779689975357222,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 0.7593213996400506,
+            "syllable_env_corr_out": 0.7593213996400506,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 1.1873024050146341e-05,
+            "wall_s_per_audio_min": 0.0002849525772035122
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -2.5105950018353833,
+            "si_sdr_out_db": -2.293592944670906,
+            "si_sdri_db": 0.2170020571644775,
+            "stoi_proxy_in": 0.8813711059091456,
+            "stoi_proxy_out": 0.8784592633936447,
+            "delta_stoi_proxy": -0.0029118425155009175,
+            "formant_drift_in_hz": 131.6137566137566,
+            "formant_drift_out_hz": 133.10185185185185,
+            "delta_formant_drift_hz": 1.4880952380952408,
+            "spectral_lsd_in_db": 29.779689975357222,
+            "spectral_lsd_out_db": 28.944743087905902,
+            "delta_spectral_lsd_db": -0.83494688745132,
+            "syllable_env_corr_in": 0.7593213996400506,
+            "syllable_env_corr_out": 0.7855902381185775,
+            "delta_syllable_env_corr": 0.0262688384785269,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.09758673404576257,
+            "wall_s_per_audio_min": 2.3420816170983016
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -2.5105950018353833,
+            "si_sdr_out_db": -2.370685594135394,
+            "si_sdri_db": 0.13990940769998916,
+            "stoi_proxy_in": 0.8813711059091456,
+            "stoi_proxy_out": 0.8702056160720139,
+            "delta_stoi_proxy": -0.011165489837131726,
+            "formant_drift_in_hz": 131.6137566137566,
+            "formant_drift_out_hz": 138.97156084656083,
+            "delta_formant_drift_hz": 7.357804232804227,
+            "spectral_lsd_in_db": 29.779689975357222,
+            "spectral_lsd_out_db": 26.382611352114782,
+            "delta_spectral_lsd_db": -3.3970786232424395,
+            "syllable_env_corr_in": 0.7593213996400506,
+            "syllable_env_corr_out": 0.762828095625385,
+            "delta_syllable_env_corr": 0.0035066959853343738,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.013370749016758054,
+            "wall_s_per_audio_min": 0.3208979764021933
+          }
+        }
+      },
+      {
+        "id": "e8-voice-revnoise-soprano-heavy-16k",
+        "stratum": "reverb_plus_noise",
+        "speaker": "soprano_female_synth",
+        "rt60_s": 0.75,
+        "noise_snr_db": 7.0,
+        "is_clean_control": false,
+        "degradation_meta": {
+          "rir_applied": true,
+          "noise_applied": true
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": false,
+            "si_sdr_in_db": -3.7577192727279627,
+            "si_sdr_out_db": -3.7577192727279627,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.8580650709169535,
+            "stoi_proxy_out": 0.8580650709169535,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 175.42989417989418,
+            "formant_drift_out_hz": 175.42989417989418,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 36.90351681712127,
+            "spectral_lsd_out_db": 36.90351681712127,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 0.7521887236490569,
+            "syllable_env_corr_out": 0.7521887236490569,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 2.8634967748075724e-05,
+            "wall_s_per_audio_min": 0.0006872392259538174
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -3.7577192727279627,
+            "si_sdr_out_db": -3.413941863198276,
+            "si_sdri_db": 0.34377740952968683,
+            "stoi_proxy_in": 0.8580650709169535,
+            "stoi_proxy_out": 0.8641824815468142,
+            "delta_stoi_proxy": 0.006117410629860709,
+            "formant_drift_in_hz": 175.42989417989418,
+            "formant_drift_out_hz": 171.95767195767195,
+            "delta_formant_drift_hz": -3.4722222222222285,
+            "spectral_lsd_in_db": 36.90351681712127,
+            "spectral_lsd_out_db": 36.18719533409237,
+            "delta_spectral_lsd_db": -0.7163214830288993,
+            "syllable_env_corr_in": 0.7521887236490569,
+            "syllable_env_corr_out": 0.8135682401518998,
+            "delta_syllable_env_corr": 0.0613795165028429,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.12988698098342866,
+            "wall_s_per_audio_min": 3.1172875436022878
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -3.7577192727279627,
+            "si_sdr_out_db": -3.6158203210061908,
+            "si_sdri_db": 0.14189895172177192,
+            "stoi_proxy_in": 0.8580650709169535,
+            "stoi_proxy_out": 0.8483074710835483,
+            "delta_stoi_proxy": -0.009757599833405184,
+            "formant_drift_in_hz": 175.42989417989418,
+            "formant_drift_out_hz": 156.49801587301587,
+            "delta_formant_drift_hz": -18.931878306878303,
+            "spectral_lsd_in_db": 36.90351681712127,
+            "spectral_lsd_out_db": 33.328247939251746,
+            "delta_spectral_lsd_db": -3.575268877869526,
+            "syllable_env_corr_in": 0.7521887236490569,
+            "syllable_env_corr_out": 0.7500024859100254,
+            "delta_syllable_env_corr": -0.0021862377390314824,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.013543051027227193,
+            "wall_s_per_audio_min": 0.32503322465345263
+          }
+        }
+      },
+      {
+        "id": "e8-voice-ctl-clean-baritone-16k",
+        "stratum": "clean_voice_control",
+        "speaker": "baritone_male_synth",
+        "rt60_s": null,
+        "noise_snr_db": null,
+        "is_clean_control": true,
+        "degradation_meta": {
+          "rir_applied": false,
+          "noise_applied": false
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": true,
+            "si_sdr_in_db": 60.0,
+            "si_sdr_out_db": 60.0,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 1.0,
+            "stoi_proxy_out": 1.0,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 0.0,
+            "formant_drift_out_hz": 0.0,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 0.0,
+            "spectral_lsd_out_db": 0.0,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 1.0,
+            "syllable_env_corr_out": 1.0,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 2.5841000024229288e-05,
+            "wall_s_per_audio_min": 0.0006201840005815029
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": true,
+            "is_clean_control": true,
+            "si_sdr_in_db": 60.0,
+            "si_sdr_out_db": 60.0,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 1.0,
+            "stoi_proxy_out": 1.0,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 0.0,
+            "formant_drift_out_hz": 0.0,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 0.0,
+            "spectral_lsd_out_db": 0.0,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 1.0,
+            "syllable_env_corr_out": 1.0,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.00111733702942729,
+            "wall_s_per_audio_min": 0.02681608870625496
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": true,
+            "is_clean_control": true,
+            "si_sdr_in_db": 60.0,
+            "si_sdr_out_db": 60.0,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 1.0,
+            "stoi_proxy_out": 1.0,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 0.0,
+            "formant_drift_out_hz": 0.0,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 0.0,
+            "spectral_lsd_out_db": 0.0,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 1.0,
+            "syllable_env_corr_out": 1.0,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.0011554709635674953,
+            "wall_s_per_audio_min": 0.02773130312561989
+          }
+        }
+      },
+      {
+        "id": "e8-voice-ctl-clean-alto-16k",
+        "stratum": "clean_voice_control",
+        "speaker": "alto_female_synth",
+        "rt60_s": null,
+        "noise_snr_db": null,
+        "is_clean_control": true,
+        "degradation_meta": {
+          "rir_applied": false,
+          "noise_applied": false
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": true,
+            "si_sdr_in_db": 60.0,
+            "si_sdr_out_db": 60.0,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 1.0,
+            "stoi_proxy_out": 1.0,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 0.0,
+            "formant_drift_out_hz": 0.0,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 0.0,
+            "spectral_lsd_out_db": 0.0,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 1.0,
+            "syllable_env_corr_out": 1.0,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 1.201301347464323e-05,
+            "wall_s_per_audio_min": 0.00028831232339143753
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": true,
+            "is_clean_control": true,
+            "si_sdr_in_db": 60.0,
+            "si_sdr_out_db": 60.0,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 1.0,
+            "stoi_proxy_out": 1.0,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 0.0,
+            "formant_drift_out_hz": 0.0,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 0.0,
+            "spectral_lsd_out_db": 0.0,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 1.0,
+            "syllable_env_corr_out": 1.0,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.0011357750045135617,
+            "wall_s_per_audio_min": 0.02725860010832548
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": true,
+            "is_clean_control": true,
+            "si_sdr_in_db": 60.0,
+            "si_sdr_out_db": 60.0,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 1.0,
+            "stoi_proxy_out": 1.0,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 0.0,
+            "formant_drift_out_hz": 0.0,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 0.0,
+            "spectral_lsd_out_db": 0.0,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 1.0,
+            "syllable_env_corr_out": 1.0,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.0011716050212271512,
+            "wall_s_per_audio_min": 0.028118520509451628
+          }
+        }
+      },
+      {
+        "id": "e8-voice-ctl-clean-soprano-16k",
+        "stratum": "clean_voice_control",
+        "speaker": "soprano_female_synth",
+        "rt60_s": null,
+        "noise_snr_db": null,
+        "is_clean_control": true,
+        "degradation_meta": {
+          "rir_applied": false,
+          "noise_applied": false
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": true,
+            "si_sdr_in_db": 60.0,
+            "si_sdr_out_db": 60.0,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.9999999999999991,
+            "stoi_proxy_out": 0.9999999999999991,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 0.0,
+            "formant_drift_out_hz": 0.0,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 0.0,
+            "spectral_lsd_out_db": 0.0,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 1.0,
+            "syllable_env_corr_out": 1.0,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 2.2837950382381678e-05,
+            "wall_s_per_audio_min": 0.0005481108091771603
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": true,
+            "is_clean_control": true,
+            "si_sdr_in_db": 60.0,
+            "si_sdr_out_db": 60.0,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.9999999999999991,
+            "stoi_proxy_out": 0.9999999999999991,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 0.0,
+            "formant_drift_out_hz": 0.0,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 0.0,
+            "spectral_lsd_out_db": 0.0,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 1.0,
+            "syllable_env_corr_out": 1.0,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.001126974995713681,
+            "wall_s_per_audio_min": 0.027047399897128344
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": true,
+            "is_clean_control": true,
+            "si_sdr_in_db": 60.0,
+            "si_sdr_out_db": 60.0,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.9999999999999991,
+            "stoi_proxy_out": 0.9999999999999991,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 0.0,
+            "formant_drift_out_hz": 0.0,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 0.0,
+            "spectral_lsd_out_db": 0.0,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 1.0,
+            "syllable_env_corr_out": 1.0,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": 0.0,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.0011362649966031313,
+            "wall_s_per_audio_min": 0.02727035991847515
+          }
+        }
+      },
+      {
+        "id": "e8-voice-ood-hall-lowsnr-16k",
+        "stratum": "ood_voice",
+        "speaker": "baritone_male_synth",
+        "rt60_s": 1.1,
+        "noise_snr_db": 2.0,
+        "is_clean_control": false,
+        "degradation_meta": {
+          "rir_applied": true,
+          "noise_applied": true
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": false,
+            "si_sdr_in_db": -6.525226930857477,
+            "si_sdr_out_db": -6.525226930857477,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.8599880902607423,
+            "stoi_proxy_out": 0.8599880902607423,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 264.7982804232804,
+            "formant_drift_out_hz": 264.7982804232804,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 38.57965656092525,
+            "spectral_lsd_out_db": 38.57965656092525,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 0.5446136316512228,
+            "syllable_env_corr_out": 0.5446136316512228,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 1.1455034837126732e-05,
+            "wall_s_per_audio_min": 0.00027492083609104156
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -6.525226930857477,
+            "si_sdr_out_db": -6.149004620422794,
+            "si_sdri_db": 0.37622231043468357,
+            "stoi_proxy_in": 0.8599880902607423,
+            "stoi_proxy_out": 0.8625352825370363,
+            "delta_stoi_proxy": 0.0025471922762939636,
+            "formant_drift_in_hz": 264.7982804232804,
+            "formant_drift_out_hz": 272.15608465608466,
+            "delta_formant_drift_hz": 7.357804232804256,
+            "spectral_lsd_in_db": 38.57965656092525,
+            "spectral_lsd_out_db": 37.883736222532875,
+            "delta_spectral_lsd_db": -0.6959203383923764,
+            "syllable_env_corr_in": 0.5446136316512228,
+            "syllable_env_corr_out": 0.67371821134276,
+            "delta_syllable_env_corr": 0.1291045796915372,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.0943864900036715,
+            "wall_s_per_audio_min": 2.265275760088116
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -6.525226930857477,
+            "si_sdr_out_db": -6.377118932547631,
+            "si_sdri_db": 0.1481079983098459,
+            "stoi_proxy_in": 0.8599880902607423,
+            "stoi_proxy_out": 0.8389474488351364,
+            "delta_stoi_proxy": -0.02104064142560591,
+            "formant_drift_in_hz": 264.7982804232804,
+            "formant_drift_out_hz": 274.55357142857144,
+            "delta_formant_drift_hz": 9.755291005291042,
+            "spectral_lsd_in_db": 38.57965656092525,
+            "spectral_lsd_out_db": 35.128556461209,
+            "delta_spectral_lsd_db": -3.4511000997162498,
+            "syllable_env_corr_in": 0.5446136316512228,
+            "syllable_env_corr_out": 0.5372470810998391,
+            "delta_syllable_env_corr": -0.007366550551383688,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.015864259039517492,
+            "wall_s_per_audio_min": 0.3807422169484198
+          }
+        }
+      },
+      {
+        "id": "e8-voice-ood-nonstationary-babble-16k",
+        "stratum": "ood_voice",
+        "speaker": "alto_female_synth",
+        "rt60_s": 0.45,
+        "noise_snr_db": 4.0,
+        "is_clean_control": false,
+        "degradation_meta": {
+          "rir_applied": true,
+          "noise_applied": true
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": false,
+            "si_sdr_in_db": -1.3314305587122468,
+            "si_sdr_out_db": -1.3314305587122468,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.8595957359774901,
+            "stoi_proxy_out": 0.8595957359774901,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 181.4649470899471,
+            "formant_drift_out_hz": 181.4649470899471,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 34.858697982254355,
+            "spectral_lsd_out_db": 34.858697982254355,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 0.8309626607276074,
+            "syllable_env_corr_out": 0.8309626607276074,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 1.0894960723817348e-05,
+            "wall_s_per_audio_min": 0.00026147905737161636
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -1.3314305587122468,
+            "si_sdr_out_db": -1.6290554152322003,
+            "si_sdri_db": -0.2976248565199535,
+            "stoi_proxy_in": 0.8595957359774901,
+            "stoi_proxy_out": 0.8595298254618735,
+            "delta_stoi_proxy": -6.591051561655181e-05,
+            "formant_drift_in_hz": 181.4649470899471,
+            "formant_drift_out_hz": 180.55555555555554,
+            "delta_formant_drift_hz": -0.9093915343915455,
+            "spectral_lsd_in_db": 34.858697982254355,
+            "spectral_lsd_out_db": 34.15418453563725,
+            "delta_spectral_lsd_db": -0.7045134466171064,
+            "syllable_env_corr_in": 0.8309626607276074,
+            "syllable_env_corr_out": 0.8379877325480456,
+            "delta_syllable_env_corr": 0.007025071820438211,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.09192825003992766,
+            "wall_s_per_audio_min": 2.206278000958264
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -1.3314305587122468,
+            "si_sdr_out_db": -0.8404873522149734,
+            "si_sdri_db": 0.4909432064972734,
+            "stoi_proxy_in": 0.8595957359774901,
+            "stoi_proxy_out": 0.8395315898419587,
+            "delta_stoi_proxy": -0.020064146135531313,
+            "formant_drift_in_hz": 181.4649470899471,
+            "formant_drift_out_hz": 175.1818783068783,
+            "delta_formant_drift_hz": -6.283068783068785,
+            "spectral_lsd_in_db": 34.858697982254355,
+            "spectral_lsd_out_db": 31.48610926974236,
+            "delta_spectral_lsd_db": -3.3725887125119947,
+            "syllable_env_corr_in": 0.8309626607276074,
+            "syllable_env_corr_out": 0.8309419922988097,
+            "delta_syllable_env_corr": -2.0668428797665506e-05,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.015905256965197623,
+            "wall_s_per_audio_min": 0.38172616716474295
+          }
+        }
+      },
+      {
+        "id": "e8-voice-ood-telephony-bandlimit-16k",
+        "stratum": "ood_voice",
+        "speaker": "soprano_female_synth",
+        "rt60_s": 0.4,
+        "noise_snr_db": 8.0,
+        "is_clean_control": false,
+        "degradation_meta": {
+          "rir_applied": true,
+          "noise_applied": true
+        },
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "bypassed": true,
+            "is_clean_control": false,
+            "si_sdr_in_db": -1.9939754098634643,
+            "si_sdr_out_db": -1.9939754098634643,
+            "si_sdri_db": 0.0,
+            "stoi_proxy_in": 0.8638075153608922,
+            "stoi_proxy_out": 0.8638075153608922,
+            "delta_stoi_proxy": 0.0,
+            "formant_drift_in_hz": 87.54960317460318,
+            "formant_drift_out_hz": 87.54960317460318,
+            "delta_formant_drift_hz": 0.0,
+            "spectral_lsd_in_db": 23.553126606517733,
+            "spectral_lsd_out_db": 23.553126606517733,
+            "delta_spectral_lsd_db": 0.0,
+            "syllable_env_corr_in": 0.735296892121527,
+            "syllable_env_corr_out": 0.735296892121527,
+            "delta_syllable_env_corr": 0.0,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 1.145398709923029e-05,
+            "wall_s_per_audio_min": 0.00027489569038152695
+          },
+          "wpe_dereverb_cpu": {
+            "arm": "wpe_dereverb_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -1.9939754098634643,
+            "si_sdr_out_db": -0.686621927222471,
+            "si_sdri_db": 1.3073534826409934,
+            "stoi_proxy_in": 0.8638075153608922,
+            "stoi_proxy_out": 0.8691232598745477,
+            "delta_stoi_proxy": 0.005315744513655574,
+            "formant_drift_in_hz": 87.54960317460318,
+            "formant_drift_out_hz": 72.50330687830687,
+            "delta_formant_drift_hz": -15.046296296296305,
+            "spectral_lsd_in_db": 23.553126606517733,
+            "spectral_lsd_out_db": 23.10014035010742,
+            "delta_spectral_lsd_db": -0.45298625641031265,
+            "syllable_env_corr_in": 0.735296892121527,
+            "syllable_env_corr_out": 0.8073722036195184,
+            "delta_syllable_env_corr": 0.0720753114979914,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.10988079302478582,
+            "wall_s_per_audio_min": 2.6371390325948596
+          },
+          "spectral_speech_enhancer_cpu": {
+            "arm": "spectral_speech_enhancer_cpu",
+            "bypassed": false,
+            "is_clean_control": false,
+            "si_sdr_in_db": -1.9939754098634643,
+            "si_sdr_out_db": -1.9231047313815284,
+            "si_sdri_db": 0.07087067848193596,
+            "stoi_proxy_in": 0.8638075153608922,
+            "stoi_proxy_out": 0.853070006462956,
+            "delta_stoi_proxy": -0.010737508897936121,
+            "formant_drift_in_hz": 87.54960317460318,
+            "formant_drift_out_hz": 81.51455026455027,
+            "delta_formant_drift_hz": -6.035052910052912,
+            "spectral_lsd_in_db": 23.553126606517733,
+            "spectral_lsd_out_db": 21.121396713312798,
+            "delta_spectral_lsd_db": -2.4317298932049347,
+            "syllable_env_corr_in": 0.735296892121527,
+            "syllable_env_corr_out": 0.733519283253337,
+            "delta_syllable_env_corr": -0.001777608868190006,
+            "clean_control_max_abs_err": null,
+            "solver_fallback": false,
+            "solver_fallback_bins": 0,
+            "input_mutated": false,
+            "wall_s": 0.014245803991798311,
+            "wall_s_per_audio_min": 0.3418992958031595
+          }
+        }
+      }
+    ]
+  },
+  "contour_b_stems": {
+    "schema": "e8-stems-results/v1",
+    "contour": "B_stems",
+    "board_card": 1135,
+    "dataset_version": "dev-e8-stems-2026-11-23",
+    "n_cases": 9,
+    "sealed_corpora_opened": false,
+    "preserve_pipeline_modified": false,
+    "colab_launched": false,
+    "toolchain": {
+      "python": "3.12.3",
+      "numpy": "2.5.2",
+      "scipy": "1.17.1",
+      "ffmpeg": "125907-ga7e72069f1-20260802",
+      "libflac": "1.4.3",
+      "platform": "x86_64"
+    },
+    "provenance": {
+      "manifest_path": "corpus/dev-e8-stems-v1.json",
+      "manifest_sha256": "b6e3ce4c623a355c0e9f5bb2ec6d0090547778442592428eb83812700ae63c07",
+      "evaluator_path": "research/e8_stems_eval.py",
+      "evaluator_sha256": "53b7090011802df395cfbd69330b087dd05a893331bd37e17ccdd6dc7189422c"
+    },
+    "invariants": {
+      "total_runs": 27,
+      "any_input_mutated": false,
+      "max_corpus_additive_err": 0.0,
+      "max_mix_recon_err": 3.3306690738754696e-16
+    },
+    "cpu_arms": [
+      "identity",
+      "hpss_band_separator_cpu",
+      "oracle_irm_upper_bound"
+    ],
+    "external_audit": {
+      "contour": "B_stems",
+      "neural_arm_status": "blocked_external_weights_or_colab",
+      "executed": false,
+      "production_dependency_added": false,
+      "blocked_reasons": [
+        "no_local_licensed_stem_weights_htdemucs_scnet_bsroformer",
+        "unverified_checkpoint_licenses_and_sha256",
+        "no_local_cuda_gpu",
+        "colab_connection_not_authorized_or_configured"
+      ],
+      "environment_audit": {
+        "torch_version": "2.14.1+cpu",
+        "cuda_available": false,
+        "local_stem_weights_found": [],
+        "colab_authorized": false
+      },
+      "external_datasets": [
+        {
+          "id": "musdb18_hq",
+          "name": "MUSDB18-HQ (uncompressed 44.1 kHz 4-stem benchmark)",
+          "status": "not_provisioned_on_host",
+          "license_note": "Non-commercial research license \u2014 verify terms before download or Colab upload",
+          "required_action": "Provision approved dev subset on Colab with SHA-256 manifest; never mix with sealed music holdout"
+        }
+      ],
+      "external_neural_models": [
+        {
+          "id": "htdemucs_v4",
+          "status": "blocked_external_weights_or_colab",
+          "local_weights_found": [],
+          "license_verified": false,
+          "blocked_reasons": [
+            "no_local_weights_for_htdemucs_v4",
+            "unverified_checkpoint_license_and_sha256_for_htdemucs_v4",
+            "no_local_cuda_gpu",
+            "colab_connection_not_authorized_or_configured"
+          ],
+          "version_pin": "demucs 4.0.1 (`htdemucs` / `htdemucs_ft` 4-stem bag of 4 models)",
+          "license": "MIT",
+          "colab_budget_estimate": "T4/L4 GPU (~2-4 GB VRAM, ~2-5 s/min audio for `htdemucs`, ~8-18 s/min for `htdemucs_ft`)",
+          "target_role": "Standard 4-stem music separation baseline (vocals/drums/bass/other)"
+        },
+        {
+          "id": "scnet",
+          "status": "blocked_external_weights_or_colab",
+          "local_weights_found": [],
+          "license_verified": false,
+          "blocked_reasons": [
+            "no_local_weights_for_scnet",
+            "unverified_checkpoint_license_and_sha256_for_scnet",
+            "no_local_cuda_gpu",
+            "colab_connection_not_authorized_or_configured"
+          ],
+          "version_pin": "SCNet (Tong et al. 2024, Sparse Compression Network \u2014 pin commit + SHA-256)",
+          "license": "MIT (verify checkpoint release terms)",
+          "colab_budget_estimate": "T4/L4 GPU (~4-6 GB VRAM, ~4-10 s/min audio)",
+          "target_role": "High-efficiency frequency-band sparse separation"
+        },
+        {
+          "id": "bs_roformer",
+          "status": "blocked_external_weights_or_colab",
+          "local_weights_found": [],
+          "license_verified": false,
+          "blocked_reasons": [
+            "no_local_weights_for_bs_roformer",
+            "unverified_checkpoint_license_and_sha256_for_bs_roformer",
+            "no_local_cuda_gpu",
+            "colab_connection_not_authorized_or_configured"
+          ],
+          "version_pin": "BS-RoFormer (Lu et al. 2023, Band-Split RoFormer \u2014 pin checkpoint SHA-256)",
+          "license": "MIT/Apache-2.0 code; MUST verify specific community checkpoint license before download",
+          "colab_budget_estimate": "T4/L4 GPU (~6-10 GB VRAM, ~10-25 s/min audio with overlap-add)",
+          "target_role": "State-of-the-art vocal/stem separation (heavy VRAM; Colab-only research)"
+        }
+      ],
+      "colab_handoff_spec": {
+        "permitted_inputs": "corpus/dev-e8-stems-v1.json + licensed MUSDB18-HQ dev split ONLY",
+        "forbidden_inputs": [
+          "corpus/sealed-v1.json",
+          "corpus/sealed-e5-v1.json",
+          "private_masters"
+        ],
+        "required_run_manifest_fields": [
+          "gpu_model",
+          "cuda_version",
+          "torch_version",
+          "model_id",
+          "checkpoint_sha256",
+          "license_spdx",
+          "dataset_sha256",
+          "wall_s_per_audio_min",
+          "peak_vram_gb",
+          "mix_recon_max_err"
+        ]
+      }
+    },
+    "go_no_go_stems": {
+      "decision_id": "go_no_go_2_stems_restoration",
+      "contour": "B_stems",
+      "production_verdict": "no_go",
+      "colab_research_verdict": "conditional_go",
+      "preserve_stereo_music_generalization": "forbidden",
+      "non_generalization_warning": "STRICT BOUNDARY: Neither Contour A (Voice) nor Contour B (Stems) results may be generalized to stereo music mastering (`Preserve` hard-declipping). Stem separation and re-summing introduces inter-stem bleed and phase/masking artifacts incompatible with Preserve's untouched-outside-mask stereo fidelity contract.",
+      "rationale": "The 4-stem CPU harness verifies exact additive mix integrity (`mix == sum(stems)`), shows deterministic HPSS+band separation improves over identity while trailing the Oracle IRM upper bound, and exposes OOD collapse when vocal/other spectra clash or stereo cues vanish (mono collapse). Production stem restoration is NO-GO because: (1) neural stem separators (HTDemucs, SCNet, BS-RoFormer) are blocked pending authorized Colab GPU + checkpoint license verification, (2) MUSDB18-HQ is not provisioned on host, and (3) stem separation is outside the Preserve stereo release.",
+      "cpu_harness_verified": true,
+      "decision_inputs_for_colab_stems_stage": [
+        "Provision licensed MUSDB18-HQ dev split (non-commercial research check) with SHA-256 manifest.",
+        "Authorize Google Colab T4/L4 GPU session (separate ticket) with pinned HTDemucs v4 (MIT), SCNet (MIT), and license-verified BS-RoFormer checkpoints.",
+        "Measure per-stem SI-SDR, inter-stem leakage (dB), and exact mix reconstruction error (`sum(est_stems) - mix`) on both dev-e8-stems-v1 and MUSDB18-HQ.",
+        "Audit stereo phase/IPD preservation and bleed-through artifacts before any opt-in Enhance stem-repair prototype is proposed.",
+        "Do NOT route stereo mastering (`Preserve`) through stem separation or generalize stem SI-SDR to full-mix hard-declipping."
+      ],
+      "external_blockers": [
+        "no_local_licensed_stem_weights_htdemucs_scnet_bsroformer",
+        "unverified_checkpoint_licenses_and_sha256",
+        "no_local_cuda_gpu",
+        "colab_connection_not_authorized_or_configured"
+      ]
+    },
+    "summary_by_stratum": {
+      "standard_4stem_mix": {
+        "identity": {
+          "n_cases": 4,
+          "is_oracle": false,
+          "mean_active_si_sdr_db": -5.756180678538765,
+          "mean_active_leakage_db": 5.726584467430822,
+          "max_mix_recon_err": 0.0,
+          "mean_mix_recon_rms_db": -382.22101923796896,
+          "per_stem": {
+            "vocals": {
+              "mean_si_sdr_db": 1.4231984687966568,
+              "mean_leakage_db": -1.472449359116336,
+              "mean_false_leakage_dbfs": null
+            },
+            "drums": {
+              "mean_si_sdr_db": -9.81814326946402,
+              "mean_leakage_db": 9.772419891544422,
+              "mean_false_leakage_dbfs": null
+            },
+            "bass": {
+              "mean_si_sdr_db": -8.381916901914444,
+              "mean_leakage_db": 8.459619605979281,
+              "mean_false_leakage_dbfs": null
+            },
+            "other": {
+              "mean_si_sdr_db": -6.247861011573255,
+              "mean_leakage_db": 6.146747731315919,
+              "mean_false_leakage_dbfs": null
+            }
+          },
+          "mean_wall_s_per_audio_min": 0.33617458830121905
+        },
+        "hpss_band_separator_cpu": {
+          "n_cases": 4,
+          "is_oracle": false,
+          "mean_active_si_sdr_db": 4.617495515795796,
+          "mean_active_leakage_db": -7.71951668166453,
+          "max_mix_recon_err": 3.3306690738754696e-16,
+          "mean_mix_recon_rms_db": -313.19593056615037,
+          "per_stem": {
+            "vocals": {
+              "mean_si_sdr_db": 9.657643393543061,
+              "mean_leakage_db": -12.373075124461192,
+              "mean_false_leakage_dbfs": null
+            },
+            "drums": {
+              "mean_si_sdr_db": -2.951618610686616,
+              "mean_leakage_db": -0.1750602412729655,
+              "mean_false_leakage_dbfs": null
+            },
+            "bass": {
+              "mean_si_sdr_db": 2.9866509367832714,
+              "mean_leakage_db": -3.9040560519398175,
+              "mean_false_leakage_dbfs": null
+            },
+            "other": {
+              "mean_si_sdr_db": 8.777306343543469,
+              "mean_leakage_db": -14.425875308984144,
+              "mean_false_leakage_dbfs": null
+            }
+          },
+          "mean_wall_s_per_audio_min": 5.978469048044644
+        },
+        "oracle_irm_upper_bound": {
+          "n_cases": 4,
+          "is_oracle": true,
+          "mean_active_si_sdr_db": 13.413290526384468,
+          "mean_active_leakage_db": -16.70564868555848,
+          "max_mix_recon_err": 3.3306690738754696e-16,
+          "mean_mix_recon_rms_db": -312.8251552445836,
+          "per_stem": {
+            "vocals": {
+              "mean_si_sdr_db": 17.01585976901173,
+              "mean_leakage_db": -18.257438679341032,
+              "mean_false_leakage_dbfs": null
+            },
+            "drums": {
+              "mean_si_sdr_db": 11.959383165474868,
+              "mean_leakage_db": -13.457359989782045,
+              "mean_false_leakage_dbfs": null
+            },
+            "bass": {
+              "mean_si_sdr_db": 11.955559597829746,
+              "mean_leakage_db": -17.265269062522336,
+              "mean_false_leakage_dbfs": null
+            },
+            "other": {
+              "mean_si_sdr_db": 12.722359573221528,
+              "mean_leakage_db": -17.842527010588505,
+              "mean_false_leakage_dbfs": null
+            }
+          },
+          "mean_wall_s_per_audio_min": 2.783702675951645
+        }
+      },
+      "sparse_clean_stem_control": {
+        "identity": {
+          "n_cases": 2,
+          "is_oracle": false,
+          "mean_active_si_sdr_db": 29.811358546702518,
+          "mean_active_leakage_db": -45.0,
+          "max_mix_recon_err": 0.0,
+          "mean_mix_recon_rms_db": -377.77668535687013,
+          "per_stem": {
+            "vocals": {
+              "mean_si_sdr_db": 60.0,
+              "mean_leakage_db": -90.0,
+              "mean_false_leakage_dbfs": -36.400089869743915
+            },
+            "drums": {
+              "mean_si_sdr_db": -1.4867210824881747,
+              "mean_leakage_db": 1.0611680012138982,
+              "mean_false_leakage_dbfs": -32.1289390696343
+            },
+            "bass": {
+              "mean_si_sdr_db": 0.7321552692982541,
+              "mean_leakage_db": -1.0611680012138986,
+              "mean_false_leakage_dbfs": -32.1289390696343
+            },
+            "other": {
+              "mean_si_sdr_db": null,
+              "mean_leakage_db": null,
+              "mean_false_leakage_dbfs": -34.264514469689104
+            }
+          },
+          "mean_wall_s_per_audio_min": 0.23282964038662612
+        },
+        "hpss_band_separator_cpu": {
+          "n_cases": 2,
+          "is_oracle": false,
+          "mean_active_si_sdr_db": 9.167113140478454,
+          "mean_active_leakage_db": -50.53392298000693,
+          "max_mix_recon_err": 2.220446049250313e-16,
+          "mean_mix_recon_rms_db": -313.28954630993223,
+          "per_stem": {
+            "vocals": {
+              "mean_si_sdr_db": 15.560475803598695,
+              "mean_leakage_db": -90.0,
+              "mean_false_leakage_dbfs": -43.50163320361222
+            },
+            "drums": {
+              "mean_si_sdr_db": 1.8107047803625462,
+              "mean_leakage_db": -17.696567155750202,
+              "mean_false_leakage_dbfs": -36.784134464919546
+            },
+            "bass": {
+              "mean_si_sdr_db": 3.7367961743538807,
+              "mean_leakage_db": -4.439124764277513,
+              "mean_false_leakage_dbfs": -41.9672489022992
+            },
+            "other": {
+              "mean_si_sdr_db": null,
+              "mean_leakage_db": null,
+              "mean_false_leakage_dbfs": -61.08073952984287
+            }
+          },
+          "mean_wall_s_per_audio_min": 5.9243184719234705
+        },
+        "oracle_irm_upper_bound": {
+          "n_cases": 2,
+          "is_oracle": true,
+          "mean_active_si_sdr_db": 35.05603528794583,
+          "mean_active_leakage_db": -51.654524565890355,
+          "max_mix_recon_err": 2.7755575615628914e-16,
+          "mean_mix_recon_rms_db": -312.66684841633764,
+          "per_stem": {
+            "vocals": {
+              "mean_si_sdr_db": 60.0,
+              "mean_leakage_db": -90.0,
+              "mean_false_leakage_dbfs": -221.88201373358334
+            },
+            "drums": {
+              "mean_si_sdr_db": 9.625551062506613,
+              "mean_leakage_db": -11.28570939058478,
+              "mean_false_leakage_dbfs": -224.54151210749257
+            },
+            "bass": {
+              "mean_si_sdr_db": 10.598590089276719,
+              "mean_leakage_db": -15.332388872976658,
+              "mean_false_leakage_dbfs": -224.54151210749257
+            },
+            "other": {
+              "mean_si_sdr_db": null,
+              "mean_leakage_db": null,
+              "mean_false_leakage_dbfs": -223.21176292053795
+            }
+          },
+          "mean_wall_s_per_audio_min": 2.5819186200387776
+        }
+      },
+      "ood_stems": {
+        "identity": {
+          "n_cases": 3,
+          "is_oracle": false,
+          "mean_active_si_sdr_db": -5.663728943205748,
+          "mean_active_leakage_db": 5.645754708456477,
+          "max_mix_recon_err": 0.0,
+          "mean_mix_recon_rms_db": -382.95084651480175,
+          "per_stem": {
+            "vocals": {
+              "mean_si_sdr_db": 0.07106739272473354,
+              "mean_leakage_db": -0.06089527607754223,
+              "mean_false_leakage_dbfs": null
+            },
+            "drums": {
+              "mean_si_sdr_db": -8.60107681117475,
+              "mean_leakage_db": 8.559269765410049,
+              "mean_false_leakage_dbfs": null
+            },
+            "bass": {
+              "mean_si_sdr_db": -8.966853637335817,
+              "mean_leakage_db": 8.920002892592464,
+              "mean_false_leakage_dbfs": null
+            },
+            "other": {
+              "mean_si_sdr_db": -5.158052717037162,
+              "mean_leakage_db": 5.164641451900941,
+              "mean_false_leakage_dbfs": null
+            }
+          },
+          "mean_wall_s_per_audio_min": 0.24287463957443833
+        },
+        "hpss_band_separator_cpu": {
+          "n_cases": 3,
+          "is_oracle": false,
+          "mean_active_si_sdr_db": -1.825859698125725,
+          "mean_active_leakage_db": -1.6246820111672662,
+          "max_mix_recon_err": 3.3306690738754696e-16,
+          "mean_mix_recon_rms_db": -313.107037207956,
+          "per_stem": {
+            "vocals": {
+              "mean_si_sdr_db": 6.076806188503171,
+              "mean_leakage_db": -7.89790141858272,
+              "mean_false_leakage_dbfs": null
+            },
+            "drums": {
+              "mean_si_sdr_db": -1.4156426637899397,
+              "mean_leakage_db": -1.5616746772333203,
+              "mean_false_leakage_dbfs": null
+            },
+            "bass": {
+              "mean_si_sdr_db": 2.9331495667305867,
+              "mean_leakage_db": -3.794143753343025,
+              "mean_false_leakage_dbfs": null
+            },
+            "other": {
+              "mean_si_sdr_db": -14.89775188394672,
+              "mean_leakage_db": 6.7549918044899995,
+              "mean_false_leakage_dbfs": null
+            }
+          },
+          "mean_wall_s_per_audio_min": 6.1924304640851915
+        },
+        "oracle_irm_upper_bound": {
+          "n_cases": 3,
+          "is_oracle": true,
+          "mean_active_si_sdr_db": 12.439255382929034,
+          "mean_active_leakage_db": -15.800037949976423,
+          "max_mix_recon_err": 3.3306690738754696e-16,
+          "mean_mix_recon_rms_db": -312.84441340044344,
+          "per_stem": {
+            "vocals": {
+              "mean_si_sdr_db": 14.838318615865091,
+              "mean_leakage_db": -15.794638093650155,
+              "mean_false_leakage_dbfs": null
+            },
+            "drums": {
+              "mean_si_sdr_db": 12.1570373624848,
+              "mean_leakage_db": -14.112445117217115,
+              "mean_false_leakage_dbfs": null
+            },
+            "bass": {
+              "mean_si_sdr_db": 11.123721859826565,
+              "mean_leakage_db": -17.036485120160446,
+              "mean_false_leakage_dbfs": null
+            },
+            "other": {
+              "mean_si_sdr_db": 11.63794369353967,
+              "mean_leakage_db": -16.256583468877974,
+              "mean_false_leakage_dbfs": null
+            }
+          },
+          "mean_wall_s_per_audio_min": 2.826936287805438
+        }
+      }
+    },
+    "cases": [
+      {
+        "id": "e8-stems-std-pop-rock-44k",
+        "stratum": "standard_4stem_mix",
+        "style": "pop_rock",
+        "active_stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "other"
+        ],
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 0.0,
+            "mix_recon_rms_db": -382.2325430646496,
+            "mean_active_si_sdr_db": -5.675276686234991,
+            "mean_active_leakage_db": 5.675118456678727,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 1.1938692297248368,
+                "inter_stem_leakage_db": -1.326425983534466,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -9.33977085657213,
+                "inter_stem_leakage_db": 9.541452482877098,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": -8.022179389295252,
+                "inter_stem_leakage_db": 8.272284195107373,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": -6.53302572879742,
+                "inter_stem_leakage_db": 6.213163132264907,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.02593447099206969,
+            "wall_s_per_audio_min": 0.6224273038096726
+          },
+          "hpss_band_separator_cpu": {
+            "arm": "hpss_band_separator_cpu",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 3.3306690738754696e-16,
+            "mix_recon_rms_db": -313.1964311851976,
+            "mean_active_si_sdr_db": 4.643730743394054,
+            "mean_active_leakage_db": -7.741988767180693,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 9.910364738628456,
+                "inter_stem_leakage_db": -11.943779874235858,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -3.2141638482466037,
+                "inter_stem_leakage_db": -0.3210369988401883,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 2.90276174298259,
+                "inter_stem_leakage_db": -3.7086084715722722,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": 8.97596034021177,
+                "inter_stem_leakage_db": -14.994529724074452,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.22882180899614468,
+            "wall_s_per_audio_min": 5.491723415907472
+          },
+          "oracle_irm_upper_bound": {
+            "arm": "oracle_irm_upper_bound",
+            "is_oracle": true,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 2.220446049250313e-16,
+            "mix_recon_rms_db": -312.84747545911875,
+            "mean_active_si_sdr_db": 13.734858152204053,
+            "mean_active_leakage_db": -17.00274599177075,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 16.857359520521598,
+                "inter_stem_leakage_db": -18.058237638704835,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": 12.864075002846267,
+                "inter_stem_leakage_db": -13.540627372218522,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 12.73509504018847,
+                "inter_stem_leakage_db": -18.58261672816449,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": 12.482903045259876,
+                "inter_stem_leakage_db": -17.829502227995167,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.12146839901106432,
+            "wall_s_per_audio_min": 2.9152415762655437
+          }
+        }
+      },
+      {
+        "id": "e8-stems-std-jazz-acoustic-44k",
+        "stratum": "standard_4stem_mix",
+        "style": "jazz_acoustic",
+        "active_stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "other"
+        ],
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 0.0,
+            "mix_recon_rms_db": -382.16850408883084,
+            "mean_active_si_sdr_db": -5.869013360483886,
+            "mean_active_leakage_db": 5.657271658559257,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 1.4164756546734294,
+                "inter_stem_leakage_db": -1.5188605308389593,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -9.852030976192315,
+                "inter_stem_leakage_db": 9.538983993367573,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": -8.663258384749524,
+                "inter_stem_leakage_db": 8.489094681645787,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": -6.3772397356671355,
+                "inter_stem_leakage_db": 6.1198684900626255,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.010001347051002085,
+            "wall_s_per_audio_min": 0.24003232922405005
+          },
+          "hpss_band_separator_cpu": {
+            "arm": "hpss_band_separator_cpu",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 2.220446049250313e-16,
+            "mix_recon_rms_db": -313.29305231457823,
+            "mean_active_si_sdr_db": 3.5470842898666417,
+            "mean_active_leakage_db": -6.460896036391557,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 8.528714387420592,
+                "inter_stem_leakage_db": -12.110960638180346,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -3.885652722112099,
+                "inter_stem_leakage_db": 1.076819385501476,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 2.4208883354343285,
+                "inter_stem_leakage_db": -3.3373922388198496,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": 7.124387158723744,
+                "inter_stem_leakage_db": -11.472050654067509,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.20391869900049642,
+            "wall_s_per_audio_min": 4.894048776011914
+          },
+          "oracle_irm_upper_bound": {
+            "arm": "oracle_irm_upper_bound",
+            "is_oracle": true,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 2.7755575615628914e-16,
+            "mix_recon_rms_db": -312.8694069521062,
+            "mean_active_si_sdr_db": 11.949005139670875,
+            "mean_active_leakage_db": -15.725316168901081,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 15.947412175245237,
+                "inter_stem_leakage_db": -17.723647338092004,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": 10.185780158828797,
+                "inter_stem_leakage_db": -11.967428629616377,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 10.588225273385696,
+                "inter_stem_leakage_db": -16.517298311427126,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": 11.074602951223776,
+                "inter_stem_leakage_db": -16.692890396468822,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.1167814219952561,
+            "wall_s_per_audio_min": 2.8027541278861463
+          }
+        }
+      },
+      {
+        "id": "e8-stems-std-synth-electronic-44k",
+        "stratum": "standard_4stem_mix",
+        "style": "synth_electronic",
+        "active_stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "other"
+        ],
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 0.0,
+            "mix_recon_rms_db": -382.42801148110186,
+            "mean_active_si_sdr_db": -5.545296080619651,
+            "mean_active_leakage_db": 5.605556400265312,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 1.2193470904495807,
+                "inter_stem_leakage_db": -1.1464079086334058,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -9.418985885846887,
+                "inter_stem_leakage_db": 9.257163083710894,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": -7.894073971646889,
+                "inter_stem_leakage_db": 7.987945100874266,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": -6.0874715554344085,
+                "inter_stem_leakage_db": 6.323525325109493,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.00991083198459819,
+            "wall_s_per_audio_min": 0.23785996763035655
+          },
+          "hpss_band_separator_cpu": {
+            "arm": "hpss_band_separator_cpu",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 2.7755575615628914e-16,
+            "mix_recon_rms_db": -313.22164606991237,
+            "mean_active_si_sdr_db": 4.4992833657195215,
+            "mean_active_leakage_db": -7.73729570369297,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 9.70349770584512,
+                "inter_stem_leakage_db": -13.652474182237572,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -3.1707493037280727,
+                "inter_stem_leakage_db": 0.36814044207353513,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 3.308489404542419,
+                "inter_stem_leakage_db": -3.6985015046617224,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": 8.15589565621862,
+                "inter_stem_leakage_db": -13.966347569946125,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.28272218303754926,
+            "wall_s_per_audio_min": 6.785332392901182
+          },
+          "oracle_irm_upper_bound": {
+            "arm": "oracle_irm_upper_bound",
+            "is_oracle": true,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 3.3306690738754696e-16,
+            "mix_recon_rms_db": -312.84165553064577,
+            "mean_active_si_sdr_db": 12.507986776413446,
+            "mean_active_leakage_db": -14.925359055094013,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 17.21160585414713,
+                "inter_stem_leakage_db": -18.326708624146583,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": 9.110598283040105,
+                "inter_stem_leakage_db": -10.73434997408234,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 10.23055235388548,
+                "inter_stem_leakage_db": -14.167144296611603,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": 13.479190614581068,
+                "inter_stem_leakage_db": -16.47323332553552,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.11561568401521072,
+            "wall_s_per_audio_min": 2.7747764163650572
+          }
+        }
+      },
+      {
+        "id": "e8-stems-std-dense-ballad-44k",
+        "stratum": "standard_4stem_mix",
+        "style": "dense_ballad",
+        "active_stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "other"
+        ],
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 0.0,
+            "mix_recon_rms_db": -382.0550183172934,
+            "mean_active_si_sdr_db": -5.935136586816534,
+            "mean_active_leakage_db": 5.968391354219991,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 1.8631019003387799,
+                "inter_stem_leakage_db": -1.8981030134585122,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -10.66178535924475,
+                "inter_stem_leakage_db": 10.752080006222123,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": -8.94815586196611,
+                "inter_stem_leakage_db": 9.0891544462897,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": -5.9937070263940555,
+                "inter_stem_leakage_db": 5.9304339778266515,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.010182448022533208,
+            "wall_s_per_audio_min": 0.244378752540797
+          },
+          "hpss_band_separator_cpu": {
+            "arm": "hpss_band_separator_cpu",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 3.3306690738754696e-16,
+            "mix_recon_rms_db": -313.0725926949132,
+            "mean_active_si_sdr_db": 5.779883664202971,
+            "mean_active_leakage_db": -8.937886219392901,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 10.487996742278078,
+                "inter_stem_leakage_db": -11.785085803190999,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -1.5359085686596878,
+                "inter_stem_leakage_db": -1.8241637938266848,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 3.3144642641737496,
+                "inter_stem_leakage_db": -4.871721992705425,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": 10.852982219019744,
+                "inter_stem_leakage_db": -17.270573287848492,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.28094881697325036,
+            "wall_s_per_audio_min": 6.742771607358009
+          },
+          "oracle_irm_upper_bound": {
+            "arm": "oracle_irm_upper_bound",
+            "is_oracle": true,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 2.220446049250313e-16,
+            "mix_recon_rms_db": -312.7420830364636,
+            "mean_active_si_sdr_db": 15.461312037249499,
+            "mean_active_leakage_db": -19.16917352646807,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 18.047061526132953,
+                "inter_stem_leakage_db": -18.921161116420706,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": 15.677079217184307,
+                "inter_stem_leakage_db": -17.58703398321094,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 14.268365723859342,
+                "inter_stem_leakage_db": -19.79401691388612,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": 13.852741681821389,
+                "inter_stem_leakage_db": -20.37448209235452,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.11008494097040966,
+            "wall_s_per_audio_min": 2.642038583289832
+          }
+        }
+      },
+      {
+        "id": "e8-stems-ctl-solo-vocals-44k",
+        "stratum": "sparse_clean_stem_control",
+        "style": "solo_vocals",
+        "active_stems": [
+          "vocals"
+        ],
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 0.0,
+            "mix_recon_rms_db": -379.912260756925,
+            "mean_active_si_sdr_db": 60.0,
+            "mean_active_leakage_db": -90.0,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 60.0,
+                "inter_stem_leakage_db": -90.0,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -32.1289390696343
+              },
+              "bass": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -32.1289390696343
+              },
+              "other": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -32.1289390696343
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.009642846998758614,
+            "wall_s_per_audio_min": 0.23142832797020674
+          },
+          "hpss_band_separator_cpu": {
+            "arm": "hpss_band_separator_cpu",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 2.220446049250313e-16,
+            "mix_recon_rms_db": -312.8974315820736,
+            "mean_active_si_sdr_db": 15.560475803598695,
+            "mean_active_leakage_db": -90.0,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 15.560475803598695,
+                "inter_stem_leakage_db": -90.0,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -36.784134464919546
+              },
+              "bass": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -41.9672489022992
+              },
+              "other": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -63.0195600816496
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.25740001897793263,
+            "wall_s_per_audio_min": 6.177600455470383
+          },
+          "oracle_irm_upper_bound": {
+            "arm": "oracle_irm_upper_bound",
+            "is_oracle": true,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 2.7755575615628914e-16,
+            "mix_recon_rms_db": -311.8879785431137,
+            "mean_active_si_sdr_db": 60.0,
+            "mean_active_leakage_db": -90.0,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 60.0,
+                "inter_stem_leakage_db": -90.0,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -224.54151210749257
+              },
+              "bass": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -224.54151210749257
+              },
+              "other": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -224.54151210749257
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.10676973703084514,
+            "wall_s_per_audio_min": 2.5624736887402833
+          }
+        }
+      },
+      {
+        "id": "e8-stems-ctl-bass-drums-only-44k",
+        "stratum": "sparse_clean_stem_control",
+        "style": "rhythm_section",
+        "active_stems": [
+          "drums",
+          "bass"
+        ],
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 0.0,
+            "mix_recon_rms_db": -375.6411099568153,
+            "mean_active_si_sdr_db": -0.3772829065949603,
+            "mean_active_leakage_db": -2.220446049250313e-16,
+            "per_stem": {
+              "vocals": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -36.400089869743915
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -1.4867210824881747,
+                "inter_stem_leakage_db": 1.0611680012138982,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 0.7321552692982541,
+                "inter_stem_leakage_db": -1.0611680012138986,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -36.400089869743915
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.00975962303346023,
+            "wall_s_per_audio_min": 0.2342309528030455
+          },
+          "hpss_band_separator_cpu": {
+            "arm": "hpss_band_separator_cpu",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 1.6653345369377348e-16,
+            "mix_recon_rms_db": -313.68166103779095,
+            "mean_active_si_sdr_db": 2.7737504773582136,
+            "mean_active_leakage_db": -11.067845960013857,
+            "per_stem": {
+              "vocals": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -43.50163320361222
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": 1.8107047803625462,
+                "inter_stem_leakage_db": -17.696567155750202,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 3.7367961743538807,
+                "inter_stem_leakage_db": -4.439124764277513,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -59.14191897803615
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.2362931870156899,
+            "wall_s_per_audio_min": 5.671036488376558
+          },
+          "oracle_irm_upper_bound": {
+            "arm": "oracle_irm_upper_bound",
+            "is_oracle": true,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 2.220446049250313e-16,
+            "mix_recon_rms_db": -313.44571828956157,
+            "mean_active_si_sdr_db": 10.112070575891666,
+            "mean_active_leakage_db": -13.309049131780718,
+            "per_stem": {
+              "vocals": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -221.88201373358334
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": 9.625551062506613,
+                "inter_stem_leakage_db": -11.28570939058478,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 10.598590089276719,
+                "inter_stem_leakage_db": -15.332388872976658,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": false,
+                "si_sdr_db": null,
+                "inter_stem_leakage_db": null,
+                "false_leakage_dbfs": -221.88201373358334
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.10839014797238633,
+            "wall_s_per_audio_min": 2.601363551337272
+          }
+        }
+      },
+      {
+        "id": "e8-stems-ood-vocal-other-clash-44k",
+        "stratum": "ood_stems",
+        "style": "center_clash",
+        "active_stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "other"
+        ],
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 0.0,
+            "mix_recon_rms_db": -383.31347753122907,
+            "mean_active_si_sdr_db": -5.6981963262682225,
+            "mean_active_leakage_db": 5.764273321264142,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": -0.7661502840941353,
+                "inter_stem_leakage_db": 0.7571551384456688,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -10.111929183312844,
+                "inter_stem_leakage_db": 10.252145625047728,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": -9.285124100630233,
+                "inter_stem_leakage_db": 9.389716962775838,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": -2.6295817370356804,
+                "inter_stem_leakage_db": 2.6580755587873295,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.009973481006454676,
+            "wall_s_per_audio_min": 0.23936354415491223
+          },
+          "hpss_band_separator_cpu": {
+            "arm": "hpss_band_separator_cpu",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 3.3306690738754696e-16,
+            "mix_recon_rms_db": -313.0857705299716,
+            "mean_active_si_sdr_db": 0.40691931417378135,
+            "mean_active_leakage_db": -5.34533096041646,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 2.265350412183284,
+                "inter_stem_leakage_db": -2.6835241572323607,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -2.5535100900083667,
+                "inter_stem_leakage_db": -0.7034829371424699,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 3.0004840289374357,
+                "inter_stem_leakage_db": -3.893027695417727,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": -1.0846470944172277,
+                "inter_stem_leakage_db": -14.101289051873284,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.2977191389654763,
+            "wall_s_per_audio_min": 7.145259335171431
+          },
+          "oracle_irm_upper_bound": {
+            "arm": "oracle_irm_upper_bound",
+            "is_oracle": true,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 3.3306690738754696e-16,
+            "mix_recon_rms_db": -312.93680470095717,
+            "mean_active_si_sdr_db": 12.071719436267474,
+            "mean_active_leakage_db": -15.329674427743813,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 12.229327450162131,
+                "inter_stem_leakage_db": -13.185412802474312,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": 12.536699831283718,
+                "inter_stem_leakage_db": -13.65267504881462,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 12.313778204332104,
+                "inter_stem_leakage_db": -18.33721016643914,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": 11.20707225929194,
+                "inter_stem_leakage_db": -16.143399693247183,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.11043066100683063,
+            "wall_s_per_audio_min": 2.650335864163935
+          }
+        }
+      },
+      {
+        "id": "e8-stems-ood-wide-antiphase-cymbals-44k",
+        "stratum": "ood_stems",
+        "style": "wide_antiphase",
+        "active_stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "other"
+        ],
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 0.0,
+            "mix_recon_rms_db": -383.7529956705497,
+            "mean_active_si_sdr_db": -5.31544651933851,
+            "mean_active_leakage_db": 5.233762822541164,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": -1.6932060162751053,
+                "inter_stem_leakage_db": 1.7352625678914027,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -6.125948412006271,
+                "inter_stem_leakage_db": 5.944039509996126,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": -9.82483607636322,
+                "inter_stem_leakage_db": 9.575710307338273,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": -3.617795572709444,
+                "inter_stem_leakage_db": 3.6800389049388516,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.00996041897451505,
+            "wall_s_per_audio_min": 0.23905005538836122
+          },
+          "hpss_band_separator_cpu": {
+            "arm": "hpss_band_separator_cpu",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 3.3306690738754696e-16,
+            "mix_recon_rms_db": -313.07865285765763,
+            "mean_active_si_sdr_db": 4.77781251831017,
+            "mean_active_leakage_db": -7.718259675612478,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 8.682690367164557,
+                "inter_stem_leakage_db": -12.264785604880366,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": 2.4117955673266094,
+                "inter_stem_leakage_db": -4.690429552655599,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 3.0613506619404585,
+                "inter_stem_leakage_db": -3.9523494484485444,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": 4.955413476809052,
+                "inter_stem_leakage_db": -9.965474096465405,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.24552990001393482,
+            "wall_s_per_audio_min": 5.892717600334436
+          },
+          "oracle_irm_upper_bound": {
+            "arm": "oracle_irm_upper_bound",
+            "is_oracle": true,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 3.3306690738754696e-16,
+            "mix_recon_rms_db": -312.7449742088474,
+            "mean_active_si_sdr_db": 13.010570399915313,
+            "mean_active_leakage_db": -16.284974632587808,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 14.759048112954591,
+                "inter_stem_leakage_db": -16.04441797740038,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": 13.417906853512495,
+                "inter_stem_leakage_db": -16.525596904988053,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 9.94504056901681,
+                "inter_stem_leakage_db": -15.596467685850968,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": 13.920286064177356,
+                "inter_stem_leakage_db": -16.97341596211183,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.12390659196535125,
+            "wall_s_per_audio_min": 2.97375820716843
+          }
+        }
+      },
+      {
+        "id": "e8-stems-ood-mono-collapsed-mix-44k",
+        "stratum": "ood_stems",
+        "style": "mono_collapsed",
+        "active_stems": [
+          "vocals",
+          "drums",
+          "bass",
+          "other"
+        ],
+        "arms": {
+          "identity": {
+            "arm": "identity",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 0.0,
+            "mix_recon_rms_db": -381.7860663426265,
+            "mean_active_si_sdr_db": -5.977543984010512,
+            "mean_active_leakage_db": 5.9392279815641285,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 2.6725584785434413,
+                "inter_stem_leakage_db": -2.6751035345696983,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -9.565352838205134,
+                "inter_stem_leakage_db": 9.481624161186293,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": -7.790600735013994,
+                "inter_stem_leakage_db": 7.794581407663279,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": -9.226780841366361,
+                "inter_stem_leakage_db": 9.155809891976643,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.010425429965835065,
+            "wall_s_per_audio_min": 0.25021031918004155
+          },
+          "hpss_band_separator_cpu": {
+            "arm": "hpss_band_separator_cpu",
+            "is_oracle": false,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 3.3306690738754696e-16,
+            "mix_recon_rms_db": -313.1566882362387,
+            "mean_active_si_sdr_db": -10.662310926861126,
+            "mean_active_leakage_db": 8.189544602527139,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 7.282377786161671,
+                "inter_stem_leakage_db": -8.74539449363543,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": -4.105213468688062,
+                "inter_stem_leakage_db": 0.7088884580981072,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 2.737614009313865,
+                "inter_stem_leakage_db": -3.5370541161628037,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": -48.56402203423198,
+                "inter_stem_leakage_db": 44.331738561808685,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.2308047690312378,
+            "wall_s_per_audio_min": 5.5393144567497075
+          },
+          "oracle_irm_upper_bound": {
+            "arm": "oracle_irm_upper_bound",
+            "is_oracle": true,
+            "corpus_additive_max_err": 0.0,
+            "mix_recon_max_err": 3.3306690738754696e-16,
+            "mix_recon_rms_db": -312.85146129152577,
+            "mean_active_si_sdr_db": 12.235476312604309,
+            "mean_active_leakage_db": -15.785464789597649,
+            "per_stem": {
+              "vocals": {
+                "active": true,
+                "si_sdr_db": 17.526580284478552,
+                "inter_stem_leakage_db": -18.154083501075775,
+                "false_leakage_dbfs": null
+              },
+              "drums": {
+                "active": true,
+                "si_sdr_db": 10.516505402658186,
+                "inter_stem_leakage_db": -12.159063397848675,
+                "false_leakage_dbfs": null
+              },
+              "bass": {
+                "active": true,
+                "si_sdr_db": 11.11234680613078,
+                "inter_stem_leakage_db": -17.175777508191235,
+                "false_leakage_dbfs": null
+              },
+              "other": {
+                "active": true,
+                "si_sdr_db": 9.786472757149717,
+                "inter_stem_leakage_db": -15.652934751274907,
+                "false_leakage_dbfs": null
+              }
+            },
+            "input_mutated": false,
+            "wall_s": 0.11902978300349787,
+            "wall_s_per_audio_min": 2.856714792083949
+          }
+        }
+      }
+    ]
+  }
+}

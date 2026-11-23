@@ -148,7 +148,7 @@ def _candidate_trial(x, y, sr, orig, target, starts, source_windows,
             em = measure(ye, sr)
             diagnostic = compare(em, eo, target)
             diagnostic["violations"] = output_violations(
-                ex, ye, sr, eo, em, check_boundaries=False)
+                ex, ye, sr, eo, em, check_boundaries=False, tp_ceiling=tp_ceiling)
             windows.append(diagnostic)
     return rest, {"valid": not violations, "score": full["score"],
                   "comparison": full, "violations": violations,

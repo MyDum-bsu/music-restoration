@@ -145,7 +145,12 @@ Sparse repair can be slow; whole-track PCM memory grows with duration. Stereo
 and album-level perceptual evaluation remain open. Keep originals and failures
 visible in batch reports.
 
-`research/` contains reproducible experiments; product modules do not import it.
+`research/` contains reproducible experiments; product `Preserve` modules do not
+import `research/`, `lab/`, `rnext.ml`, `joblib`, `scikit-learn`, or `torch`.
+Legacy runners (`restore_one.py`, `restore_per_track.py`, `release_batch.py`)
+remain preserved for historical reproduction; see the
+[E9 legacy & ML isolation report](docs/validation/e9-legacy-isolation-report.md)
+for the `legacy → Preserve` and `research → Preserve` migration routes.
 Historical spectrograms and DR reports are descriptive examples, not proof that
 missing frequency content was recovered or a human restorer was surpassed.
 

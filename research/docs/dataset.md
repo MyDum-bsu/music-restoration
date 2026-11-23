@@ -48,7 +48,7 @@ bootleg/live recording standing in for the studio album.
 
 ## 3. Assembly pipeline
 
-What is already free (no master-release download): `scripts/master_targets.py`
+What is already free (no master-release download): `research/master_targets.py`
 collects `corpus/master_targets.jsonl` from the topics — **637 releases /
 8104 tracks** with a published master analysis (DR/Peak/RMS per track,
 crest_tt = peak − rms):
@@ -62,13 +62,13 @@ That is the "before measuring the source" target; deltas appear once pairs are
 assembled.
 
 ```
-scripts/dataset_plan.py topics   # master topic pages → corpus/restored/{tid}.json
-                                 #   releases[] + textual DR table of the master (if present)
-scripts/dataset_plan.py match    # candidate pool per artist (1 search instead of 1 per release)
-                                 #   → corpus/dataset_plan.jsonl  (matched/weak/no_original)
-scripts/dataset_plan.py report   # summary: volume, decades, master DR, share of discographies
-scripts/dataset_fetch.py --dry-run   # exactly what will be downloaded (file selection)
-scripts/dataset_fetch.py --go        # Transmission: file selection + start
+research/dataset_plan.py topics   # master topic pages → corpus/restored/{tid}.json
+                                  #   releases[] + textual DR table of the master (if present)
+research/dataset_plan.py match    # candidate pool per artist (1 search instead of 1 per release)
+                                  #   → corpus/dataset_plan.jsonl  (matched/weak/no_original)
+research/dataset_plan.py report   # summary: volume, decades, master DR, share of discographies
+research/dataset_fetch.py --dry-run   # exactly what will be downloaded (file selection)
+research/dataset_fetch.py --go        # Transmission: file selection + start
 ```
 
 Matching details:
@@ -117,7 +117,7 @@ downloaded.
 ## 5. Storage (hard limit 40 GiB)
 
 ```
-/media/mydum/Data/Music/restore/dataset/
+<data_root>/dataset/
   plan/…                  not stored: the plan lives in corpus/dataset_plan.jsonl
   raw/<key>/              RAW, transient: download → extract → delete
   pairs/<key>/meta.json   ids, tracks, matched files, master DR, QC flags

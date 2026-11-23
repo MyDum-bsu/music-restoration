@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """restore-lab — a local web view: dataset, metrics, spectrograms, pipeline.
 
-Run:  python3 lab/server.py [--port 8765]
+Run:  python3 research/lab/server.py [--port 8765]
 Reads the dataset from the flash drive (read-only); all of its own artifacts
 (spectrogram cache, runs of "our" pipeline) go to ~/.cache/restore-lab/.
 Writes nothing to the flash drive or the repository.

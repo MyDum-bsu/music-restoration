@@ -112,7 +112,7 @@ TRACK_NUM_RE = re.compile(r"\s*(\d{1,3})")
 def measure_file(path: Path) -> dict:
     """audio_measure metrics for one file plus spikes and the band vector.
 
-    spikes_over_09 counts samples with |x| > 0.9 in the first ~90 s, the same
+    spikes_over_09 counts samples with |x| > 0.9 over the whole file, the same
     definition the independent-restore experiment used; band_rms_db is
     rnext.features.band_rms_db on that decode.  The decode keeps NATIVE
     channels: audio_measure.decode() remixes mono to stereo, and this ffmpeg
@@ -127,7 +127,7 @@ def measure_file(path: Path) -> dict:
     missing = [name for name, key in pairs if row.get(key) is None]
     if missing:
         raise EvalError(f"{path}: audio_measure returned no {', '.join(missing)}")
-    x, sr = F.decode_f32(str(path), 0.0, 90.0, channels=None)
+    x, sr = F.decode_f32(str(path), channels=None)
     if x is None or x.size == 0:
         raise EvalError(f"{path}: cannot decode for spikes/bands")
     bands = F.band_rms_db(x, sr)
@@ -412,8 +412,8 @@ def render_report(data: dict, delta_rows: list[dict], album_rows: list[dict],
               f"--out-dir <out-dir> --report <report.md>",
               "python3 scripts/eval_vs_masters.py --select --corpus <corpus.jsonl> "
               "--seed <seed> --per-master 5 --out picks.json", "```", "",
-              "Measurement: scripts/audio_measure.py (DR/crest/clipping on the first "
-              "~90 s, LUFS/TP over the whole file via ffmpeg ebur128); spikes = "
+              "Measurement: scripts/audio_measure.py (DR/crest/clipping on the full "
+              "decode, LUFS/TP over the whole file via ffmpeg ebur128); spikes = "
               "samples with |x| > 0.9 in that decode; band vector = "
               "rnext.features.band_rms_db (30 bands, 20 Hz…20 kHz). Track matching "
               "by the leading digits of the file stem; unmatched tracks are "

@@ -55,10 +55,10 @@ point, not as an honest competitor.
 ## Auto-cycle
 
 ```bash
-python3 scripts/ml_auto.py                 # one pass: version → training → evals → summary
-python3 scripts/ml_auto.py --interval 1800 # the same in a loop
-python3 scripts/ml_auto.py --with-audio    # plus end-to-end audio evals of pairs with raw data
-python3 scripts/ml_train.py --model ridge --by-author   # manual run/experiment
+python3 research/ml_auto.py                 # one pass: version → training → evals → summary
+python3 research/ml_auto.py --interval 1800 # the same in a loop
+python3 research/ml_auto.py --with-audio    # plus end-to-end audio evals of pairs with raw data
+python3 research/ml_train.py --model ridge --by-author   # manual run/experiment
 ```
 
 Volume levels (`trusted` tracks): **M1 = 600** (target regression), **M2 = 1500**
@@ -66,13 +66,16 @@ Volume levels (`trusted` tracks): **M1 = 600** (target regression), **M2 = 1500*
 reached, the auto-cycle prints how much is left and does not start training.
 
 Splits: `by-album` (30% of albums) — primary; `by-author` — checks transfer
-between masters, enabled automatically at ≥2 authors.
+between masters, enabled automatically at ≥2 authors. Future ML experiments must
+follow the fail-closed split-boundary and recording-deduplication contract in
+`research/e9_ml_governance.py` (`approved_labels` / `dev_selection` / `promotion` /
+`sealed_test`).
 
 ## Continuous enrichment
 
 ```bash
-python3 scripts/dataset_loop.py --once              # one pass
-python3 scripts/dataset_loop.py --interval 900      # keep running in the background
+python3 research/dataset_loop.py --once              # one pass
+python3 research/dataset_loop.py --interval 900      # keep running in the background
 ```
 
 A pass: wait for downloads to finish → pick a new batch → download → extract
@@ -80,13 +83,18 @@ A pass: wait for downloads to finish → pick a new batch → download → extra
 evaluate) → reference audit → target layer → `ml_auto --with-audio`. Log:
 `dataset/loop.log`.
 
-## Runtime: the target from the model in the pipeline
+## Runtime: legacy opt-in vs. Preserve isolation
 
 ```bash
+# Legacy/research opt-in ONLY (never used by Preserve):
 python3 scripts/restore_one.py --src <img.flac> --cue <cue> --out out/ \
         --ml-snapshot auto          # or a specific id
+
+# Production Preserve path (zero ML/joblib/torch dependency, offline CPU):
+python3 scripts/restore_safe.py --src <album/> --out <empty-out/>
 ```
 
-The report gains `ml_snapshot` and `ml_target` per track. When a model is used,
-the `healthy` threshold is aligned with the training one (`≥ 12`); otherwise a
-DR of 11 would stay transparent even though the model predicts a target for it.
+In the legacy `restore_one.py` path, the report gains `ml_snapshot` and `ml_target`
+per track, and the `healthy` threshold is aligned with training (`≥ 12`). `Preserve`
+(`scripts/restore_safe.py`) never imports `rnext.ml`, `joblib`, `scikit-learn`, or
+`torch`. See `docs/validation/e9-legacy-isolation-report.md` for the isolation audit.

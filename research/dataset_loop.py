@@ -10,7 +10,7 @@ One pass of the loop:
 
 Idempotent: a re-run continues from the same place. Logs go to `dataset/loop.log`.
 
-  python3 scripts/dataset_loop.py --interval 900 --batch-gb 12 --keep-window 12
+  python3 research/dataset_loop.py --interval 900 --batch-gb 12 --keep-window 12
 """
 import argparse
 import json
@@ -99,28 +99,28 @@ def one_pass(args) -> None:
     free = free_gb()
     if free < args.min_free_gb:
         log(f"free {free:.1f} GB < {args.min_free_gb} GB — pruning raw")
-        subprocess.run([sys.executable, "scripts/dataset_extract.py", "--prune",
+        subprocess.run([sys.executable, "research/dataset_extract.py", "--prune",
                         "--prune-keep", str(args.keep_window)], cwd=str(ROOT), check=False)
         if free_gb() < args.min_free_gb:
             # critical: drop UNFINISHED pairs with low progress too
             log("still low on space — dropping unfinished pairs with low progress")
-            subprocess.run([sys.executable, "scripts/dataset_prune_stalled.py",
+            subprocess.run([sys.executable, "research/dataset_prune_stalled.py",
                             "--max-progress", "0.5"], cwd=str(ROOT), check=False)
 
     # 0) dead seeds must not hold the cap: drop pairs without peers
-    subprocess.run([sys.executable, "scripts/dataset_prune_stalled.py", "--peerless"],
+    subprocess.run([sys.executable, "research/dataset_prune_stalled.py", "--peerless"],
                    cwd=str(ROOT), check=False, stdout=subprocess.DEVNULL)
     # ...and immediately recompute wanted-sets: without this, torrents of dropped
     # pairs keep downloading into deleted directories (raw comes back, space leaks)
-    subprocess.run([sys.executable, "scripts/dataset_fetch.py", "--repair"],
+    subprocess.run([sys.executable, "research/dataset_fetch.py", "--repair"],
                    cwd=str(ROOT), check=False, stdout=subprocess.DEVNULL)
 
     # 1) process what is ready — every pass, regardless of downloads
-    run([sys.executable, "scripts/dataset_extract.py", "--all", "--excerpts", "1",
+    run([sys.executable, "research/dataset_extract.py", "--all", "--excerpts", "1",
          "--keep-raw", "--keep-raw-window", str(args.keep_window)])
-    run([sys.executable, "scripts/reference_audit.py"])
-    run([sys.executable, "scripts/target_model.py"])
-    run([sys.executable, "scripts/ml_auto.py", "--with-audio"])
+    run([sys.executable, "research/reference_audit.py"])
+    run([sys.executable, "research/target_model.py"])
+    run([sys.executable, "research/ml_auto.py", "--with-audio"])
     man = dataset_dir() / "manifest.json"
     if man.is_file():
         m = json.loads(man.read_text(encoding="utf-8"))
@@ -146,13 +146,13 @@ def one_pass(args) -> None:
 
     n = batch_counter() + 1
     tag = f"batch-{n:03d}"
-    if run([sys.executable, "scripts/dataset_select.py", "--limit", str(args.batch_pairs),
+    if run([sys.executable, "research/dataset_select.py", "--limit", str(args.batch_pairs),
             "--min-master-seeders", str(args.min_master_seeders),
             "--max-master-gb", str(args.max_master_gb), "--out", tag]) != 0:
         log("select failed")
         return
     plan = workspace.dir_of("corpus") / f"dataset_batch_{tag}.jsonl"
-    run([sys.executable, "scripts/dataset_fetch.py", "--go", "--limit", str(args.batch_pairs),
+    run([sys.executable, "research/dataset_fetch.py", "--go", "--limit", str(args.batch_pairs),
          "--max-gb", str(args.batch_gb), "--plan", str(plan)])
 
 
@@ -180,7 +180,7 @@ def main() -> int:
     # after a reboot they return to defaults and speed drops ~20x.
     # Applied on every loop start: both in the session and in settings.json.
     try:
-        subprocess.run([sys.executable, "scripts/transmission_tune.py", "--apply"],
+        subprocess.run([sys.executable, "research/transmission_tune.py", "--apply"],
                        cwd=str(ROOT), check=False, timeout=60)
         log("Transmission settings applied")
     except Exception as e:                                 # noqa: BLE001

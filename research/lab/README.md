@@ -4,13 +4,18 @@ A local web view over the restoration algorithm: what it is trying to do, how cl
 it gets, and what the result actually looks like next to the reference.
 
 ```bash
-cd ~/Desktop/projects/music-restoration
-python3 lab/server.py          # → http://127.0.0.1:8765
+cd <repo-root>
+python3 research/lab/server.py          # → http://127.0.0.1:8765
 ```
 
-Needs the corpus drive mounted at `/media/mydum/Data/Music/restore`. Nothing is
+Needs `data_root` configured in `config/workspace.json` (`rnext.workspace`). Nothing is
 written to the drive or the repository — spectrogram cache and rendered test
 excerpts live in `~/.cache/restore-lab/`.
+
+> **Isolation boundary (`research → Preserve`):** Restoration Lab is a research-only
+> inspector for historical dataset/model artifacts. For production local CPU
+> restoration, use `python3 scripts/restore_safe.py --src <album/> --out <empty-out/>`
+> and inspect `report.json` / `scripts/evaluate_album.py`.
 
 ## Pages
 
@@ -48,7 +53,7 @@ score there means the model learned the task rather than one person's habits.
 ## Structure
 
 ```
-lab/
+research/lab/
   server.py          # HTTP API, STFT spectrograms, live pipeline runs
   static/index.html  # shell
   static/app.js      # routing, charts (plain canvas), rendering

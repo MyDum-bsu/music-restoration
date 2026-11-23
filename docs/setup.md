@@ -8,7 +8,10 @@ into the system except the external tools.
 
 - Python 3.10+ and the packages from `requirements.txt`
   (`numpy`, `scipy`, `matplotlib`, `mutagen`, `pillow`, `beautifulsoup4`,
-  `requests`, `scikit-learn`, `joblib`, `pytest`);
+  `requests`, `scikit-learn`, `joblib`, `pytest`). Note: `scikit-learn` and
+  `joblib` are legacy/research ML dependencies (`rnext/ml/*`, `research/*`)
+  and are **not** imported or required at runtime by the local CPU `Preserve`
+  path (`scripts/restore_safe.py`);
 - `ffmpeg`, `flac`, `metaflac`, `shntool`, `cuetag` for decoding, tagging and
   image+cue splitting;
 - Transmission with the RPC endpoint enabled, if the agent is to queue downloads.
@@ -125,8 +128,12 @@ fallback to the absolute gate.
 Inspect every status in the safe runner's `report.json`: `processed_candidate`,
 `kept_original`, `qc_fallback_original`, or `error`. A copied original can retain
 its original high peak or other defects; external QC does not turn that copy
-into a repaired result. The legacy `restore_per_track.py` remains available for
-historical reproduction, but is no longer the preferred automatic path.
+into a repaired result. The legacy `restore_per_track.py`, `restore_one.py`,
+and `release_batch.py` remain available for historical reproduction, but new
+automatic runs should migrate (`legacy → Preserve`) to `scripts/restore_safe.py`.
+Research and ML tooling (`research/*`, `rnext/ml/*`) is isolated from `Preserve`
+(`research → Preserve` requires offline evaluation and E9 split governance; see
+`docs/validation/e9-legacy-isolation-report.md`).
 
 ## 6. Checks before a pull request
 

@@ -9,16 +9,20 @@ verdict procedure is fixed before the data, and the report separates what the
 metrics prove from what they cannot (listening preference).
 
   python3 scripts/evaluate_album.py --src <original-dir> --restored <restored-dir> \
-          --out <dir> [--tp-ceiling -0.9] [--dr-threshold 0.3] [--loudness-mismatch-lu 2.0]
+          --out <dir> [--tp-ceiling -1.0] [--loudness-mismatch-lu 2.0]
 
 Verdict procedure per track, declared before the data:
 
-  1. OUR output constraint: true peak above --tp-ceiling loses immediately
-     (reason=ceiling).  The original is not judged by the ceiling — a hot
-     master is expected;
-  2. DR gap >= --dr-threshold: the higher DR wins (reason=dr);
-  3. otherwise the spike count: more click-like sample jumps lose (reason=spikes);
-  4. otherwise comparable/tie.
+  1. OUR output constraint: true peak above the track's effective ceiling
+     plus its tolerance (the runner's delivery_qc contract, or --tp-ceiling
+     without a report) loses immediately (reason=ceiling).  The original is
+     not judged by the ceiling — a hot master is expected;
+  2. otherwise the spike count: click-like sample jumps added vs the source
+     lose (reason=spikes), removed ones win;
+  3. otherwise comparable/tie.
+
+DR and true peak are technical delivery metrics, not fidelity votes: a DR
+change never declares a winner by itself.
 
 LUFS never votes: |ours − orig| beyond --loudness-mismatch-lu marks the track
 `loudness_mismatch` — comparability, not quality.
@@ -53,15 +57,17 @@ import audio_measure  # noqa: E402
 import eval_vs_masters as EV  # noqa: E402  (the measurement kernel + EvalError)
 
 
-PEAK_CEILING_DBFS = -0.9
-DR_THRESHOLD = 0.3
+# Fallback ceiling for outputs without a runner report: the Preserve
+# default. Per-track reports carry their own delivery_qc contract.
+PEAK_CEILING_DBFS = -1.0
+TP_TOLERANCE_DB = 0.05
 LOUDNESS_MISMATCH_LU = 2.0
 TP_AT_CEILING_TOL = 0.05
 DR_REGRESSION_DB = 0.25
 
 LIMITATIONS = [
-    "DR, crest, clipping and spikes are measured on the first ~90 s of each "
-    "file (audio_measure.decode window); LUFS and true peak cover the whole file.",
+    "DR, crest, clipping and spikes are measured on the full decode of each "
+    "file; LUFS and true peak cover the whole file.",
     "LUFS gap is release loudness by design, not a quality verdict.",
     "Metrics are engineering proxies: they prove output constraints and "
     "dynamics/spectrum shifts, not listening preference; blind listening "
@@ -155,27 +161,23 @@ def match_tracks(src_files: list[Path], res_files: list[Path]):
 
 
 def track_verdict(ours: dict, orig: dict, tp_ceiling: float = PEAK_CEILING_DBFS,
-                  dr_threshold: float = DR_THRESHOLD,
+                  tp_tolerance: float = TP_TOLERANCE_DB,
                   loudness_mismatch_lu: float = LOUDNESS_MISMATCH_LU):
-    """The declared ladder: ceiling (ours only) -> DR gap -> spikes -> tie."""
+    """The declared ladder: ceiling+tolerance (ours only) -> spikes -> tie.
+
+    DR and TP are delivery_QC quantities, never fidelity votes."""
     tp = ours.get("true_peak_db")
-    if tp is not None and tp > tp_ceiling:
+    if tp is not None and tp > tp_ceiling + tp_tolerance:
         verdict, reason = "orig_better", "ceiling"
     else:
-        dr_o, dr_i = float(ours["dr14"]), float(orig["dr14"])
-        if dr_o - dr_i >= dr_threshold:
-            verdict, reason = "ours_better", "dr"
-        elif dr_i - dr_o >= dr_threshold:
-            verdict, reason = "orig_better", "dr"
+        sp_o = int(ours.get("spikes_over_09", 0))
+        sp_i = int(orig.get("spikes_over_09", 0))
+        if sp_o > sp_i:
+            verdict, reason = "orig_better", "spikes"
+        elif sp_o < sp_i:
+            verdict, reason = "ours_better", "spikes"
         else:
-            sp_o = int(ours.get("spikes_over_09", 0))
-            sp_i = int(orig.get("spikes_over_09", 0))
-            if sp_o > sp_i:
-                verdict, reason = "orig_better", "spikes"
-            elif sp_o < sp_i:
-                verdict, reason = "ours_better", "spikes"
-            else:
-                verdict, reason = "comparable", "tie"
+            verdict, reason = "comparable", "tie"
     lu_o, lu_i = ours.get("lufs"), orig.get("lufs")
     if lu_o is None or lu_i is None:
         comparability = "unknown"
@@ -254,17 +256,23 @@ def measure_pair(matched, runner_report) -> list[dict]:
             row["status"] = runner.get("status", "unknown")
             row["needs_review"] = bool(runner.get("needs_review", False))
             row["restoration_state"] = runner.get("restoration_state", "unknown")
+            qc = runner.get("delivery_qc") or {}
+            if qc.get("tp_ceiling_dbfs") is not None:
+                row["tp_ceiling_dbfs"] = float(qc["tp_ceiling_dbfs"])
+            if qc.get("tp_tolerance_db") is not None:
+                row["tp_tolerance_db"] = float(qc["tp_tolerance_db"])
         rows.append(row)
     return rows
 
 
 def build_summary(rows: list[dict], matched_via: dict[str, int], skipped: list[dict],
-                  src: Path, restored: Path, tp_ceiling: float,
-                  dr_threshold: float) -> dict:
+                  src: Path, restored: Path, tp_ceiling: float) -> dict:
     verdicts = []
     for row in rows:
         v, reason, comparability = track_verdict(
-            row["res"], row["src"], tp_ceiling=tp_ceiling, dr_threshold=dr_threshold)
+            row["res"], row["src"],
+            tp_ceiling=row.get("tp_ceiling_dbfs", tp_ceiling),
+            tp_tolerance=row.get("tp_tolerance_db", TP_TOLERANCE_DB))
         row["verdict"], row["reason"], row["comparability"] = v, reason, comparability
         verdicts.append(v)
     overall, overall_reason = album_verdict(verdicts)
@@ -281,7 +289,7 @@ def build_summary(rows: list[dict], matched_via: dict[str, int], skipped: list[d
         status_counts[row["status"]] = status_counts.get(row["status"], 0) + 1
     summary = {
         "src": str(src), "restored": str(restored),
-        "tp_ceiling": tp_ceiling, "dr_threshold": dr_threshold,
+        "tp_ceiling": tp_ceiling,
         "tracks_measured": len(rows),
         "matched_via": matched_via,
         "skipped": skipped,
@@ -302,8 +310,11 @@ def build_summary(rows: list[dict], matched_via: dict[str, int], skipped: list[d
             "band_shift_db_mean": float(np.mean([r["band_shift_db"] for r in rows])),
             "punch_retention_median": float(statistics.median(
                 [r["punch_retention_db"] for r in rows])),
-            "tp_at_ceiling": sum(1 for r in rows
-                                 if r["res"]["true_peak_db"] > tp_ceiling - TP_AT_CEILING_TOL),
+            "tp_at_ceiling": sum(
+                1 for r in rows
+                if r["res"]["true_peak_db"]
+                > r.get("tp_ceiling_dbfs", tp_ceiling)
+                - r.get("tp_tolerance_db", TP_AT_CEILING_TOL)),
             "dr_regression_tracks": sum(1 for r in rows
                                         if float(r["res"]["dr14"]) < float(r["src"]["dr14"]) - DR_REGRESSION_DB),
             "clipped_orig_sum": int(sum(r["src"]["clip_samples"] for r in rows)),
@@ -402,7 +413,7 @@ def render_report(summary: dict, rows: list[dict], src: Path, restored: Path) ->
                      "request; do not report them as successfully restored.")
     lines += ["", "## Per track", "",
               "DR/crest/LUFS/TP per side, verdict by the declared ladder "
-              "(ceiling → DR → spikes → tie; LUFS never votes).", "",
+              "(ceiling → spikes → tie; LUFS and DR never vote).", "",
               "| track | DR o→r | crest o→r | LUFS o→r | TP r | band shift | verdict | reason | status |",
               "|---|---|---|---|---|---|---|---|---|"]
     for row in rows:
@@ -427,8 +438,6 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", required=True, help="directory for tracks.csv/verdicts.csv/summary.json/REPORT.md")
     ap.add_argument("--tp-ceiling", type=float, default=PEAK_CEILING_DBFS,
                     help=f"true-peak ceiling for OUR output (default {PEAK_CEILING_DBFS})")
-    ap.add_argument("--dr-threshold", type=float, default=DR_THRESHOLD,
-                    help=f"DR gap that decides a track (default {DR_THRESHOLD})")
     ap.add_argument("--loudness-mismatch-lu", type=float, default=LOUDNESS_MISMATCH_LU,
                     help=f"|LUFS gap| marking loudness_mismatch (default {LOUDNESS_MISMATCH_LU})")
     args = ap.parse_args(argv)
@@ -447,7 +456,7 @@ def main(argv: list[str] | None = None) -> int:
         runner_report = _load_runner_report(restored)
         rows = measure_pair(matched, runner_report)
         summary = build_summary(rows, matched_via, skipped, src, restored,
-                                args.tp_ceiling, args.dr_threshold)
+                                args.tp_ceiling)
         track_rows = [{
             "track": r["track"],
             "dr14_orig": str(int(r["src"]["dr14"])), "dr14_ours": str(int(r["res"]["dr14"])),

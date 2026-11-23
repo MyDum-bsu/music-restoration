@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+uv.lock
 node_modules/
 *.egg-info/
 .DS_Store
@@ -23,3 +24,6 @@ node_modules/
 # machine-local workspace config; config/workspace.example.json is the tracked template
 config/workspace.json
 .zcode/
+
+# corpus/v1 generated audio — reproducible from pinned synthesis blocks; manifests are tracked
+/corpus/audio/
