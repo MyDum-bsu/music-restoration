@@ -38,7 +38,7 @@ def _stft_batch(x: np.ndarray, starts: np.ndarray, w: np.ndarray) -> np.ndarray:
 def _build_gain_matrix(levels: np.ndarray, pol: "ContourPolicy", hop_s: float,
                        band_fcs: np.ndarray) -> np.ndarray:
     """levels [nb_bands, ch, nf] -> gains_db [nb_bands, ch, nf]."""
-    nb, ch, nf = levels.shape
+    nb, _ch, _nf = levels.shape
     gains = np.zeros_like(levels, dtype=np.float64)
     for bi in range(nb):
         fc = band_fcs[bi]
@@ -202,6 +202,28 @@ def contour_expand(x: np.ndarray, sr: int, pol: ContourPolicy | None = None,
 
 
 def true_peak_dbfs(x: np.ndarray, sr: int, factor: int = 4) -> float:
-    """TP with 4x polyphase (controls intersample overshoots)."""
-    up = signal.resample_poly(x, factor, 1, axis=0)
-    return float(20.0 * np.log10(max(float(np.max(np.abs(up))), 1e-12)))
+    """TP with 4x polyphase (controls intersample overshoots).
+
+    Uses bounded-memory overlapping chunks for long tracks (>524k samples) so
+    5-minute 48/96 kHz stereo files do not allocate multi-gigabyte upsampled
+    buffers. Overlap (64 input samples >= 6x default Kaiser half-width) matches
+    full-array `resample_poly` to machine precision.
+    """
+    n = len(x)
+    chunk = 524_288
+    if n <= chunk:
+        up = signal.resample_poly(x, factor, 1, axis=0)
+        peak = float(np.max(np.abs(up))) if up.size else 0.0
+        return float(20.0 * np.log10(max(peak, 1e-12)))
+    pad = 64
+    peak = 0.0
+    for s in range(0, n, chunk):
+        e = min(n, s + chunk)
+        sp = max(0, s - pad)
+        ep = min(n, e + pad)
+        up = signal.resample_poly(x[sp:ep], factor, 1, axis=0)
+        tl = (s - sp) * factor
+        tr = len(up) - (ep - e) * factor
+        seg_peak = float(np.max(np.abs(up[tl:tr]))) if tr > tl else 0.0
+        peak = max(peak, seg_peak)
+    return float(20.0 * np.log10(max(peak, 1e-12)))

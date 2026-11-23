@@ -4,21 +4,27 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import shutil
 import sys
 import uuid
+from pathlib import Path
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from rnext import features as F
 from rnext.dsp import limit
-from rnext.dsp.selection import measure, output_violations, compare
+from rnext.dsp.repair import (
+    DECLIP_ENGINES,
+    finalize_declip_candidate,
+    propose_declip_candidate,
+    select_restoration,
+)
+from rnext.dsp.selection import compare, measure, output_violations
 from rnext.dsp.selection import release_target as compute_release_target
-from rnext.dsp.repair import select_restoration
-from scripts.restore_one import encode_flac
+from rnext.dsp.stereo_safety import evaluate_gapless_boundary, plan_album_headroom
 from scripts import audio_measure
+from scripts.restore_one import encode_flac
 
 # One QC contract for the whole delivery path: the defective Preserve branch
 # repairs under -1 dBTP; the dynamics branch keeps its material ceilings.
@@ -163,22 +169,9 @@ def _sha256(path):
     return digest.hexdigest()
 
 
-def process(source, dest, mode="auto", clip_threshold=None, release_target=None,
-            loudness_target=None):
-    info = F.ffprobe_audio(str(source))
-    if info["ch"] not in (1, 2):
-        raise ValueError("mono/stereo input required; multichannel conversion must be explicit")
-    source_sha256 = _sha256(source)
-    x, sr = F.decode_f32(str(source), strict=True, channels=None)
-    if abs(len(x) / sr - info["dur"]) > max(1e-5, 2 / sr):
-        raise ValueError("decoded duration differs from container")
-    y, report = select_restoration(x, sr, mode=mode, bits=info["bps"] or 24,
-                                  clip_threshold=clip_threshold,
-                                  release_target=release_target)
-    if release_target is not None:
-        report["release_target"] = release_target
-    # The single delivery QC contract: one effective ceiling and tolerance for
-    # candidate selection, decoded-encode verification and the loudness pass.
+def _deliver_track(source, dest, x, sr, info, source_sha256, y, report,
+                   loudness_target=None):
+    """Run the single delivery QC contract, atomic commit, and output hashing."""
     ceiling = _effective_ceiling(report)
     report["delivery_qc"] = {"tp_ceiling_dbfs": ceiling,
                              "tp_tolerance_db": TP_TOLERANCE_DB,
@@ -248,11 +241,159 @@ def process(source, dest, mode="auto", clip_threshold=None, release_target=None,
     return report
 
 
+def process(source, dest, mode="auto", clip_threshold=None, release_target=None,
+            loudness_target=None, declip_engine="current_snapshot",
+            album_gain_db=None):
+    info = F.ffprobe_audio(str(source))
+    if info["ch"] not in (1, 2):
+        raise ValueError("mono/stereo input required; multichannel conversion must be explicit")
+    source_sha256 = _sha256(source)
+    x, sr = F.decode_f32(str(source), strict=True, channels=None)
+    if abs(len(x) / sr - info["dur"]) > max(1e-5, 2 / sr):
+        raise ValueError("decoded duration differs from container")
+    opts = {
+        "mode": mode,
+        "bits": info["bps"] or 24,
+        "clip_threshold": clip_threshold,
+        "release_target": release_target,
+    }
+    if declip_engine != "current_snapshot":
+        opts["declip_engine"] = declip_engine
+    if album_gain_db is not None:
+        opts["album_gain_db"] = album_gain_db
+    y, report = select_restoration(x, sr, **opts)
+    if release_target is not None:
+        report["release_target"] = release_target
+    return _deliver_track(source, dest, x, sr, info, source_sha256, y, report,
+                          loudness_target=loudness_target)
+
+
+def _process_album_declip(files, out, *, clip_threshold=None,
+                          loudness_target=None,
+                          declip_engine="current_snapshot"):
+    """Two-pass Preserve album declip with unified attenuation-only headroom.
+
+    Pass 1 computes pre-gain declip proposals per track. `plan_album_headroom`
+    decides whether a single unified album gain is compatible with immutable
+    kept tracks; if mixed, kept tracks stay byte-for-byte unchanged and the
+    album is explicitly flagged `needs_review=True`, `auto_album_delivery=False`.
+    Pass 2 delivers each track via the identical atomic FLAC + QC contract and
+    verifies adjacent gapless track boundaries jointly.
+    """
+    staged_items = []
+    proposals = []
+    for source in files:
+        try:
+            info = F.ffprobe_audio(str(source))
+            if info["ch"] not in (1, 2):
+                raise ValueError("mono/stereo input required; multichannel conversion must be explicit")
+            source_sha256 = _sha256(source)
+            x, sr = F.decode_f32(str(source), strict=True, channels=None)
+            if abs(len(x) / sr - info["dur"]) > max(1e-5, 2 / sr):
+                raise ValueError("decoded duration differs from container")
+            repaired, mask, prop = propose_declip_candidate(
+                x, sr, bits=info["bps"] or 24, clip_threshold=clip_threshold,
+                declip_engine=declip_engine)
+            staged_items.append({"source": source, "info": info,
+                                 "source_sha256": source_sha256,
+                                 "x": x, "sr": sr, "repaired": repaired,
+                                 "mask": mask, "proposal": prop, "error": None})
+            proposals.append({"track_id": source.name, "status": prop["status"],
+                              "pre_gain_tp_dbfs": prop.get("pre_gain_tp_dbfs")})
+        except Exception as exc:  # noqa: BLE001 — per-track error recorded in batch report
+            staged_items.append({"source": source, "error": str(exc)})
+            proposals.append({"track_id": source.name, "status": "error",
+                              "pre_gain_tp_dbfs": None})
+
+    plan = plan_album_headroom(proposals, ceiling_db=PRESERVE_CEILING_DBFS)
+    rows = []
+    for item in staged_items:
+        source = item["source"]
+        if item["error"] is not None:
+            row = {"source": str(source), "status": "error", "error": item["error"]}
+        else:
+            try:
+                tid = source.name
+                prop = item["proposal"]
+                gain_db = plan["per_track_gain_db"].get(tid, 0.0)
+                if plan["policy"] == "rejected_excessive_album_attenuation":
+                    prop = {**prop, "status": "qc_fallback_original",
+                            "reason": plan["reason"]}
+                    y, report = finalize_declip_candidate(
+                        item["x"], item["repaired"], item["mask"], prop, item["sr"])
+                else:
+                    use_gain = gain_db if prop["status"] == "processed_candidate" else None
+                    y, report = finalize_declip_candidate(
+                        item["x"], item["repaired"], item["mask"], prop, item["sr"],
+                        album_gain_db=use_gain, ceiling_db=PRESERVE_CEILING_DBFS)
+                if plan["needs_review"]:
+                    report["needs_review"] = True
+                report["album_headroom"] = {
+                    "policy": plan["policy"],
+                    "compatible": plan["compatible"],
+                    "auto_album_delivery": plan["auto_album_delivery"],
+                    "album_gain_db": plan["album_gain_db"],
+                    "applied_track_gain_db": float(gain_db),
+                    "max_relative_level_shift_db": plan["max_relative_level_shift_db"],
+                    "reason": plan["reason"],
+                }
+                row = _deliver_track(source, out / source.name, item["x"], item["sr"],
+                                     item["info"], item["source_sha256"], y, report,
+                                     loudness_target=loudness_target)
+            except Exception as exc:  # noqa: BLE001 — per-track error recorded in batch report
+                row = {"source": str(source), "status": "error", "error": str(exc)}
+        rows.append(row)
+        tmp = _tmp_path(out / "report.json")
+        tmp.write_text(json.dumps(rows, ensure_ascii=False, indent=2, allow_nan=False))
+        tmp.replace(out / "report.json")
+        print(f"{source.name}: {row['status']}", flush=True)
+
+    # Joint gapless boundary verification on consecutive delivered stereo tracks.
+    boundaries = []
+    for i in range(len(staged_items) - 1):
+        a, b = staged_items[i], staged_items[i + 1]
+        if a["error"] is not None or b["error"] is not None:
+            continue
+        if a["sr"] != b["sr"] or a["info"]["ch"] != 2 or b["info"]["ch"] != 2:
+            continue
+        dest_a, dest_b = out / a["source"].name, out / b["source"].name
+        if not (dest_a.exists() and dest_b.exists()):
+            continue
+        da, sr_a = F.decode_f32(str(dest_a), strict=True, channels=None)
+        db, sr_b = F.decode_f32(str(dest_b), strict=True, channels=None)
+        if sr_a == sr_b == a["sr"] and da.shape == a["x"].shape and db.shape == b["x"].shape:
+            res = evaluate_gapless_boundary(
+                a["x"], b["x"], da, db, a["sr"],
+                mask_a=a["mask"], mask_b=b["mask"],
+            )
+            boundaries.append({
+                "from_track": a["source"].name,
+                "to_track": b["source"].name,
+                **res,
+            })
+
+    album_safety = {
+        "schema": "album-safety/v1",
+        "declip_engine": declip_engine,
+        "headroom_plan": plan,
+        "gapless_boundaries": boundaries,
+        "all_boundaries_passed": all(b["passed"] for b in boundaries),
+    }
+    tmp_as = _tmp_path(out / "album_safety.json")
+    tmp_as.write_text(json.dumps(album_safety, ensure_ascii=False, indent=2, allow_nan=False) + "\n")
+    tmp_as.replace(out / "album_safety.json")
+    return rows
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--src", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--mode", choices=("auto", "dynamics", "declip"), default="auto")
+    ap.add_argument("--declip-engine", choices=DECLIP_ENGINES, default="current_snapshot",
+                    help="hard-declipping engine (default current_snapshot; aspade_v2 is the E4 freeze candidate)")
+    ap.add_argument("--album-headroom", action="store_true",
+                    help="coordinate attenuation-only unified album gain and joint gapless checks in declip mode")
     ap.add_argument("--clip-threshold", type=float, help="explicit symmetric hard-clip level in PCM units")
     ap.add_argument("--loudness-target", type=float, default=None,
                     help="opt-in release loudness in LUFS: gain the accepted candidate "
@@ -265,6 +406,13 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     if any(out.iterdir()):
         ap.error("output must be an empty directory")
+
+    if args.album_headroom and args.mode == "declip" and len(files) > 1:
+        rows = _process_album_declip(
+            files, out, clip_threshold=args.clip_threshold,
+            loudness_target=args.loudness_target,
+            declip_engine=args.declip_engine)
+        return 1 if any(r["status"] == "error" for r in rows) else 0
 
     # Release-level dynamics prior: the least-compressed third carries the
     # release's own ceiling. Advisory only — a file that cannot be decoded
@@ -287,8 +435,9 @@ def main():
             row = process(source, out / source.name, mode=args.mode,
                           clip_threshold=args.clip_threshold,
                           release_target=release_target,
-                          loudness_target=args.loudness_target)
-        except Exception as exc:
+                          loudness_target=args.loudness_target,
+                          declip_engine=args.declip_engine)
+        except Exception as exc:  # noqa: BLE001 — CLI boundary records per-track error in batch report
             row = {"source": str(source), "status": "error", "error": str(exc)}
         rows.append(row)
         tmp = _tmp_path(out / "report.json")
