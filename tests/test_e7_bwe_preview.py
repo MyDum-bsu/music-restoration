@@ -215,6 +215,38 @@ def test_export_bwe_preview_fails_closed_on_symlink_or_source_alias(tmp_path: Pa
     assert not (out_dir / f"{case['id']}.{res.arm}.synthesized_band_only.flac").exists()
 
 
+def test_export_bwe_preview_fails_closed_on_hardlink_to_source(tmp_path: Path) -> None:
+    """export_bwe_preview refuses hardlinks (same inode) to source before writing anything."""
+    import os
+
+    case = _case_by_id("e7-bl8k-harmonic-mix-48k")
+    _clean, degraded, _am, _meta = e7_corpus.synthesize_e7_arrays(case)
+    sr = int(case["rate"])
+    cutoff = float(case["observed_cutoff_hz"])
+    seg = degraded[: int(sr * 0.3)].copy()
+
+    src_dir = tmp_path / "library"
+    out_dir = tmp_path / "enhance_preview"
+    src_dir.mkdir()
+    out_dir.mkdir()
+    src_path = src_dir / "original_track.wav"
+    corpus_synth.write_wav(src_path, sr, seg, bits=24, seed=0)
+    src_sha_before = hashlib.sha256(src_path.read_bytes()).hexdigest()
+
+    res = e7.run_arm("dsp_harmonic_bwe_preview", seg, sr, cutoff)
+
+    sidecar_hardlink = out_dir / f"{case['id']}.{res.arm}.bwe_preview.sidecar.json"
+    os.link(src_path, sidecar_hardlink)
+
+    with pytest.raises(ValueError, match="hardlink|samefile|inode"):
+        e7.export_bwe_preview(src_path, res, sr, out_dir, case["id"], bits=24)
+
+    # Source file must remain 100% untouched and no FLAC files should have been created.
+    assert hashlib.sha256(src_path.read_bytes()).hexdigest() == src_sha_before
+    assert not (out_dir / f"{case['id']}.{res.arm}.bwe_preview.flac").exists()
+    assert not (out_dir / f"{case['id']}.{res.arm}.synthesized_band_only.flac").exists()
+
+
 def test_zero_headroom_clamped_synth_reports_synthesized_hf_band_false() -> None:
     """If headroom clamp zeroes out synthesized_band, synthesized_hf_band must be False."""
     case = _case_by_id("e7-bl8k-harmonic-mix-48k")

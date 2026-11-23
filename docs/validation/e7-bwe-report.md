@@ -9,7 +9,7 @@
 - **Preserve promotion / neural production dependency / Colab automation:** `False` (isolated opt-in Enhance preview study only).
 - **Manifest SHA-256 (`corpus/dev-e7-bwe-v1.json`):** `0cef1dad5b41758ec6412f998d523a89c4a14dc3a65663231c05c4fdd5912334`
 - **Corpus Builder SHA-256 (`research/build_e7_bwe_corpus.py`):** `2b80e00479bf0245ebc6a8a903d95853ea37730d22228979ef2152d814a8157d`
-- **E7 Harness SHA-256 (`research/e7_bwe_preview.py`):** `e0b84e6c7d3db6dbe97c8964f116037cb2d5f23c44b8d84b8296e85b4e03614a`
+- **E7 Harness SHA-256 (`research/e7_bwe_preview.py`):** `f06a25dd45f0fd92d5433cc3fff454d9271ad928d8d208162515367498ad8954`
 - **Additive & Immutability Contract:** `34/34` runs passed `preview == input + synthesized_band` (`max_err = 0.00e+00`) with `0` input mutations.
 
 > **Honest Semantics Notice:** High-frequency energy above `observed_cutoff_hz` produced by `dsp_harmonic_bwe_preview` is a **synthesized preview** (`synthesized_hf_band = true`, `is_generative_preview = true`, `not_original_restoration = true`), **never** a recovered original waveform. Missing-band LSD and spectral tilt evaluate envelope plausibility only.
@@ -22,18 +22,18 @@
 
 | Stratum (n) | Arm | Obs ΔSNR (dB) | Obs ΔLSD (dB) | Obs Max Err vs In | Miss LSD In (dB) | Miss LSD Out (dB) | Miss ΔLSD (dB) | Synth Energy (dBFS) | Wall (s/min) |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `bandlimit_8k` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 36.51 | 36.51 | +0.00 | 0 (none) | 0.03 |
-| `bandlimit_8k` (3) | `dsp_harmonic_bwe_preview` | +0.000 | -0.0000 | 3.43e-05 | 36.51 | 17.63 | -18.88 | -43.8 | 4.21 |
-| `bandlimit_11k` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 33.74 | 33.74 | +0.00 | 0 (none) | 0.04 |
-| `bandlimit_11k` (3) | `dsp_harmonic_bwe_preview` | +0.000 | -0.0000 | 1.12e-05 | 33.74 | 17.90 | -15.84 | -42.4 | 5.13 |
-| `bandlimit_16k` (2) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 20.62 | 20.62 | +0.00 | 0 (none) | 0.05 |
-| `bandlimit_16k` (2) | `dsp_harmonic_bwe_preview` | +0.000 | -0.0000 | 1.07e-05 | 20.62 | 17.92 | -2.71 | -42.7 | 6.23 |
-| `codec_roundtrip` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 33.94 | 33.94 | +0.00 | 0 (none) | 0.03 |
-| `codec_roundtrip` (3) | `dsp_harmonic_bwe_preview` | -0.000 | +0.0000 | 1.60e-05 | 33.94 | 18.69 | -15.25 | -45.3 | 3.20 |
+| `bandlimit_8k` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 36.51 | 36.51 | +0.00 | 0 (none) | 0.02 |
+| `bandlimit_8k` (3) | `dsp_harmonic_bwe_preview` | +0.000 | -0.0000 | 3.43e-05 | 36.51 | 17.63 | -18.88 | -43.8 | 2.48 |
+| `bandlimit_11k` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 33.74 | 33.74 | +0.00 | 0 (none) | 0.02 |
+| `bandlimit_11k` (3) | `dsp_harmonic_bwe_preview` | +0.000 | -0.0000 | 1.12e-05 | 33.74 | 17.90 | -15.84 | -42.4 | 2.50 |
+| `bandlimit_16k` (2) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 20.62 | 20.62 | +0.00 | 0 (none) | 0.02 |
+| `bandlimit_16k` (2) | `dsp_harmonic_bwe_preview` | +0.000 | -0.0000 | 1.07e-05 | 20.62 | 17.92 | -2.71 | -42.7 | 2.36 |
+| `codec_roundtrip` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 33.94 | 33.94 | +0.00 | 0 (none) | 0.02 |
+| `codec_roundtrip` (3) | `dsp_harmonic_bwe_preview` | -0.000 | +0.0000 | 1.60e-05 | 33.94 | 18.69 | -15.25 | -45.3 | 2.39 |
 | `fullband_clean_control` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 0.00 | 0.00 | +0.00 | 0 (none) | 0.02 |
-| `fullband_clean_control` (3) | `dsp_harmonic_bwe_preview` | +0.000 | +0.0000 | 0.00e+00 | 0.00 | 0.00 | +0.00 | 0 (none) | 0.38 |
-| `ood` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 39.59 | 39.59 | +0.00 | 0 (none) | 0.03 |
-| `ood` (3) | `dsp_harmonic_bwe_preview` | +0.000 | +0.0000 | 2.81e-04 | 39.59 | 19.60 | -19.99 | -45.5 | 2.93 |
+| `fullband_clean_control` (3) | `dsp_harmonic_bwe_preview` | +0.000 | +0.0000 | 0.00e+00 | 0.00 | 0.00 | +0.00 | 0 (none) | 0.32 |
+| `ood` (3) | `safe_resample_only` | +0.000 | +0.0000 | 0.00e+00 | 39.59 | 39.59 | +0.00 | 0 (none) | 0.02 |
+| `ood` (3) | `dsp_harmonic_bwe_preview` | +0.000 | +0.0000 | 2.81e-04 | 39.59 | 19.60 | -19.99 | -45.5 | 2.60 |
 
 ### 2.2 Stereo Coherence (L/R Correlation, ILD, IPD) & Artifact Checks
 

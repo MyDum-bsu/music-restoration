@@ -524,7 +524,8 @@ def export_bwe_preview(
     sidecar_path = out_dir / sidecar_fname
 
     # Fail closed BEFORE any writes: forbid symlinks at any output path and forbid
-    # any output path resolving to the same realpath as `source_path`.
+    # any output path aliasing `source_path` by realpath OR by inode (hardlink).
+    src_st = os.stat(src)
     src_real = os.path.realpath(src)
     for out_p in (preview_path, synth_path, sidecar_path):
         try:
@@ -533,6 +534,8 @@ def export_bwe_preview(
             st = None
         if st is not None and stat.S_ISLNK(st.st_mode):
             raise ValueError(f"refusing to write BWE output through symlink: {out_p}")
+        if st is not None and (st.st_dev, st.st_ino) == (src_st.st_dev, src_st.st_ino):
+            raise ValueError(f"refusing to overwrite source inode (hardlink/samefile): {out_p}")
         if os.path.realpath(out_p) == src_real:
             raise ValueError(f"refusing to overwrite source file via output path: {out_p}")
 
@@ -589,7 +592,17 @@ def export_bwe_preview(
             "source file remains untouched."
         ),
     }
-    sidecar_path.write_text(json.dumps(sidecar, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+    # Write sidecar atomically via temp file + os.replace so no existing inode is mutated in-place.
+    sidecar_payload = json.dumps(sidecar, indent=2, allow_nan=False) + "\n"
+    fd, tmp_name = tempfile.mkstemp(prefix=".e7_sidecar_", suffix=".tmp", dir=str(out_dir))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(sidecar_payload)
+        os.replace(tmp_name, sidecar_path)
+    except Exception:
+        if os.path.exists(tmp_name):
+            os.unlink(tmp_name)
+        raise
 
     # Verify source immutability STRICTLY AFTER all three outputs (including sidecar) are written.
     source_sha256_after = hashlib.sha256(src.read_bytes()).hexdigest()
