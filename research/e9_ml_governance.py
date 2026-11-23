@@ -143,6 +143,10 @@ def assert_not_sealed_source(path_or_name: str | Path, stage: str) -> None:
     if stage == "sealed_test":
         return
     raw = str(path_or_name)
+    if ".." in Path(raw).parts:
+        raise GovernanceError(
+            f"parent_traversal_forbidden: refusing '..' segment in source_manifest '{raw}'"
+        )
     candidates = [raw, Path(raw).name]
     try:
         abs_path = Path(os.path.abspath(raw))

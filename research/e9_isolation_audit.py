@@ -228,7 +228,10 @@ RUNBOOK_UPDATES: tuple[dict[str, str], ...] = (
 
 def _assert_not_sealed_path(path: Path) -> None:
     """Fail closed if a target path points to a sealed corpus manifest, contains any symlink, or cannot be stat/resolved."""
-    candidates = [str(path), path.name]
+    raw = str(path)
+    if ".." in Path(raw).parts:
+        raise ValueError(f"parent_traversal_forbidden: refusing '..' segment in path '{path}'")
+    candidates = [raw, path.name]
     try:
         abs_path = Path(os.path.abspath(str(path)))
         prefix = Path(abs_path.anchor) if abs_path.anchor else Path(".")

@@ -306,6 +306,12 @@ def test_sealed_symlink_alias_and_resolve_oserror_fail_closed(tmp_path, monkeypa
     with pytest.raises(ValueError, match="symlink component"):
         AUDIT._assert_not_sealed_path(dir_link / "any_file.json")
 
+    # Parent traversal ('..') must be rejected BEFORE abspath() collapses `link/..`.
+    with pytest.raises(ValueError, match="parent_traversal_forbidden"):
+        AUDIT._assert_not_sealed_path(dir_link / ".." / "out.json")
+    with pytest.raises(GOV.GovernanceError, match="parent_traversal_forbidden"):
+        GOV.assert_not_sealed_source(dir_link / ".." / "dev.json", stage="dev_selection")
+
     def _eacces(_path):
         raise PermissionError(13, "Permission denied")
 
