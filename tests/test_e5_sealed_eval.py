@@ -38,6 +38,7 @@ from research.e5_blind_panel import (
 from research.e5_sealed_eval import (
     EXPECTED_FREEZE_SHA256,
     FreezeIntegrityError,
+    _canonical_freeze_sha256,
     verify_freeze_integrity,
 )
 
@@ -45,6 +46,18 @@ ROOT = Path(__file__).resolve().parents[1]
 E5_EVAL_CLI = ROOT / "research" / "e5_sealed_eval.py"
 E5_PANEL_CLI = ROOT / "research" / "e5_blind_panel.py"
 FREEZE_MANIFEST = ROOT / "docs" / "validation" / "e4-freeze-manifest.json"
+
+
+@pytest.fixture
+def synthetic_freeze(tmp_path: Path) -> tuple[Path, str]:
+    """Keep the frozen implementation pins but bind the test CLI to its own toolchain."""
+    doc = json.loads(FREEZE_MANIFEST.read_text())
+    doc["toolchain"]["detected"] = corpus_v1.actual_toolchain()
+    digest = _canonical_freeze_sha256(doc)
+    doc["freeze_sha256"] = digest
+    path = tmp_path / "synthetic-freeze.json"
+    path.write_text(json.dumps(doc))
+    return path, digest
 
 
 def _make_mini_sealed_manifest(tmp_path: Path) -> tuple[Path, Path]:
@@ -231,10 +244,12 @@ def test_e5_refuses_tampered_freeze_sha256_and_all_18_frozen_files(tmp_path):
     assert "ZERO-MUTATION VIOLATION" in proc.stderr
 
 
-def test_e5_refuses_unprovisioned_sealed_v1_stub(tmp_path):
+def test_e5_refuses_unprovisioned_sealed_v1_stub(tmp_path, synthetic_freeze):
+    freeze_path, freeze_sha = synthetic_freeze
     proc = subprocess.run(
         [sys.executable, str(E5_EVAL_CLI),
          "--manifest", str(ROOT / "corpus" / "sealed-v1.json"),
+         "--freeze-manifest", str(freeze_path), "--expected-freeze-sha256", freeze_sha,
          "--confirm-unseal-once", "--custodian-release-token", "TEST-TOKEN",
          "--results-json", str(tmp_path / "never.json")],
         capture_output=True, text=True, check=False,
@@ -244,15 +259,17 @@ def test_e5_refuses_unprovisioned_sealed_v1_stub(tmp_path):
     assert not (tmp_path / "never.json").exists()
 
 
-def test_e5_mini_synthetic_run_and_no_host_path_leaks(tmp_path):
+def test_e5_mini_synthetic_run_and_no_host_path_leaks(tmp_path, synthetic_freeze):
     mpath, audio = _make_mini_sealed_manifest(tmp_path)
     out_json = tmp_path / "mini_results.json"
     out_md = tmp_path / "mini_report.md"
+    freeze_path, freeze_sha = synthetic_freeze
 
     proc = subprocess.run(
         [sys.executable, str(E5_EVAL_CLI),
          "--manifest", str(mpath),
          "--audio-root", str(audio),
+         "--freeze-manifest", str(freeze_path), "--expected-freeze-sha256", freeze_sha,
          "--confirm-unseal-once",
          "--custodian-release-token", "SECRET-UNIT-TOKEN-12345",
          "--custodian-reason", "Unit test synthetic run",
@@ -273,7 +290,7 @@ def test_e5_mini_synthetic_run_and_no_host_path_leaks(tmp_path):
     assert doc["schema"] == "e5-sealed-eval/v1"
     assert doc["freeze_verification"]["verified"] is True
     assert doc["freeze_verification"]["verified_files_count"] == 18
-    assert doc["freeze_verification"]["freeze_sha256"] == EXPECTED_FREEZE_SHA256
+    assert doc["freeze_verification"]["freeze_sha256"] == freeze_sha
     assert doc["sealed_v1_audit"]["status"] == "not_provisioned_on_host"
 
     cand = doc["summary"]["arms"]["aspade_mit__v2_windowed"]

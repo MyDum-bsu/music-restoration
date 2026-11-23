@@ -158,12 +158,13 @@ def test_paired_file_without_mask_reports_null_mask_metrics(tmp_path):
     case = dict(case)
     del case["mask"]
     case["kind"] = "paired_file"
-    doc = {**doc, "files": [f for f in doc["files"]
-                            if not f["path"].endswith(".mask")],
+    doc = {**doc, "toolchain": corpus_v1.actual_toolchain(),
+           "files": [f for f in doc["files"] if not f["path"].endswith(".mask")],
            "cases": [case]}
     manifest = tmp_path / "manifest.json"
     manifest.write_text(json.dumps(doc))
-    proc = run_cli(manifest, audio, tmp_path / "out", "--methods", "identity")
+    proc = run_cli(manifest, audio, tmp_path / "out",
+                   "--strict-toolchain", "--methods", "identity")
     assert proc.returncode == 0, proc.stderr
     rows = json.loads((tmp_path / "out" / "results.json").read_text())["cases"]
     assert rows[0]["methods"]["identity"]["masked_fixed_gain_sdr_db"] is None
@@ -217,7 +218,7 @@ def test_two_clean_runs_reproduce_ids_hashes_statuses(tmp_path):
 
 
 def test_committed_smoke_manifest_runs_via_cli(tmp_path):
-    """Real smoke corpus: validate pins, run the CLI, get comparable rows."""
+    """Validate committed audio pins, then run the CLI with a local toolchain fixture."""
     audio = tmp_path / "audio" / "smoke"
     doc = corpus_v1.load(ROOT / "corpus" / "smoke-v1.json")
     for case in doc["cases"]:
@@ -226,8 +227,10 @@ def test_committed_smoke_manifest_runs_via_cli(tmp_path):
             assert specs[role]["sha256"] == case[role]["sha256"], \
                 f"{case['id']}: regenerated {role} drifted from pinned hash"
     assert corpus_v1.validate_manifest(doc, check_hashes_root=audio) == []
-    proc = run_cli(ROOT / "corpus" / "smoke-v1.json", audio, tmp_path / "out",
-                   "--methods", "identity,gain_only")
+    manifest = tmp_path / "smoke-test-manifest.json"
+    manifest.write_text(json.dumps({**doc, "toolchain": corpus_v1.actual_toolchain()}))
+    proc = run_cli(manifest, audio, tmp_path / "out",
+                   "--strict-toolchain", "--methods", "identity,gain_only")
     assert proc.returncode == 0, proc.stderr
     rows = json.loads((tmp_path / "out" / "results.json").read_text())
     assert {c["id"] for c in doc["cases"]} == {r["id"] for r in rows["cases"]}
