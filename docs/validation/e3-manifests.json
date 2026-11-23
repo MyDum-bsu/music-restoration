@@ -10,8 +10,8 @@
     "corpus/sealed-v1.json"
   ],
   "implementation_sha256": {
-    "research/e3_bakeoff.py": "537d0340ce9a82b1e3bbbd43a08d0ccc4bf2ccffbdb946c9b86fb6d183c55891",
-    "research/declip_metrics.py": "95bb7dde9b16eb7f3992cd03c71974bd56e1ddae66f40f42f6eebd844f82b412",
+    "research/e3_bakeoff.py": "f899643372bd6e69fd744961d92c9f6c2cd527c5be851fc04b8fd8dd0b660a77",
+    "research/declip_metrics.py": "84ed7b2e45c2ec7a8d6505be740bcd5e4579def1b820e216b560991d0c2055a9",
     "research/run_benchmark.py": "5b27d4ce0a635ebef4e624a32cd5c69372e6363c534afe548f62e7501b7c65a1",
     "research/corpus_v1.py": "c83ff3233ea7ebc0b1863d4bcc721ee76367c1eede2e42e1d44024ace498bd51",
     "research/corpus_synth.py": "024cdd07aa5f0bfb1f150f29156153e74c1d9f03a7815cf8931dbd9f3d64fc4b",
@@ -24,7 +24,7 @@
     "rnext/dsp/contour.py": "8cf5111572e98cc51c12891f425fe7b7df69ef35f77c13ac5070cd1e104731ed",
     "rnext/dsp/declip.py": "be301f83a682d5d15017a0939ff1f8e28d00e08fe64fed8b344c3d0a0378d5d1",
     "rnext/dsp/clip_detector.py": "409914703fb154c745ff617cfe0cd1c4fa04c1a8d33fb051598537c1b130aab6",
-    "rnext/dsp/declip_methods.py": "2c4168565d800014af532b917774fe7020f3f51e9aa5fca3d19bd52971550c36",
+    "rnext/dsp/declip_methods.py": "5b7b1a3b5ac890cd68eb83f06841309b2270f4528f2f7ef471013adf6503b6fd",
     "rnext/features.py": "ce3e387c3283c526a835652fb2561fb958d2fc09ca80dba6e2495335d9929de2"
   },
   "baseline_manifest": {
@@ -119,11 +119,12 @@
   },
   "dev_decision": {
     "verdict": "select_dev_candidate_for_e4_freeze",
+    "gate_basis": "exploratory_dev_bootstrap_ci_95",
     "selected_candidate": "aspade_mit__v2_windowed",
     "baseline": "current_snapshot_auto",
     "sealed_opened": false,
-    "summary": "Select aspade_mit + detect_hard_clip_v2 as the E4 stereo/album safety and CPU freeze candidate. It outperforms current_snapshot_auto on BOTH dev corpora with strictly positive 95% paired cluster CIs, 100% defect case coverage, 0/9 negative-control FPs, 0 polarity violations, and 3x-41x faster CPU execution, whereas reg_ar_mit only wins on 5-sinusoid dev-v1 signals and loses by -1.40 dB to current_sparse on polyphonic stereo mixes (dev-e3-v1).",
-    "caveat": "Dev selection only. Neither DR, peak reduction, nor dev SDR proves perceptual preference or release readiness. Promotion requires E4 stereo/album safety + CPU freeze and E5 sealed holdout + blind listening panel."
+    "summary": "Select aspade_mit + detect_hard_clip_v2 as the E4 stereo/album safety and CPU freeze candidate. It outperforms current_snapshot_auto on BOTH dev corpora with strictly positive exploratory 95% paired cluster bootstrap CIs (Student-t CIs and Holm-Bonferroni p-values reported alongside), 100% defect case coverage, 0/9 negative-control FPs, 0 polarity violations, and 3x-41x faster CPU execution, whereas reg_ar_mit only wins on 5-sinusoid dev-v1 signals and loses by -1.40 dB to current_sparse on polyphonic stereo mixes (dev-e3-v1).",
+    "caveat": "Exploratory dev selection only. Neither DR, peak reduction, nor dev SDR proves perceptual preference or release readiness. Promotion requires E4 stereo/album safety + CPU freeze and E5 sealed holdout + blind listening panel."
   },
   "runs": {
     "dev-v1": {
@@ -192,11 +193,11 @@
               "whole_track_sisdri_db": 0.0
             }
           ],
-          "wall_seconds_total": 0.13821718597318977,
-          "wall_s_per_audio_min_p50": 0.027589084929786623,
-          "wall_s_per_audio_min_p95": 0.09027757261355872,
+          "wall_seconds_total": 0.0822360300226137,
+          "wall_s_per_audio_min_p50": 0.01939791435142979,
+          "wall_s_per_audio_min_p95": 0.21238361037976564,
           "rss_delta_mb_p95": 84.58476562499993,
-          "process_max_rss_mb": 981.6484375
+          "process_max_rss_mb": 944.92578125
         },
         "gain_only": {
           "n_defects": 5,
@@ -219,7 +220,7 @@
           "conditional_median_masked_delta_sdr_db": null,
           "conditional_mean_sisdri_db": null,
           "polarity_violations_total": 0,
-          "max_reliable_diff": 0.05873075131937944,
+          "max_reliable_diff": 0.0,
           "worst_cases": [
             {
               "id": "dev-clip-eval-a-44k",
@@ -243,11 +244,11 @@
               "whole_track_sisdri_db": 0.0
             }
           ],
-          "wall_seconds_total": 0.1400536161963828,
-          "wall_s_per_audio_min_p50": 0.05384047405095771,
-          "wall_s_per_audio_min_p95": 0.07330954502243042,
-          "rss_delta_mb_p95": 40.25253906249996,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 2.856649739027489,
+          "wall_s_per_audio_min_p50": 0.9854790896529069,
+          "wall_s_per_audio_min_p95": 2.7792890415759754,
+          "rss_delta_mb_p95": 87.75996093749993,
+          "process_max_rss_mb": 944.92578125
         },
         "current_sparse": {
           "n_defects": 5,
@@ -294,11 +295,11 @@
               "whole_track_sisdri_db": 10.178278538369824
             }
           ],
-          "wall_seconds_total": 211.85359777201666,
-          "wall_s_per_audio_min_p50": 186.60115083141136,
-          "wall_s_per_audio_min_p95": 352.5611155573861,
-          "rss_delta_mb_p95": 82.25039062499998,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 321.3072131019435,
+          "wall_s_per_audio_min_p50": 222.41657727039242,
+          "wall_s_per_audio_min_p95": 949.5284183288311,
+          "rss_delta_mb_p95": 119.95585937499996,
+          "process_max_rss_mb": 944.92578125
         },
         "aspade_mit": {
           "n_defects": 5,
@@ -345,11 +346,11 @@
               "whole_track_sisdri_db": 15.00810289262602
             }
           ],
-          "wall_seconds_total": 15.190021181944758,
-          "wall_s_per_audio_min_p50": 4.527080962143373,
-          "wall_s_per_audio_min_p95": 14.83852792344987,
-          "rss_delta_mb_p95": 57.02265624999998,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 15.612157481024042,
+          "wall_s_per_audio_min_p50": 6.232329248849292,
+          "wall_s_per_audio_min_p95": 13.563333554629933,
+          "rss_delta_mb_p95": 171.0902343749999,
+          "process_max_rss_mb": 944.92578125
         },
         "ss_pew_mit": {
           "n_defects": 5,
@@ -396,11 +397,11 @@
               "whole_track_sisdri_db": 16.616799532285164
             }
           ],
-          "wall_seconds_total": 17.356506734911818,
-          "wall_s_per_audio_min_p50": 4.620108397502918,
-          "wall_s_per_audio_min_p95": 11.075856645678869,
-          "rss_delta_mb_p95": 104.34257812499996,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 20.622751789051108,
+          "wall_s_per_audio_min_p50": 8.99414316578338,
+          "wall_s_per_audio_min_p95": 13.341217296227112,
+          "rss_delta_mb_p95": 142.10937499999994,
+          "process_max_rss_mb": 944.92578125
         },
         "reg_ar_mit": {
           "n_defects": 5,
@@ -447,11 +448,11 @@
               "whole_track_sisdri_db": 26.46708142107319
             }
           ],
-          "wall_seconds_total": 15.849311798985582,
-          "wall_s_per_audio_min_p50": 1.6727727800025605,
-          "wall_s_per_audio_min_p95": 7.1213971737021815,
-          "rss_delta_mb_p95": 104.61953124999997,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 19.91164561593905,
+          "wall_s_per_audio_min_p50": 2.7637304599920753,
+          "wall_s_per_audio_min_p95": 9.218644766867758,
+          "rss_delta_mb_p95": 143.66328124999995,
+          "process_max_rss_mb": 944.92578125
         }
       },
       "detectors": {
@@ -635,8 +636,8 @@
           "conditional_mean_masked_delta_sdr_db": 2.9273439724868275,
           "conditional_median_masked_delta_sdr_db": 2.9273439724868275,
           "conditional_mean_sisdri_db": 2.2734928649560513,
-          "polarity_violations_total": 84478,
-          "max_reliable_diff": 0.35823284536873723,
+          "polarity_violations_total": null,
+          "max_reliable_diff": null,
           "worst_cases": [
             {
               "id": "dev-clip-eval-c-late90-44k",
@@ -660,11 +661,11 @@
               "whole_track_sisdri_db": 0.0
             }
           ],
-          "wall_seconds_total": 82.02512545487843,
-          "wall_s_per_audio_min_p50": 5.990026610903442,
-          "wall_s_per_audio_min_p95": 200.39164800674178,
-          "rss_delta_mb_p95": 58.502343749999994,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 72.30474303499795,
+          "wall_s_per_audio_min_p50": 6.804829237429658,
+          "wall_s_per_audio_min_p95": 154.82195847414542,
+          "rss_delta_mb_p95": 74.02187499999998,
+          "process_max_rss_mb": 944.92578125
         },
         "current_sparse__v1_current": {
           "n_defects": 5,
@@ -711,11 +712,11 @@
               "whole_track_sisdri_db": 0.0
             }
           ],
-          "wall_seconds_total": 85.08669780305354,
-          "wall_s_per_audio_min_p50": 0.5751210452872328,
-          "wall_s_per_audio_min_p95": 282.9975320546729,
-          "rss_delta_mb_p95": 69.15136718749994,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 59.2202030539047,
+          "wall_s_per_audio_min_p50": 0.7524545726482756,
+          "wall_s_per_audio_min_p95": 125.50615073380409,
+          "rss_delta_mb_p95": 70.58710937499995,
+          "process_max_rss_mb": 944.92578125
         },
         "aspade_mit__v1_current": {
           "n_defects": 5,
@@ -762,11 +763,11 @@
               "whole_track_sisdri_db": 0.0
             }
           ],
-          "wall_seconds_total": 8.366580559115391,
-          "wall_s_per_audio_min_p50": 0.5639858832582831,
-          "wall_s_per_audio_min_p95": 7.138128471081826,
-          "rss_delta_mb_p95": 110.9392578124999,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 7.39106659789104,
+          "wall_s_per_audio_min_p50": 0.7254397297510877,
+          "wall_s_per_audio_min_p95": 8.155195511140446,
+          "rss_delta_mb_p95": 90.82753906249992,
+          "process_max_rss_mb": 944.92578125
         },
         "ss_pew_mit__v1_current": {
           "n_defects": 5,
@@ -813,11 +814,11 @@
               "whole_track_sisdri_db": 0.0
             }
           ],
-          "wall_seconds_total": 6.984736129932571,
-          "wall_s_per_audio_min_p50": 0.5644601822132245,
-          "wall_s_per_audio_min_p95": 7.022170843989282,
-          "rss_delta_mb_p95": 120.8949218749999,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 9.19227889587637,
+          "wall_s_per_audio_min_p50": 0.7280841695028357,
+          "wall_s_per_audio_min_p95": 9.038874015413885,
+          "rss_delta_mb_p95": 120.9837890624999,
+          "process_max_rss_mb": 944.92578125
         },
         "reg_ar_mit__v1_current": {
           "n_defects": 5,
@@ -864,11 +865,11 @@
               "whole_track_sisdri_db": 0.0
             }
           ],
-          "wall_seconds_total": 13.908521121076774,
-          "wall_s_per_audio_min_p50": 0.5644427232327871,
-          "wall_s_per_audio_min_p95": 6.321752382534724,
-          "rss_delta_mb_p95": 122.3041015624999,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 53.749657860957086,
+          "wall_s_per_audio_min_p50": 0.7212246109265834,
+          "wall_s_per_audio_min_p95": 23.60937208722979,
+          "rss_delta_mb_p95": 121.6134765624999,
+          "process_max_rss_mb": 944.92578125
         },
         "current_sparse__v2_windowed": {
           "n_defects": 5,
@@ -915,11 +916,11 @@
               "whole_track_sisdri_db": 10.840973816589269
             }
           ],
-          "wall_seconds_total": 197.74094161111861,
-          "wall_s_per_audio_min_p50": 105.46847822405297,
-          "wall_s_per_audio_min_p95": 388.1240812507749,
-          "rss_delta_mb_p95": 117.55585937499995,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 248.1715025479789,
+          "wall_s_per_audio_min_p50": 199.4859290124504,
+          "wall_s_per_audio_min_p95": 522.340175158868,
+          "rss_delta_mb_p95": 67.94863281249998,
+          "process_max_rss_mb": 944.92578125
         },
         "aspade_mit__v2_windowed": {
           "n_defects": 5,
@@ -966,11 +967,11 @@
               "whole_track_sisdri_db": 14.7908873732192
             }
           ],
-          "wall_seconds_total": 16.52652333799051,
-          "wall_s_per_audio_min_p50": 6.2712607299909,
-          "wall_s_per_audio_min_p95": 12.17913667994435,
-          "rss_delta_mb_p95": 132.04199218749994,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 19.460538043931592,
+          "wall_s_per_audio_min_p50": 8.54710064953036,
+          "wall_s_per_audio_min_p95": 15.206656759022735,
+          "rss_delta_mb_p95": 144.54433593749994,
+          "process_max_rss_mb": 944.92578125
         },
         "ss_pew_mit__v2_windowed": {
           "n_defects": 5,
@@ -1017,11 +1018,11 @@
               "whole_track_sisdri_db": 13.44667082161996
             }
           ],
-          "wall_seconds_total": 16.87739534501452,
-          "wall_s_per_audio_min_p50": 6.354111462569563,
-          "wall_s_per_audio_min_p95": 12.49459723077598,
-          "rss_delta_mb_p95": 143.28867187499992,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 21.629586294002365,
+          "wall_s_per_audio_min_p50": 9.497906240285374,
+          "wall_s_per_audio_min_p95": 13.417644705361454,
+          "rss_delta_mb_p95": 144.55703124999994,
+          "process_max_rss_mb": 944.92578125
         },
         "reg_ar_mit__v2_windowed": {
           "n_defects": 5,
@@ -1068,11 +1069,11 @@
               "whole_track_sisdri_db": 19.5180150389956
             }
           ],
-          "wall_seconds_total": 19.103528070030734,
-          "wall_s_per_audio_min_p50": 2.3541750249569304,
-          "wall_s_per_audio_min_p95": 9.20467908617739,
-          "rss_delta_mb_p95": 135.73437499999994,
-          "process_max_rss_mb": 981.6484375
+          "wall_seconds_total": 20.739251984865405,
+          "wall_s_per_audio_min_p50": 3.224869249970652,
+          "wall_s_per_audio_min_p95": 10.285650727973042,
+          "rss_delta_mb_p95": 144.95605468749994,
+          "process_max_rss_mb": 944.92578125
         }
       },
       "paired_ci_masked_delta_sdr_db": {
@@ -1095,14 +1096,14 @@
           "n_clusters": 5,
           "mean": 10.59321227415992,
           "median": 15.00669494336313,
-          "std": 8.544175577299033,
-          "min": -3.243988084930084,
+          "std": 8.54417557729903,
+          "min": -3.2439880849300824,
           "max": 17.80414094174632,
           "worst_cluster": "t-dev-7",
-          "bootstrap_ci_low": 3.2247116813644134,
+          "bootstrap_ci_low": 3.2247116813644157,
           "bootstrap_ci_high": 16.26212810567285,
-          "t_ci_low": -0.015782934504150248,
-          "t_ci_high": 21.202207482823994,
+          "t_ci_low": -0.01578293450414847,
+          "t_ci_high": 21.20220748282399,
           "sign_flip_p_value": 0.125,
           "holm_bonferroni_p": 1.0
         },
@@ -1156,10 +1157,10 @@
           "mean": 18.47844465071857,
           "median": 16.710400639021543,
           "std": 15.490681439750672,
-          "min": -3.243634214427921,
+          "min": -3.243634214427919,
           "max": 38.19874066746253,
           "worst_cluster": "t-dev-7",
-          "bootstrap_ci_low": 6.199162703650583,
+          "bootstrap_ci_low": 6.199162703650584,
           "bootstrap_ci_high": 31.06458763278485,
           "t_ci_low": -0.7557768006630923,
           "t_ci_high": 37.71266610210023,
@@ -1216,10 +1217,10 @@
           "mean": 26.456211696308024,
           "median": 26.464656143839797,
           "std": 22.82462607407768,
-          "min": -3.1496679518140773,
+          "min": -3.1496679518140756,
           "max": 60.622750432415685,
           "worst_cluster": "t-dev-7",
-          "bootstrap_ci_low": 8.696061686447473,
+          "bootstrap_ci_low": 8.696061686447475,
           "bootstrap_ci_high": 46.04231423086916,
           "t_ci_low": -1.8843047723371527,
           "t_ci_high": 54.7967281649532,
@@ -1638,11 +1639,24 @@
       },
       "dev_decision": {
         "verdict": "select_dev_candidate_for_e4_freeze",
+        "gate_basis": "exploratory_dev_bootstrap_ci_95",
         "selected_candidate": "reg_ar_mit__v2_windowed",
         "baseline": "current_snapshot_auto",
         "sealed_opened": false,
-        "reason": "reg_ar_mit__v2_windowed passes zero negative-control FP, zero polarity violations, zero failures, and achieves positive 95% paired cluster CI over current_snapshot_auto on dev without touching sealed.",
-        "caveat": "Dev selection only \u2014 NOT a release claim or perceptual preference claim. Requires E4 stereo/album safety + CPU freeze and E5 sealed + blind panel."
+        "selected_paired_stats": {
+          "bootstrap_ci_95": [
+            6.763476416737587,
+            42.529260979704475
+          ],
+          "student_t_ci_95": [
+            -7.465457179123728,
+            50.01902180435377
+          ],
+          "sign_flip_p_value": 0.0625,
+          "holm_bonferroni_p": 0.875
+        },
+        "reason": "reg_ar_mit__v2_windowed passes zero negative-control FP, zero polarity violations, zero failures, and achieves positive exploratory 95% paired cluster bootstrap CI over current_snapshot_auto on dev without touching sealed.",
+        "caveat": "Exploratory dev selection only (unadjusted bootstrap CI gate; see reported Student-t CI and Holm-Bonferroni p) \u2014 NOT a release claim or perceptual preference claim. Requires E4 stereo/album safety + CPU freeze and E5 sealed + blind panel."
       }
     },
     "dev-e3-v1": {
@@ -1711,11 +1725,11 @@
               "whole_track_sisdri_db": 0.0
             }
           ],
-          "wall_seconds_total": 0.1933128230739385,
-          "wall_s_per_audio_min_p50": 0.02355478980462067,
-          "wall_s_per_audio_min_p95": 0.056805884780655735,
-          "rss_delta_mb_p95": 22.34824218749983,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 0.06829100591130555,
+          "wall_s_per_audio_min_p50": 0.02470654423434652,
+          "wall_s_per_audio_min_p95": 0.04159561169217338,
+          "rss_delta_mb_p95": 22.31171874999983,
+          "process_max_rss_mb": 903.015625
         },
         "gain_only": {
           "n_defects": 12,
@@ -1738,7 +1752,7 @@
           "conditional_median_masked_delta_sdr_db": null,
           "conditional_mean_sisdri_db": null,
           "polarity_violations_total": 0,
-          "max_reliable_diff": 0.05873075131937944,
+          "max_reliable_diff": 0.0,
           "worst_cases": [
             {
               "id": "e3-asym-neg-44k-24b",
@@ -1762,11 +1776,11 @@
               "whole_track_sisdri_db": 0.0
             }
           ],
-          "wall_seconds_total": 0.32723451405763626,
-          "wall_s_per_audio_min_p50": 0.04259626482962631,
-          "wall_s_per_audio_min_p95": 0.13937567681663804,
-          "rss_delta_mb_p95": 9.290429687499913,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 2.0590152120566927,
+          "wall_s_per_audio_min_p50": 0.5746149453625549,
+          "wall_s_per_audio_min_p95": 1.1453641503758263,
+          "rss_delta_mb_p95": 27.767578124999787,
+          "process_max_rss_mb": 903.015625
         },
         "current_sparse": {
           "n_defects": 12,
@@ -1813,11 +1827,11 @@
               "whole_track_sisdri_db": 4.471970815661578
             }
           ],
-          "wall_seconds_total": 287.41647602792364,
-          "wall_s_per_audio_min_p50": 110.16883623742615,
-          "wall_s_per_audio_min_p95": 528.2205235123977,
-          "rss_delta_mb_p95": 52.73144531249983,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 359.5238874350325,
+          "wall_s_per_audio_min_p50": 112.3407942079939,
+          "wall_s_per_audio_min_p95": 844.8551232094323,
+          "rss_delta_mb_p95": 42.16484374999992,
+          "process_max_rss_mb": 903.015625
         },
         "aspade_mit": {
           "n_defects": 12,
@@ -1864,11 +1878,11 @@
               "whole_track_sisdri_db": 5.865456709303295
             }
           ],
-          "wall_seconds_total": 66.03519200399751,
-          "wall_s_per_audio_min_p50": 13.599186982173705,
-          "wall_s_per_audio_min_p95": 175.45678717263212,
-          "rss_delta_mb_p95": 73.89999999999978,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 87.84821780002676,
+          "wall_s_per_audio_min_p50": 13.144448039674899,
+          "wall_s_per_audio_min_p95": 254.71648518714926,
+          "rss_delta_mb_p95": 63.95624999999977,
+          "process_max_rss_mb": 903.015625
         },
         "ss_pew_mit": {
           "n_defects": 12,
@@ -1915,11 +1929,11 @@
               "whole_track_sisdri_db": 4.376254460966159
             }
           ],
-          "wall_seconds_total": 75.22524443501607,
-          "wall_s_per_audio_min_p50": 15.144858855055645,
-          "wall_s_per_audio_min_p95": 211.37445310808835,
-          "rss_delta_mb_p95": 73.58671874999979,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 98.98718692711554,
+          "wall_s_per_audio_min_p50": 14.692448250279995,
+          "wall_s_per_audio_min_p95": 260.39205941796513,
+          "rss_delta_mb_p95": 67.55312499999977,
+          "process_max_rss_mb": 903.015625
         },
         "reg_ar_mit": {
           "n_defects": 12,
@@ -1966,11 +1980,11 @@
               "whole_track_sisdri_db": 5.13636615595459
             }
           ],
-          "wall_seconds_total": 29.22620854905108,
-          "wall_s_per_audio_min_p50": 5.697538814856671,
-          "wall_s_per_audio_min_p95": 88.41131935334123,
-          "rss_delta_mb_p95": 78.96308593749978,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 33.49903051101137,
+          "wall_s_per_audio_min_p50": 5.820851474854862,
+          "wall_s_per_audio_min_p95": 87.8693161985138,
+          "rss_delta_mb_p95": 68.44160156249977,
+          "process_max_rss_mb": 903.015625
         }
       },
       "detectors": {
@@ -2252,8 +2266,8 @@
           "conditional_mean_masked_delta_sdr_db": 7.619564815877617,
           "conditional_median_masked_delta_sdr_db": 7.798498773100471,
           "conditional_mean_sisdri_db": 7.7603031235910525,
-          "polarity_violations_total": 7995,
-          "max_reliable_diff": 0.05884113573939276,
+          "polarity_violations_total": null,
+          "max_reliable_diff": null,
           "worst_cases": [
             {
               "id": "e3-late-defect-44k-16b",
@@ -2277,11 +2291,11 @@
               "whole_track_sisdri_db": 4.550153679131903
             }
           ],
-          "wall_seconds_total": 187.25992044212762,
-          "wall_s_per_audio_min_p50": 103.86453543775133,
-          "wall_s_per_audio_min_p95": 457.788479669718,
-          "rss_delta_mb_p95": 55.705273437499976,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 243.52016702690162,
+          "wall_s_per_audio_min_p50": 103.37980150507065,
+          "wall_s_per_audio_min_p95": 667.5200690940394,
+          "rss_delta_mb_p95": 48.334570312499956,
+          "process_max_rss_mb": 903.015625
         },
         "current_sparse__v1_current": {
           "n_defects": 12,
@@ -2328,11 +2342,11 @@
               "whole_track_sisdri_db": 4.550153679131903
             }
           ],
-          "wall_seconds_total": 194.54250296007376,
-          "wall_s_per_audio_min_p50": 103.29999944282463,
-          "wall_s_per_audio_min_p95": 510.98204242347845,
-          "rss_delta_mb_p95": 65.1636718749999,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 208.909925480315,
+          "wall_s_per_audio_min_p50": 101.65365065942751,
+          "wall_s_per_audio_min_p95": 547.7314396326401,
+          "rss_delta_mb_p95": 52.05839843749988,
+          "process_max_rss_mb": 903.015625
         },
         "aspade_mit__v1_current": {
           "n_defects": 12,
@@ -2379,11 +2393,11 @@
               "whole_track_sisdri_db": 5.809745427551881
             }
           ],
-          "wall_seconds_total": 76.51603966503171,
-          "wall_s_per_audio_min_p50": 14.96955155278556,
-          "wall_s_per_audio_min_p95": 226.13296230421082,
-          "rss_delta_mb_p95": 63.2910156249999,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 96.97470672708005,
+          "wall_s_per_audio_min_p50": 14.525842387665762,
+          "wall_s_per_audio_min_p95": 290.83468821435196,
+          "rss_delta_mb_p95": 52.08828124999988,
+          "process_max_rss_mb": 903.015625
         },
         "ss_pew_mit__v1_current": {
           "n_defects": 12,
@@ -2430,11 +2444,11 @@
               "whole_track_sisdri_db": 4.370837720443838
             }
           ],
-          "wall_seconds_total": 70.26498076005373,
-          "wall_s_per_audio_min_p50": 15.85357559248223,
-          "wall_s_per_audio_min_p95": 209.79165206925245,
-          "rss_delta_mb_p95": 63.2910156249999,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 72.92358980327845,
+          "wall_s_per_audio_min_p50": 15.17574363053427,
+          "wall_s_per_audio_min_p95": 226.22083955176637,
+          "rss_delta_mb_p95": 55.82363281249989,
+          "process_max_rss_mb": 903.015625
         },
         "reg_ar_mit__v1_current": {
           "n_defects": 12,
@@ -2481,11 +2495,11 @@
               "whole_track_sisdri_db": 5.125754326715381
             }
           ],
-          "wall_seconds_total": 27.942907419113908,
-          "wall_s_per_audio_min_p50": 5.605103557754774,
-          "wall_s_per_audio_min_p95": 99.62470733693038,
-          "rss_delta_mb_p95": 63.3076171874999,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 28.05793977889698,
+          "wall_s_per_audio_min_p50": 5.97784842713736,
+          "wall_s_per_audio_min_p95": 94.74666369400799,
+          "rss_delta_mb_p95": 55.82363281249989,
+          "process_max_rss_mb": 903.015625
         },
         "current_sparse__v2_windowed": {
           "n_defects": 12,
@@ -2532,11 +2546,11 @@
               "whole_track_sisdri_db": 4.471970815661578
             }
           ],
-          "wall_seconds_total": 255.6851351216319,
-          "wall_s_per_audio_min_p50": 104.18090543942526,
-          "wall_s_per_audio_min_p95": 472.17051012747106,
-          "rss_delta_mb_p95": 69.83164062499986,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 244.75783154991223,
+          "wall_s_per_audio_min_p50": 102.71276276223944,
+          "wall_s_per_audio_min_p95": 475.4673082671942,
+          "rss_delta_mb_p95": 56.829687499999835,
+          "process_max_rss_mb": 903.015625
         },
         "aspade_mit__v2_windowed": {
           "n_defects": 12,
@@ -2583,11 +2597,11 @@
               "whole_track_sisdri_db": 5.865456709303295
             }
           ],
-          "wall_seconds_total": 67.67572120099794,
-          "wall_s_per_audio_min_p50": 13.890526439936366,
-          "wall_s_per_audio_min_p95": 178.10019683568675,
-          "rss_delta_mb_p95": 74.9164062499998,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 70.51407823595218,
+          "wall_s_per_audio_min_p50": 12.815452327486128,
+          "wall_s_per_audio_min_p95": 195.38436688279035,
+          "rss_delta_mb_p95": 63.69414062499977,
+          "process_max_rss_mb": 903.015625
         },
         "ss_pew_mit__v2_windowed": {
           "n_defects": 12,
@@ -2634,11 +2648,11 @@
               "whole_track_sisdri_db": 4.376254460966159
             }
           ],
-          "wall_seconds_total": 77.7239867389435,
-          "wall_s_per_audio_min_p50": 15.893837024923414,
-          "wall_s_per_audio_min_p95": 217.84046715422298,
-          "rss_delta_mb_p95": 74.89902343749979,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 76.6903309970512,
+          "wall_s_per_audio_min_p50": 14.588867692655185,
+          "wall_s_per_audio_min_p95": 218.15835237431745,
+          "rss_delta_mb_p95": 67.42773437499977,
+          "process_max_rss_mb": 903.015625
         },
         "reg_ar_mit__v2_windowed": {
           "n_defects": 12,
@@ -2685,11 +2699,11 @@
               "whole_track_sisdri_db": 5.136210033278374
             }
           ],
-          "wall_seconds_total": 31.09099212870933,
-          "wall_s_per_audio_min_p50": 5.715967169817304,
-          "wall_s_per_audio_min_p95": 102.95814195818092,
-          "rss_delta_mb_p95": 74.9193359374998,
-          "process_max_rss_mb": 915.515625
+          "wall_seconds_total": 32.84123934409581,
+          "wall_s_per_audio_min_p50": 6.564751942787552,
+          "wall_s_per_audio_min_p95": 91.28950093330056,
+          "rss_delta_mb_p95": 67.43066406249977,
+          "process_max_rss_mb": 903.015625
         }
       },
       "paired_ci_masked_delta_sdr_db": {
@@ -2710,15 +2724,15 @@
         },
         "oracle:aspade_mit_vs_gain_only": {
           "n_clusters": 12,
-          "mean": 7.4805972384261885,
+          "mean": 7.480597238426189,
           "median": 8.33648561789911,
-          "std": 4.3770027762255435,
-          "min": -2.666889267415945,
+          "std": 4.377002776225543,
+          "min": -2.666889267415942,
           "max": 11.60148127948495,
           "worst_cluster": "t-e3-12",
-          "bootstrap_ci_low": 4.911521955886381,
-          "bootstrap_ci_high": 9.583907311604337,
-          "t_ci_low": 4.699582353050424,
+          "bootstrap_ci_low": 4.911521955886383,
+          "bootstrap_ci_high": 9.583907311604339,
+          "t_ci_low": 4.699582353050425,
           "t_ci_high": 10.261612123801953,
           "sign_flip_p_value": 0.00146484375,
           "holm_bonferroni_p": 0.017578125
@@ -2770,16 +2784,16 @@
         },
         "oracle:ss_pew_mit_vs_gain_only": {
           "n_clusters": 12,
-          "mean": 6.883864559057535,
+          "mean": 6.883864559057538,
           "median": 7.940694223533319,
-          "std": 4.323588656118743,
-          "min": -2.2834985767980327,
+          "std": 4.323588656118742,
+          "min": -2.28349857679803,
           "max": 11.537873456290956,
           "worst_cluster": "t-e3-12",
-          "bootstrap_ci_low": 4.423988473222561,
-          "bootstrap_ci_high": 9.042694931405425,
-          "t_ci_low": 4.136787386473069,
-          "t_ci_high": 9.630941731642002,
+          "bootstrap_ci_low": 4.423988473222563,
+          "bootstrap_ci_high": 9.042694931405427,
+          "t_ci_low": 4.136787386473072,
+          "t_ci_high": 9.630941731642004,
           "sign_flip_p_value": 0.00146484375,
           "holm_bonferroni_p": 0.017578125
         },
@@ -2832,11 +2846,11 @@
           "n_clusters": 12,
           "mean": 4.985759831614518,
           "median": 5.6923797284605175,
-          "std": 2.4178090173763365,
-          "min": -1.6636812016003832,
+          "std": 2.417809017376336,
+          "min": -1.6636812016003804,
           "max": 6.923932822039209,
           "worst_cluster": "t-e3-12",
-          "bootstrap_ci_low": 3.5081484686362234,
+          "bootstrap_ci_low": 3.5081484686362248,
           "bootstrap_ci_high": 6.057389610709068,
           "t_ci_low": 3.4495572722189145,
           "t_ci_high": 6.521962391010122,
@@ -2924,13 +2938,13 @@
           "n_clusters": 12,
           "mean": 7.771166775540031,
           "median": 8.425326585990174,
-          "std": 4.047981202078296,
-          "min": -0.5749680184613659,
+          "std": 4.0479812020782955,
+          "min": -0.5749680184613641,
           "max": 11.758563514380292,
           "worst_cluster": "t-e3-12",
-          "bootstrap_ci_low": 5.44256975679372,
+          "bootstrap_ci_low": 5.442569756793722,
           "bootstrap_ci_high": 9.766728112633862,
-          "t_ci_low": 5.199202224855237,
+          "t_ci_low": 5.199202224855238,
           "t_ci_high": 10.343131326224825,
           "sign_flip_p_value": 0.0009765625,
           "holm_bonferroni_p": 0.013671875
@@ -2984,13 +2998,13 @@
           "n_clusters": 12,
           "mean": 7.133918296323159,
           "median": 8.018184333072352,
-          "std": 4.075945866298331,
-          "min": -0.47359712437298995,
+          "std": 4.07594586629833,
+          "min": -0.4735971243729882,
           "max": 11.784039697334372,
           "worst_cluster": "t-e3-12",
-          "bootstrap_ci_low": 4.843751656031423,
+          "bootstrap_ci_low": 4.843751656031424,
           "bootstrap_ci_high": 9.198274909585505,
-          "t_ci_low": 4.544185845676576,
+          "t_ci_low": 4.5441858456765765,
           "t_ci_high": 9.723650746969742,
           "sign_flip_p_value": 0.0009765625,
           "holm_bonferroni_p": 0.013671875
@@ -3044,13 +3058,13 @@
           "n_clusters": 12,
           "mean": 5.151081502276645,
           "median": 5.789102117130652,
-          "std": 2.108027709918282,
-          "min": -0.3239954552541917,
+          "std": 2.1080277099182814,
+          "min": -0.32399545525418993,
           "max": 6.939602274486155,
           "worst_cluster": "t-e3-12",
           "bootstrap_ci_low": 3.892254785946355,
           "bootstrap_ci_high": 6.1123555304660995,
-          "t_ci_low": 3.8117045953415416,
+          "t_ci_low": 3.811704595341542,
           "t_ci_high": 6.490458409211747,
           "sign_flip_p_value": 0.0009765625,
           "holm_bonferroni_p": 0.013671875
@@ -3255,11 +3269,24 @@
       },
       "dev_decision": {
         "verdict": "select_dev_candidate_for_e4_freeze",
+        "gate_basis": "exploratory_dev_bootstrap_ci_95",
         "selected_candidate": "aspade_mit__v2_windowed",
         "baseline": "current_snapshot_auto",
         "sealed_opened": false,
-        "reason": "aspade_mit__v2_windowed passes zero negative-control FP, zero polarity violations, zero failures, and achieves positive 95% paired cluster CI over current_snapshot_auto on dev without touching sealed.",
-        "caveat": "Dev selection only \u2014 NOT a release claim or perceptual preference claim. Requires E4 stereo/album safety + CPU freeze and E5 sealed + blind panel."
+        "selected_paired_stats": {
+          "bootstrap_ci_95": [
+            0.2257904997294487,
+            1.461564761463254
+          ],
+          "student_t_ci_95": [
+            0.20820662765409692,
+            1.740346215059109
+          ],
+          "sign_flip_p_value": 0.0224609375,
+          "holm_bonferroni_p": 0.134765625
+        },
+        "reason": "aspade_mit__v2_windowed passes zero negative-control FP, zero polarity violations, zero failures, and achieves positive exploratory 95% paired cluster bootstrap CI over current_snapshot_auto on dev without touching sealed.",
+        "caveat": "Exploratory dev selection only (unadjusted bootstrap CI gate; see reported Student-t CI and Holm-Bonferroni p) \u2014 NOT a release claim or perceptual preference claim. Requires E4 stereo/album safety + CPU freeze and E5 sealed + blind panel."
       }
     }
   }

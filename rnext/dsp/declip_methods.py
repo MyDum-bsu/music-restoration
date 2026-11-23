@@ -438,6 +438,37 @@ def _fit_regularized_ar(x: np.ndarray, order: int, ar_reg: float) -> np.ndarray:
     return np.concatenate(([1.0], a))
 
 
+def _build_ar_gram_submatrix(c_idx: np.ndarray, g: np.ndarray, n: int) -> np.ndarray:
+    """Build exact submatrix H_CC = (A(g)^T A(g))[C, C] for causal AR residual A(g).
+
+    The residual operator e = np.convolve(x, g, mode="valid") has length n - p
+    and entries e[t - p] = sum_{k=0}^p g[k] x[t - k] for t in [p, n - 1].
+    Hence A[t - p, j] = g[t - j] for j <= t <= j + p, and:
+      (A^T A)[i, j] = sum_{t = max(p, i, j)}^{min(n - 1, i + p, j + p)} g[t - i] g[t - j].
+    For interior indices (p <= idx <= n - 1 - p) this equals acf_g[|i - j|].
+    """
+    p = g.size - 1
+    acf_g = np.correlate(g, g, mode="full")[p:]  # length p + 1
+    i_grid, j_grid = np.broadcast_arrays(c_idx[:, None], c_idx[None, :])
+    d_ij = np.abs(i_grid - j_grid)
+    h_cc = np.where(d_ij <= p, acf_g[np.minimum(d_ij, p)], 0.0)
+    near_edge = (c_idx < p) | (c_idx > n - 1 - p)
+    if near_edge.any():
+        edge_pos = np.flatnonzero(near_edge)
+        for row_k in edge_pos:
+            ii = int(c_idx[row_k])
+            cols = np.flatnonzero(np.abs(c_idx - ii) <= p)
+            for col_k in cols:
+                jj = int(c_idx[col_k])
+                t0 = max(p, ii, jj)
+                t1 = min(n - 1, ii + p, jj + p)
+                val = (float(np.dot(g[t0 - ii:t1 - ii + 1], g[t0 - jj:t1 - jj + 1]))
+                       if t0 <= t1 else 0.0)
+                h_cc[row_k, col_k] = val
+                h_cc[col_k, row_k] = val
+    return h_cc
+
+
 def _solve_ar_frame_qp(
     x_init: np.ndarray,
     obs: np.ndarray,
@@ -476,27 +507,7 @@ def _solve_ar_frame_qp(
         return np.where(is_pos, np.maximum(v_c, obs_c), np.minimum(v_c, obs_c))
 
     if m <= 320:
-        # Fast exact Gram submatrix H_CC: for interior indices (p <= idx <= n-1-p),
-        # H[i, j] equals the filter autocorrelation acf_g[|i - j|]. Boundary
-        # entries use exact truncated sums.
-        acf_g = np.correlate(g, g, mode="full")[p:]  # length p + 1
-        i_grid, j_grid = np.broadcast_arrays(c_idx[:, None], c_idx[None, :])
-        d_ij = np.abs(i_grid - j_grid)
-        h_cc = np.where(d_ij <= p, acf_g[np.minimum(d_ij, p)], 0.0)
-        # Exact boundary adjustment for any clipped index within p of frame edges.
-        near_edge = (c_idx < p) | (c_idx > n - 1 - p)
-        if near_edge.any():
-            edge_pos = np.flatnonzero(near_edge)
-            for row_k in edge_pos:
-                ii = int(c_idx[row_k])
-                cols = np.flatnonzero(np.abs(c_idx - ii) <= p)
-                for col_k in cols:
-                    jj = int(c_idx[col_k])
-                    t0 = max(p, ii, jj)
-                    t1 = min(n - 1, ii + p, jj + p)
-                    val = float(np.dot(g[t0 - ii:t1 - ii + 1], g[t0 - jj:t1 - jj + 1])) if t0 <= t1 else 0.0
-                    h_cc[row_k, col_k] = val
-                    h_cc[col_k, row_k] = val
+        h_cc = _build_ar_gram_submatrix(c_idx, g, n)
         h_cc[np.diag_indices(m)] += qp_reg
         try:
             cf = cho_factor(h_cc, lower=True, check_finite=False)
@@ -566,6 +577,7 @@ def _reg_ar_channel(
     acc = np.zeros_like(sig_p)
     norm = np.zeros_like(sig_p)
     clipped_frames = 0
+    fallback_frames = 0
 
     for s in starts:
         seg = sig_p[s:s + frame]
@@ -583,15 +595,17 @@ def _reg_ar_channel(
         for _ in range(ar_iters):
             g = _fit_regularized_ar(cur, order, ar_reg)
             cur = _solve_ar_frame_qp(cur, obs, pos_idx, neg_idx, g, qp_reg, qp_iters)
-        # Guard against rare AR instability in severely clipped frames.
+        # Guard against rare AR instability in severely clipped frames (recorded explicitly).
         if not np.isfinite(cur).all() or float(np.max(np.abs(cur))) > 16.0:
             cur = obs
+            fallback_frames += 1
         acc[s:s + frame] += (cur * scale) * win
         norm[s:s + frame] += win
 
     repaired = acc[pad_l:pad_l + sig.size] / np.maximum(norm[pad_l:pad_l + sig.size], 1e-12)
     return repaired, {
         "clipped_frames": clipped_frames,
+        "fallback_frames": fallback_frames,
         "total_frames": int(starts.size),
     }
 

@@ -38,6 +38,7 @@ from research import corpus_synth, corpus_v1
 from research import declip_metrics as M
 from research.run_benchmark import _clean_error, _decode, _git_commit, _safe_argv
 from rnext.dsp.clip_detector import detect_hard_clip_v2, score_hard_clip_v1
+from rnext.dsp.contour import true_peak_dbfs
 from rnext.dsp.declip_methods import (
     apply_headroom_policy,
     declip_aspade,
@@ -102,13 +103,14 @@ def _run_solver(method: str, x: np.ndarray, sr: int, mask: np.ndarray | None,
     if method == "identity":
         return x.copy(), x.copy(), {"status": "kept_original", "output_gain_db": 0.0}
     if method == "gain_only":
-        ceiling = 10.0 ** (ceiling_db / 20.0)
-        peak = float(np.max(np.abs(x)))
-        gain = min(1.0, ceiling / peak) if peak > 0.0 else 1.0
-        out = (x.astype(np.float64) * gain).astype(x.dtype)
+        # Same true-peak headroom ceiling policy (-1.0 dBTP) as repair arms, with zero repair.
+        raw_tp = true_peak_dbfs(x, sr)
+        gain_db = min(0.0, float(ceiling_db) - raw_tp)
+        out = (x.astype(np.float64) * (10.0 ** (gain_db / 20.0))).astype(x.dtype)
         # Pre-gain waveform is unmodified input `x` (static attenuation is not a repair).
         return out, x.copy(), {"status": "gain_only",
-                               "output_gain_db": float(20.0 * np.log10(max(gain, 1e-12)))}
+                               "pre_gain_tp_dbfs": float(raw_tp),
+                               "output_gain_db": float(gain_db)}
     if mask is None or not mask.any():
         return x.copy(), x.copy(), {"status": "kept_original",
                                     "reason": "empty_mask",
@@ -295,8 +297,8 @@ def _aggregate_arm(rows: list[dict], arm: str, name: str) -> dict:
     n_processed = 0
     n_abstained = 0
     n_failed = 0
-    polarity_violations = 0
-    max_reliable_diff = 0.0
+    polarity_violations_vals = []
+    reliable_diff_vals = []
 
     for r in defects:
         e = r[arm][name]
@@ -306,8 +308,10 @@ def _aggregate_arm(rows: list[dict], arm: str, name: str) -> dict:
         rss_vals.append(e["process_max_rss_mb"])
         peak_mem_vals.append(e["rss_delta_mb"])
         total_wall += e["wall_seconds"]
-        polarity_violations += int(m.get("polarity_violations", 0))
-        max_reliable_diff = max(max_reliable_diff, float(m.get("max_reliable_diff", 0.0)))
+        if m.get("polarity_violations") is not None:
+            polarity_violations_vals.append(int(m["polarity_violations"]))
+        if m.get("max_reliable_diff") is not None:
+            reliable_diff_vals.append(float(m["max_reliable_diff"]))
 
         if st == "processed_candidate":
             n_processed += 1
@@ -375,8 +379,8 @@ def _aggregate_arm(rows: list[dict], arm: str, name: str) -> dict:
         "conditional_mean_masked_delta_sdr_db": float(np.mean(cond_masked_delta)) if cond_masked_delta else None,
         "conditional_median_masked_delta_sdr_db": float(np.median(cond_masked_delta)) if cond_masked_delta else None,
         "conditional_mean_sisdri_db": float(np.mean(cond_sisdri)) if cond_sisdri else None,
-        "polarity_violations_total": polarity_violations,
-        "max_reliable_diff": float(max_reliable_diff),
+        "polarity_violations_total": int(sum(polarity_violations_vals)) if polarity_violations_vals else None,
+        "max_reliable_diff": float(max(reliable_diff_vals)) if reliable_diff_vals else None,
         "worst_cases": worst_entries[:3],
         "wall_seconds_total": float(total_wall),
         "wall_s_per_audio_min_p50": float(np.percentile(wall_per_min, 50)) if wall_per_min else None,
@@ -527,9 +531,11 @@ def summarize_bakeoff(rows: list[dict], methods: list[str]) -> dict:
             })
         risk_coverage[k] = M.risk_coverage_curve(recs)
 
-    # Formal dev decision: select best blind candidate that satisfies zero clean FP,
-    # zero polarity violations, positive 95% CI vs identity and current_snapshot_auto;
-    # otherwise explicit no_go / no_promote.
+    # Exploratory dev selection gate: select best blind candidate satisfying
+    # zero negative-control FP, zero polarity violations, zero failures, and
+    # positive exploratory 95% cluster bootstrap CI over current_snapshot_auto.
+    # Holm-Bonferroni p-values and Student-t CIs are reported alongside; formal
+    # confirmatory gates are preregistered in E4 before opening sealed in E5.
     candidates = [k for k in blind_keys if k != "current_snapshot_auto"]
     eligible = []
     for k in candidates:
@@ -546,28 +552,38 @@ def summarize_bakeoff(rows: list[dict], methods: list[str]) -> dict:
     eligible.sort(reverse=True)
     if eligible:
         winner = eligible[0][2]
+        ci_win = paired_masked.get(f"blind:{winner}_vs_current_snapshot_auto")
         decision = {
             "verdict": "select_dev_candidate_for_e4_freeze",
+            "gate_basis": "exploratory_dev_bootstrap_ci_95",
             "selected_candidate": winner,
             "baseline": "current_snapshot_auto",
             "sealed_opened": False,
+            "selected_paired_stats": {
+                "bootstrap_ci_95": [ci_win["bootstrap_ci_low"], ci_win["bootstrap_ci_high"]],
+                "student_t_ci_95": [ci_win["t_ci_low"], ci_win["t_ci_high"]],
+                "sign_flip_p_value": ci_win["sign_flip_p_value"],
+                "holm_bonferroni_p": ci_win["holm_bonferroni_p"],
+            } if ci_win else None,
             "reason": (
                 f"{winner} passes zero negative-control FP, zero polarity violations, "
-                f"zero failures, and achieves positive 95% paired cluster CI over "
-                f"current_snapshot_auto on dev without touching sealed."
+                f"zero failures, and achieves positive exploratory 95% paired cluster "
+                f"bootstrap CI over current_snapshot_auto on dev without touching sealed."
             ),
             "caveat": (
-                "Dev selection only — NOT a release claim or perceptual preference claim. "
-                "Requires E4 stereo/album safety + CPU freeze and E5 sealed + blind panel."
+                "Exploratory dev selection only (unadjusted bootstrap CI gate; see reported "
+                "Student-t CI and Holm-Bonferroni p) — NOT a release claim or perceptual "
+                "preference claim. Requires E4 stereo/album safety + CPU freeze and E5 sealed + blind panel."
             ),
         }
     else:
         decision = {
             "verdict": "no_promote_on_dev",
+            "gate_basis": "exploratory_dev_bootstrap_ci_95",
             "selected_candidate": None,
             "baseline": "current_snapshot_auto",
             "sealed_opened": False,
-            "reason": "No blind candidate cleared zero-FP, zero-violation, and positive 95% CI gates.",
+            "reason": "No blind candidate cleared zero-FP, zero-violation, and exploratory 95% bootstrap CI gates.",
             "caveat": "Keep current safe route; do not open sealed.",
         }
 
@@ -625,7 +641,7 @@ def render_markdown_report(protocol: dict, summary: dict, rows: list[dict]) -> s
             f"{_fmt(s['all_input_median_masked_delta_sdr_db'], '{:+.2f}')} | "
             f"{_fmt(s['all_input_min_masked_delta_sdr_db'], '{:+.2f}')} | "
             f"{_fmt(s['all_input_mean_sisdri_db'], '{:+.2f}')} | "
-            f"{s['polarity_violations_total']} | "
+            f"{'-' if s['polarity_violations_total'] is None else s['polarity_violations_total']} | "
             f"{_fmt(s['wall_s_per_audio_min_p50'])} | "
             f"{_fmt(s['wall_s_per_audio_min_p95'])} | "
             f"{_fmt(s['process_max_rss_mb'], '{:.1f}')} |"

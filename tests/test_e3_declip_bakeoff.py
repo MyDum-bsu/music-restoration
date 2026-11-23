@@ -11,6 +11,9 @@ from research import corpus_synth, corpus_v1
 from research import declip_metrics as M
 from rnext.dsp.clip_detector import detect_hard_clip_v2
 from rnext.dsp.declip_methods import (
+    _build_ar_gram_submatrix,
+    _fit_regularized_ar,
+    _solve_ar_frame_qp,
     apply_headroom_policy,
     declip_aspade,
     declip_regularized_ar,
@@ -147,18 +150,63 @@ def test_detector_v2_zero_fp_on_negative_controls(op, extra, bits):
     assert not pred.any(), f"false positive on {op} ({bits}-bit): {diag}"
 
 
+def test_reg_ar_gram_submatrix_and_qp_match_exact_ata_at_boundaries():
+    """Verify fast H_CC matches exact causal A^T A to machine precision at left/right edges."""
+    n, p = 256, 24
+    rng = np.random.default_rng(77)
+    t = np.arange(n, dtype=np.float64) / 44100.0
+    sig = 0.6 * np.sin(2 * np.pi * 220 * t) + 0.35 * np.sin(2 * np.pi * 550 * t + 0.4)
+    g = _fit_regularized_ar(sig, order=p, ar_reg=1e-5)
+
+    # Explicit causal AR residual matrix A: (A @ x)[t - p] = sum_{k=0}^p g[k] x[t - k].
+    a_mat = np.zeros((n - p, n), dtype=np.float64)
+    for m in range(n - p):
+        a_mat[m, m:m + p + 1] = g[::-1]
+    h_exact = a_mat.T @ a_mat
+
+    # Clipped indices spanning left boundary (<p), exact seam (p-1, p), interior, and right edge (>n-1-p).
+    pos_idx = np.array([0, 5, p - 1, p, 120, n - p - 1, n - p, n - 1])
+    neg_idx = np.array([10, p + 1, 130, n - p + 3, n - 2])
+    c_idx = np.sort(np.concatenate((pos_idx, neg_idx)))
+
+    h_cc_fast = _build_ar_gram_submatrix(c_idx, g, n)
+    np.testing.assert_allclose(h_cc_fast, h_exact[np.ix_(c_idx, c_idx)], atol=1e-13, rtol=0.0)
+
+    # Also verify exact unconstrained QP match via _solve_ar_frame_qp (box strictly inactive).
+    qp_reg = 1e-5
+    obs_free = sig + rng.normal(0.0, 1e-4, size=n)
+    obs_free[pos_idx] = sig[pos_idx] - 2.0
+    obs_free[neg_idx] = sig[neg_idx] + 2.0
+    sol = _solve_ar_frame_qp(obs_free.copy(), obs_free, pos_idx, neg_idx, g, qp_reg=qp_reg, qp_iters=60)
+    x_rel = obs_free.copy()
+    x_rel[c_idx] = 0.0
+    rhs_exact = (h_exact @ x_rel)[c_idx] - qp_reg * obs_free[c_idx]
+    x_c_exact = np.linalg.solve(h_exact[np.ix_(c_idx, c_idx)] + qp_reg * np.eye(c_idx.size), -rhs_exact)
+    is_pos = np.isin(c_idx, pos_idx)
+    assert np.all(x_c_exact[is_pos] >= obs_free[c_idx[is_pos]])
+    assert np.all(x_c_exact[~is_pos] <= obs_free[c_idx[~is_pos]])
+    np.testing.assert_allclose(sol[c_idx], x_c_exact, atol=1e-10, rtol=0.0)
+
+
 def test_metrics_gain_invariance_and_statistics():
     clean = _stereo_harmonic(sr=44100, seconds=0.4)
     deg = np.clip(clean, -0.55, 0.55).astype(np.float32)
     mask = np.abs(clean) > 0.55
 
-    ev_id = M.evaluate_waveform(clean, deg, deg, mask)
-    ev_gain = M.evaluate_waveform(clean, deg, deg * 0.5, mask)
+    ev_id = M.evaluate_waveform(clean, deg, deg, mask, raw_candidate=deg)
+    ev_gain = M.evaluate_waveform(clean, deg, deg * 0.5, mask, raw_candidate=deg)
+    ev_no_raw = M.evaluate_waveform(clean, deg, deg * 0.5, mask, raw_candidate=None)
     assert ev_id["masked_delta_sdr_db"] == pytest.approx(0.0, abs=1e-9)
     assert ev_gain["masked_delta_sdr_db"] == pytest.approx(0.0, abs=1e-6)
     assert ev_gain["whole_track_sisdri_db"] == pytest.approx(0.0, abs=1e-6)
+    assert ev_gain["polarity_violations"] == 0
+    assert ev_gain["max_reliable_diff"] == 0.0
+    assert ev_no_raw["polarity_violations"] is None
+    assert ev_no_raw["max_reliable_diff"] is None
+    assert "pre_gain_candidate_unavailable" in ev_no_raw["exclusions"]
     assert ev_gain["masked_sdr_uncompensated_db"] < ev_id["masked_sdr_uncompensated_db"] - 5.0
     json.dumps(ev_gain, allow_nan=False)
+    json.dumps(ev_no_raw, allow_nan=False)
 
     ci = M.paired_cluster_ci({f"c{i}": 2.0 + 0.2 * i for i in range(8)})
     assert ci["n_clusters"] == 8
@@ -263,5 +311,7 @@ def test_e3_bakeoff_cli_refuses_sealed_and_runs_cleanly(tmp_path):
     assert summary["dev_decision"]["sealed_opened"] is False
     assert summary["detectors"]["v2_windowed"]["control_fp_cases"] == 0
     assert summary["oracle"]["gain_only"]["polarity_violations_total"] == 0
+    assert summary["oracle"]["gain_only"]["max_reliable_diff"] == 0.0
+    assert summary["blind"]["current_snapshot_auto"]["polarity_violations_total"] is None
     assert summary["oracle"]["aspade_mit"]["all_input_mean_masked_delta_sdr_db"] > 0.0
     assert (out / "report.md").exists()

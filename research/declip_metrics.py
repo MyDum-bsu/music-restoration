@@ -100,16 +100,19 @@ def evaluate_waveform(
         "masked_delta_sdr_db": None,
         "near_mask_sdr_db": None,
         "outside_mask_sdr_db": None,
-        "polarity_violations": 0,
-        "max_reliable_diff": 0.0,
+        "polarity_violations": None,
+        "max_reliable_diff": None,
     }
 
     if mask is None or not mask.any():
         exclusions.append("empty_true_mask")
         out["outside_mask_sdr_db"] = _sdr(
             float(np.sum(c ** 2)), float(np.sum((c - y_aligned) ** 2)))
-        ref = raw_candidate.astype(np.float64) if raw_candidate is not None else y_aligned
-        out["max_reliable_diff"] = float(np.max(np.abs(ref - d)))
+        if raw_candidate is not None:
+            out["polarity_violations"] = 0
+            out["max_reliable_diff"] = float(np.max(np.abs(raw_candidate.astype(np.float64) - d)))
+        else:
+            exclusions.append("pre_gain_candidate_unavailable")
         out["exclusions"] = exclusions
         return out
 
@@ -139,16 +142,18 @@ def evaluate_waveform(
         out["outside_mask_sdr_db"] = _sdr(
             float(np.sum(c[outside] ** 2)), float(np.sum((c[outside] - y_aligned[outside]) ** 2)))
 
-    # Check reliable preservation and polarity inequalities before output gain
-    # (or on gain-aligned output if pre-gain candidate was not provided).
-    check = raw_candidate.astype(np.float64) if raw_candidate is not None else y_aligned
-    if outside.any():
-        out["max_reliable_diff"] = float(np.max(np.abs(check[outside] - d[outside])))
-    pos = m & (d > 0.0)
-    neg = m & (d < 0.0)
-    viol = int(np.count_nonzero(check[pos] < d[pos] - 1e-7)
-               + np.count_nonzero(check[neg] > d[neg] + 1e-7))
-    out["polarity_violations"] = viol
+    # Pre-gain invariants are only defined when the pre-gain candidate PCM is supplied.
+    # Measuring them on a gain-aligned post-gain output creates false violations.
+    if raw_candidate is None:
+        exclusions.append("pre_gain_candidate_unavailable")
+    else:
+        check = raw_candidate.astype(np.float64)
+        out["max_reliable_diff"] = float(np.max(np.abs(check[outside] - d[outside]))) if outside.any() else 0.0
+        pos = m & (d > 0.0)
+        neg = m & (d < 0.0)
+        viol = int(np.count_nonzero(check[pos] < d[pos] - 1e-7)
+                   + np.count_nonzero(check[neg] > d[neg] + 1e-7))
+        out["polarity_violations"] = viol
     out["exclusions"] = exclusions
     return out
 
