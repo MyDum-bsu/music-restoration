@@ -21,7 +21,7 @@
       "ffmpeg": "125907-ga7e72069f1-20260802",
       "libflac": "1.4.3"
     },
-    "git_base_commit": "a77856cd0e10d5aa3c0f8bec0fbf00681c8d53cb",
+    "git_base_commit": "b75f2cd3854b5c0420209a68705bd6ff32f83857",
     "implementation_sha256": {
       "rnext/dsp/clip_detector.py": "409914703fb154c745ff617cfe0cd1c4fa04c1a8d33fb051598537c1b130aab6",
       "rnext/dsp/declip_methods.py": "5b7b1a3b5ac890cd68eb83f06841309b2270f4528f2f7ef471013adf6503b6fd",
@@ -40,7 +40,7 @@
       "research/declip_metrics.py": "84ed7b2e45c2ec7a8d6505be740bcd5e4579def1b820e216b560991d0c2055a9",
       "research/run_benchmark.py": "5b27d4ce0a635ebef4e624a32cd5c69372e6363c534afe548f62e7501b7c65a1",
       "research/e3_bakeoff.py": "f899643372bd6e69fd744961d92c9f6c2cd527c5be851fc04b8fd8dd0b660a77",
-      "research/e4_stereo_freeze.py": "16760c52180b695b784f5ccae754daf11439809c492b163667528be529e743f3"
+      "research/e4_stereo_freeze.py": "f51e94ba63fa1d290018c3730657bdde0eed8c8f113b35f390170d351b15d6f8"
     },
     "reference_cpu": {
       "model": "x86_64",
@@ -2130,5 +2130,5 @@
     "ready_for_e5_custodian_release": true,
     "sealed_audio_opened": false
   },
-  "freeze_sha256": "61dca03e31303c201a1ad42ed1629ad0c5df222d9f8e8c265aac7704a799ae9f"
+  "freeze_sha256": "ee4cdc8cec0a4f6a365b4784e6b694b64febac202f1ce31528f66a38a416f09c"
 }

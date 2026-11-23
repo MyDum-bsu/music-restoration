@@ -531,6 +531,11 @@ def test_committed_e4_freeze_manifest_is_valid_and_pinned():
     for rel, pinned in doc["toolchain"]["implementation_sha256"].items():
         assert corpus_v1.digest(ROOT / rel) == pinned, f"implementation hash drifted: {rel}"
 
+    # If Suite C single-track rows were reused, the report must explicitly disclose provenance.
+    reused_sha = doc["e4_verification"]["suite_c_cpu_profile"].get("tracks_reused_from_sha256")
+    if reused_sha:
+        assert reused_sha in rep_text, "report must disclose tracks_reused_from_sha256 provenance"
+
     # Verify committed sealed-v1.json remains untouched & blocked!
     sealed = corpus_v1.load(ROOT / "corpus" / "sealed-v1.json")
     assert any("sealed tier blocked" in e for e in corpus_v1.validate_manifest(sealed))
