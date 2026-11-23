@@ -1,0 +1,1478 @@
+{
+  "schema": "e6-archival-corpus/v1",
+  "tier": "dev",
+  "dataset_version": "dev-e6-archival-2026-11-23",
+  "sealed_corpora_opened": false,
+  "toolchain": {
+    "python": "3.12.3",
+    "numpy": "2.5.2",
+    "scipy": "1.17.1",
+    "ffmpeg": "125907-ga7e72069f1-20260802",
+    "libflac": "1.4.3"
+  },
+  "rng": {
+    "algorithm": "numpy-pcg64",
+    "seed": 20261123
+  },
+  "strata_counts": {
+    "clicks_only": 4,
+    "hiss_only": 4,
+    "combined_archival": 3,
+    "clean_control": 4,
+    "ood": 3
+  },
+  "files": [
+    {
+      "path": "e6-clicks-sparse-tonal-44k.clean.wav",
+      "sha256": "9be9f725b143bc022d79cbcb2c8a2a56a64b24af5c741d93576cc3d47d21911a",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-clicks-sparse-tonal-44k.degraded.wav",
+      "sha256": "f11cbad56556d10d46ea729b1f89a5281c28298cdaeeb6db7f61ce040d272a72",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-clicks-sparse-tonal-44k.click_mask.json",
+      "sha256": "4a27748e72f550f5eb20c28278737404e7f5c64263afa29c1516d82682435c92",
+      "bytes": 686
+    },
+    {
+      "path": "e6-clicks-sparse-tonal-44k.attack_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-clicks-dense-crackle-48k.clean.wav",
+      "sha256": "cf9926fbc286ed4a79fa53e4669f0ca0b660a1daf888e4849dba4790dcc5bc17",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-clicks-dense-crackle-48k.degraded.wav",
+      "sha256": "c7c48e510ff47a15706c97a0aa90ca56b049428801e82e79ad5dcaa8f754c232",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-clicks-dense-crackle-48k.click_mask.json",
+      "sha256": "557f8794bf452d3aa09d4fe715b8f8213346455abff09c3befafe4d755beb5d8",
+      "bytes": 1885
+    },
+    {
+      "path": "e6-clicks-dense-crackle-48k.attack_mask.json",
+      "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+      "bytes": 40
+    },
+    {
+      "path": "e6-clicks-on-percussion-48k.clean.wav",
+      "sha256": "5138b06f1fe363d87bd4def36b42faa0dd397f581453593c6452af3bdf68a647",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-clicks-on-percussion-48k.degraded.wav",
+      "sha256": "098c3336aa16e2c9d893c34d905f0b887784290747267749ee07dd7947325a30",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-clicks-on-percussion-48k.click_mask.json",
+      "sha256": "9701dfaa2c06b010c915fc65c13b57a29f6c7da1a3fa6900684767e22c3be3c5",
+      "bytes": 1015
+    },
+    {
+      "path": "e6-clicks-on-percussion-48k.attack_mask.json",
+      "sha256": "cf72b6f049b52de21a2f35dab787b051bcec28279bd026bbdde4f9313cb116e9",
+      "bytes": 242
+    },
+    {
+      "path": "e6-clicks-single-ch-44k.clean.wav",
+      "sha256": "9629f4fe70bdfbc49e3e9bf98edc103bfd8dba366b678afc53ddc9471a1d0436",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-clicks-single-ch-44k.degraded.wav",
+      "sha256": "78e6c9a91a7ced2498acb09b43f5363e2c50a2d78440f91c5ac371fa29c34b09",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-clicks-single-ch-44k.click_mask.json",
+      "sha256": "a0acf88b5c1012707fa2cb52c6a9714d289277281834344f44933da2676e7123",
+      "bytes": 1343
+    },
+    {
+      "path": "e6-clicks-single-ch-44k.attack_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-hiss-tape-white-20db-44k.clean.wav",
+      "sha256": "45f8708cbb1b3dbd32583cd18b4a5fe78a91403993a52f197f20e45f70fb7dc8",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-hiss-tape-white-20db-44k.degraded.wav",
+      "sha256": "622d81e8e7fa5693c6bc580ce842d41494e4604f1c709ae7a6166d0bc0cd257b",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-hiss-tape-white-20db-44k.click_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-hiss-tape-white-20db-44k.attack_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-hiss-vinyl-pink-15db-48k.clean.wav",
+      "sha256": "88caf5658bada8178a30514abf6b3820fa92b7b5e04055b1edde02420d3c96d2",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-hiss-vinyl-pink-15db-48k.degraded.wav",
+      "sha256": "4a4fa869dcc9fdce0de8b6becd2bc40b84d976a2d4f1a2265078650f6c463cde",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-hiss-vinyl-pink-15db-48k.click_mask.json",
+      "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+      "bytes": 40
+    },
+    {
+      "path": "e6-hiss-vinyl-pink-15db-48k.attack_mask.json",
+      "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+      "bytes": 40
+    },
+    {
+      "path": "e6-hiss-modulated-wow-18db-44k.clean.wav",
+      "sha256": "df080091f22d0e18f02c7374d325fcc7298a525e7a00d78ace4533f79d55cf14",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-hiss-modulated-wow-18db-44k.degraded.wav",
+      "sha256": "e1efc2accda27ef82bc1e03f517e70ce1b8d1478da4dfa387cf6f58b8406a459",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-hiss-modulated-wow-18db-44k.click_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-hiss-modulated-wow-18db-44k.attack_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-hiss-high-snr-30db-48k.clean.wav",
+      "sha256": "2ec6811f9adb97a9b4299fdf77dc722e16f7e4b89c4a4e236f2d9e598d05bcb3",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-hiss-high-snr-30db-48k.degraded.wav",
+      "sha256": "af66940a48bc39e63bcb157012545986925d69274ab105b3bd5e98c969b8a183",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-hiss-high-snr-30db-48k.click_mask.json",
+      "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+      "bytes": 40
+    },
+    {
+      "path": "e6-hiss-high-snr-30db-48k.attack_mask.json",
+      "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+      "bytes": 40
+    },
+    {
+      "path": "e6-archival-vinyl-44k.clean.wav",
+      "sha256": "50817e6562b5bdf1f40b5ce31c0f6c2ff5f691fe2771e8491f6d90c6b5e30def",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-archival-vinyl-44k.degraded.wav",
+      "sha256": "6b7220693bbbc31943ca09032b0e7535c78efe2ff71d912282654c04bf0ad42e",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-archival-vinyl-44k.click_mask.json",
+      "sha256": "b811c0041507610946b1a665a246ffe61dd40fddd2f421d11562fb4a94c7554f",
+      "bytes": 845
+    },
+    {
+      "path": "e6-archival-vinyl-44k.attack_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-archival-tape-crackle-48k.clean.wav",
+      "sha256": "65f42d43b13bd0343772c60768716dfbe516e5cbdfa7c99bf59fe8d1c5a2ccb8",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-archival-tape-crackle-48k.degraded.wav",
+      "sha256": "92a90c10ed47b6aae685133e89ec58396760b47f246dcfaeba58c898b6d3a594",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-archival-tape-crackle-48k.click_mask.json",
+      "sha256": "cf68f81ded77aefbdcfd67954193e07c605bbdd96770face6b0a304d38d3d210",
+      "bytes": 824
+    },
+    {
+      "path": "e6-archival-tape-crackle-48k.attack_mask.json",
+      "sha256": "10ea0136743c6e27d2e7db385538e8311d9fe1116aa6c67fd124fbf7b6c1bdf5",
+      "bytes": 240
+    },
+    {
+      "path": "e6-archival-78rpm-shellac-44k.clean.wav",
+      "sha256": "eb631a90cad5381e3420afc8102df59ed35140ec59a9ee87436df81b34e449a1",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-archival-78rpm-shellac-44k.degraded.wav",
+      "sha256": "2bd9769c2dc012f1dafd30c3217fe7d9f43f67f6db3b389cc3801d047748ceac",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-archival-78rpm-shellac-44k.click_mask.json",
+      "sha256": "4acd9880d9f828d35529415e03f1a33481eb2c7254478d35cf2017bec0756cae",
+      "bytes": 1635
+    },
+    {
+      "path": "e6-archival-78rpm-shellac-44k.attack_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-ctl-clean-percussion-48k.clean.wav",
+      "sha256": "f9db0c4b6eae3c4565039fa2c657ca94661f9009658124ca00984113cb3d1a19",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-ctl-clean-percussion-48k.degraded.wav",
+      "sha256": "f9db0c4b6eae3c4565039fa2c657ca94661f9009658124ca00984113cb3d1a19",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-ctl-clean-percussion-48k.click_mask.json",
+      "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+      "bytes": 40
+    },
+    {
+      "path": "e6-ctl-clean-percussion-48k.attack_mask.json",
+      "sha256": "4ed82092a5251ce1fa864b5eba678af147cc7a919274cc09317803d7761ad92d",
+      "bytes": 242
+    },
+    {
+      "path": "e6-ctl-clean-plucked-44k.clean.wav",
+      "sha256": "229bf3a03f8748d5c9d7a84e5cdc7843e45f7eae782b7303f553da4148bf169a",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-ctl-clean-plucked-44k.degraded.wav",
+      "sha256": "229bf3a03f8748d5c9d7a84e5cdc7843e45f7eae782b7303f553da4148bf169a",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-ctl-clean-plucked-44k.click_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-ctl-clean-plucked-44k.attack_mask.json",
+      "sha256": "420e4323c431b1c55a1598f7efb87a33680495924a5e57ab45e269f6c78d8e38",
+      "bytes": 201
+    },
+    {
+      "path": "e6-ctl-clean-reverb-tail-48k.clean.wav",
+      "sha256": "5b40aaf54c17fb9cf902df3257f750634cb7a7ec3fdf8cc86499bbffd0e6ddf4",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-ctl-clean-reverb-tail-48k.degraded.wav",
+      "sha256": "5b40aaf54c17fb9cf902df3257f750634cb7a7ec3fdf8cc86499bbffd0e6ddf4",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-ctl-clean-reverb-tail-48k.click_mask.json",
+      "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+      "bytes": 40
+    },
+    {
+      "path": "e6-ctl-clean-reverb-tail-48k.attack_mask.json",
+      "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+      "bytes": 40
+    },
+    {
+      "path": "e6-ctl-clean-tonal-44k.clean.wav",
+      "sha256": "1b9135b43c3f0ea69840f1727f13bb62bba6956dd05fc1afdf9905bb47b6406a",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-ctl-clean-tonal-44k.degraded.wav",
+      "sha256": "1b9135b43c3f0ea69840f1727f13bb62bba6956dd05fc1afdf9905bb47b6406a",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-ctl-clean-tonal-44k.click_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-ctl-clean-tonal-44k.attack_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-ood-wide-scratch-44k.clean.wav",
+      "sha256": "a44ecaca72380e151f26038ede398a85b38a56e281b062933d751e1ece245361",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-ood-wide-scratch-44k.degraded.wav",
+      "sha256": "7f4905896f24d69109bc003ecee2e33fa351c55ebf42dbefc4f913664a8b3af4",
+      "bytes": 529244
+    },
+    {
+      "path": "e6-ood-wide-scratch-44k.click_mask.json",
+      "sha256": "085e5017110ba6f8c4c493e1d7b5a945a388453c3f0644f2a2b9fd3bfa0a7c48",
+      "bytes": 155
+    },
+    {
+      "path": "e6-ood-wide-scratch-44k.attack_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-ood-nonstationary-hum-hiss-48k.clean.wav",
+      "sha256": "846d4e59956ae9af0357ba6ffc557d01e030d65fe4ef5289c303800209585677",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-ood-nonstationary-hum-hiss-48k.degraded.wav",
+      "sha256": "9191e8a6e2c372f9c2f37af9e6bfbaf8b169f21871211e1a66ab85e27fec9af7",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-ood-nonstationary-hum-hiss-48k.click_mask.json",
+      "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+      "bytes": 40
+    },
+    {
+      "path": "e6-ood-nonstationary-hum-hiss-48k.attack_mask.json",
+      "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+      "bytes": 40
+    },
+    {
+      "path": "e6-ood-ultrasonic-perc-96k.clean.wav",
+      "sha256": "d18845b9174ae65cc36b423e74adc8677a227fea08c6af0e40cbc83309e7af9e",
+      "bytes": 1152044
+    },
+    {
+      "path": "e6-ood-ultrasonic-perc-96k.degraded.wav",
+      "sha256": "1e5b0517e0915bf8ee745cdb5919142535f1d1814763a3f27e51fe6555713df5",
+      "bytes": 1152044
+    },
+    {
+      "path": "e6-ood-ultrasonic-perc-96k.click_mask.json",
+      "sha256": "83805f78f55b03cd55b460a0fa2f793d34a578468074ad6b2d28a92b0ce7ce1c",
+      "bytes": 341
+    },
+    {
+      "path": "e6-ood-ultrasonic-perc-96k.attack_mask.json",
+      "sha256": "9efcd70d0071ed5ef1a9964060eec0f01589d85ba62136f4e01f5d2cfee90320",
+      "bytes": 176
+    }
+  ],
+  "cases": [
+    {
+      "id": "e6-clicks-sparse-tonal-44k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "clicks_only",
+      "split": "eval",
+      "rate": 44100,
+      "channels": 2,
+      "bits": 16,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-01",
+        "fingerprint": "fp-e6-01",
+        "session": "ses-e6-01",
+        "artist": "e6-artist-01",
+        "album": "e6-album-01",
+        "stem_family": "fam-e6-01"
+      },
+      "clean": {
+        "path": "e6-clicks-sparse-tonal-44k.clean.wav",
+        "sha256": "9be9f725b143bc022d79cbcb2c8a2a56a64b24af5c741d93576cc3d47d21911a",
+        "bytes": 529244
+      },
+      "degraded": {
+        "path": "e6-clicks-sparse-tonal-44k.degraded.wav",
+        "sha256": "f11cbad56556d10d46ea729b1f89a5281c28298cdaeeb6db7f61ce040d272a72",
+        "bytes": 529244
+      },
+      "click_mask": {
+        "path": "e6-clicks-sparse-tonal-44k.click_mask.json",
+        "sha256": "4a27748e72f550f5eb20c28278737404e7f5c64263afa29c1516d82682435c92",
+        "bytes": 686
+      },
+      "attack_mask": {
+        "path": "e6-clicks-sparse-tonal-44k.attack_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 601,
+        "rate": 44100,
+        "seconds": 3.0,
+        "operator": "clicks_only",
+        "bits": 16,
+        "n_clicks": 22,
+        "width_range": [
+          1,
+          5
+        ],
+        "amp_range": [
+          0.3,
+          0.72
+        ]
+      },
+      "tail_slice": null
+    },
+    {
+      "id": "e6-clicks-dense-crackle-48k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "clicks_only",
+      "split": "eval",
+      "rate": 48000,
+      "channels": 2,
+      "bits": 24,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-02",
+        "fingerprint": "fp-e6-02",
+        "session": "ses-e6-02",
+        "artist": "e6-artist-02",
+        "album": "e6-album-02",
+        "stem_family": "fam-e6-02"
+      },
+      "clean": {
+        "path": "e6-clicks-dense-crackle-48k.clean.wav",
+        "sha256": "cf9926fbc286ed4a79fa53e4669f0ca0b660a1daf888e4849dba4790dcc5bc17",
+        "bytes": 864044
+      },
+      "degraded": {
+        "path": "e6-clicks-dense-crackle-48k.degraded.wav",
+        "sha256": "c7c48e510ff47a15706c97a0aa90ca56b049428801e82e79ad5dcaa8f754c232",
+        "bytes": 864044
+      },
+      "click_mask": {
+        "path": "e6-clicks-dense-crackle-48k.click_mask.json",
+        "sha256": "557f8794bf452d3aa09d4fe715b8f8213346455abff09c3befafe4d755beb5d8",
+        "bytes": 1885
+      },
+      "attack_mask": {
+        "path": "e6-clicks-dense-crackle-48k.attack_mask.json",
+        "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 602,
+        "rate": 48000,
+        "seconds": 3.0,
+        "operator": "clicks_only",
+        "bits": 24,
+        "n_clicks": 85,
+        "width_range": [
+          1,
+          4
+        ],
+        "amp_range": [
+          0.22,
+          0.6
+        ]
+      },
+      "tail_slice": null
+    },
+    {
+      "id": "e6-clicks-on-percussion-48k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "clicks_only",
+      "split": "eval",
+      "rate": 48000,
+      "channels": 2,
+      "bits": 24,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-03",
+        "fingerprint": "fp-e6-03",
+        "session": "ses-e6-03",
+        "artist": "e6-artist-03",
+        "album": "e6-album-03",
+        "stem_family": "fam-e6-03"
+      },
+      "clean": {
+        "path": "e6-clicks-on-percussion-48k.clean.wav",
+        "sha256": "5138b06f1fe363d87bd4def36b42faa0dd397f581453593c6452af3bdf68a647",
+        "bytes": 864044
+      },
+      "degraded": {
+        "path": "e6-clicks-on-percussion-48k.degraded.wav",
+        "sha256": "098c3336aa16e2c9d893c34d905f0b887784290747267749ee07dd7947325a30",
+        "bytes": 864044
+      },
+      "click_mask": {
+        "path": "e6-clicks-on-percussion-48k.click_mask.json",
+        "sha256": "9701dfaa2c06b010c915fc65c13b57a29f6c7da1a3fa6900684767e22c3be3c5",
+        "bytes": 1015
+      },
+      "attack_mask": {
+        "path": "e6-clicks-on-percussion-48k.attack_mask.json",
+        "sha256": "cf72b6f049b52de21a2f35dab787b051bcec28279bd026bbdde4f9313cb116e9",
+        "bytes": 242
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 603,
+        "rate": 48000,
+        "seconds": 3.0,
+        "operator": "clicks_only",
+        "bits": 24,
+        "percussive": true,
+        "overlay_on_attacks": true,
+        "n_clicks": 32,
+        "width_range": [
+          1,
+          5
+        ],
+        "amp_range": [
+          0.32,
+          0.7
+        ]
+      },
+      "tail_slice": null
+    },
+    {
+      "id": "e6-clicks-single-ch-44k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "clicks_only",
+      "split": "eval",
+      "rate": 44100,
+      "channels": 2,
+      "bits": 16,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-04",
+        "fingerprint": "fp-e6-04",
+        "session": "ses-e6-04",
+        "artist": "e6-artist-04",
+        "album": "e6-album-04",
+        "stem_family": "fam-e6-04"
+      },
+      "clean": {
+        "path": "e6-clicks-single-ch-44k.clean.wav",
+        "sha256": "9629f4fe70bdfbc49e3e9bf98edc103bfd8dba366b678afc53ddc9471a1d0436",
+        "bytes": 529244
+      },
+      "degraded": {
+        "path": "e6-clicks-single-ch-44k.degraded.wav",
+        "sha256": "78e6c9a91a7ced2498acb09b43f5363e2c50a2d78440f91c5ac371fa29c34b09",
+        "bytes": 529244
+      },
+      "click_mask": {
+        "path": "e6-clicks-single-ch-44k.click_mask.json",
+        "sha256": "a0acf88b5c1012707fa2cb52c6a9714d289277281834344f44933da2676e7123",
+        "bytes": 1343
+      },
+      "attack_mask": {
+        "path": "e6-clicks-single-ch-44k.attack_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 604,
+        "rate": 44100,
+        "seconds": 3.0,
+        "operator": "clicks_only",
+        "bits": 16,
+        "n_clicks": 36,
+        "width_range": [
+          1,
+          6
+        ],
+        "amp_range": [
+          0.28,
+          0.68
+        ],
+        "channel_mode": "left_heavy"
+      },
+      "tail_slice": null
+    },
+    {
+      "id": "e6-hiss-tape-white-20db-44k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "hiss_only",
+      "split": "eval",
+      "rate": 44100,
+      "channels": 2,
+      "bits": 16,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-05",
+        "fingerprint": "fp-e6-05",
+        "session": "ses-e6-05",
+        "artist": "e6-artist-05",
+        "album": "e6-album-05",
+        "stem_family": "fam-e6-05"
+      },
+      "clean": {
+        "path": "e6-hiss-tape-white-20db-44k.clean.wav",
+        "sha256": "45f8708cbb1b3dbd32583cd18b4a5fe78a91403993a52f197f20e45f70fb7dc8",
+        "bytes": 529244
+      },
+      "degraded": {
+        "path": "e6-hiss-tape-white-20db-44k.degraded.wav",
+        "sha256": "622d81e8e7fa5693c6bc580ce842d41494e4604f1c709ae7a6166d0bc0cd257b",
+        "bytes": 529244
+      },
+      "click_mask": {
+        "path": "e6-hiss-tape-white-20db-44k.click_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "attack_mask": {
+        "path": "e6-hiss-tape-white-20db-44k.attack_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 611,
+        "rate": 44100,
+        "seconds": 3.0,
+        "operator": "hiss_only",
+        "bits": 16,
+        "target_snr_db": 20.0,
+        "hiss_color": "tape_white_hf",
+        "quiet_tail": true
+      },
+      "tail_slice": [
+        98784,
+        132300
+      ]
+    },
+    {
+      "id": "e6-hiss-vinyl-pink-15db-48k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "hiss_only",
+      "split": "eval",
+      "rate": 48000,
+      "channels": 2,
+      "bits": 24,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-06",
+        "fingerprint": "fp-e6-06",
+        "session": "ses-e6-06",
+        "artist": "e6-artist-06",
+        "album": "e6-album-06",
+        "stem_family": "fam-e6-06"
+      },
+      "clean": {
+        "path": "e6-hiss-vinyl-pink-15db-48k.clean.wav",
+        "sha256": "88caf5658bada8178a30514abf6b3820fa92b7b5e04055b1edde02420d3c96d2",
+        "bytes": 864044
+      },
+      "degraded": {
+        "path": "e6-hiss-vinyl-pink-15db-48k.degraded.wav",
+        "sha256": "4a4fa869dcc9fdce0de8b6becd2bc40b84d976a2d4f1a2265078650f6c463cde",
+        "bytes": 864044
+      },
+      "click_mask": {
+        "path": "e6-hiss-vinyl-pink-15db-48k.click_mask.json",
+        "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+        "bytes": 40
+      },
+      "attack_mask": {
+        "path": "e6-hiss-vinyl-pink-15db-48k.attack_mask.json",
+        "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 612,
+        "rate": 48000,
+        "seconds": 3.0,
+        "operator": "hiss_only",
+        "bits": 24,
+        "target_snr_db": 15.0,
+        "hiss_color": "vinyl_pink_hf",
+        "quiet_tail": true
+      },
+      "tail_slice": [
+        107520,
+        144000
+      ]
+    },
+    {
+      "id": "e6-hiss-modulated-wow-18db-44k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "hiss_only",
+      "split": "eval",
+      "rate": 44100,
+      "channels": 2,
+      "bits": 16,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-07",
+        "fingerprint": "fp-e6-07",
+        "session": "ses-e6-07",
+        "artist": "e6-artist-07",
+        "album": "e6-album-07",
+        "stem_family": "fam-e6-07"
+      },
+      "clean": {
+        "path": "e6-hiss-modulated-wow-18db-44k.clean.wav",
+        "sha256": "df080091f22d0e18f02c7374d325fcc7298a525e7a00d78ace4533f79d55cf14",
+        "bytes": 529244
+      },
+      "degraded": {
+        "path": "e6-hiss-modulated-wow-18db-44k.degraded.wav",
+        "sha256": "e1efc2accda27ef82bc1e03f517e70ce1b8d1478da4dfa387cf6f58b8406a459",
+        "bytes": 529244
+      },
+      "click_mask": {
+        "path": "e6-hiss-modulated-wow-18db-44k.click_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "attack_mask": {
+        "path": "e6-hiss-modulated-wow-18db-44k.attack_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 613,
+        "rate": 44100,
+        "seconds": 3.0,
+        "operator": "hiss_only",
+        "bits": 16,
+        "target_snr_db": 18.0,
+        "hiss_color": "tape_white_hf",
+        "modulated": true,
+        "quiet_tail": true
+      },
+      "tail_slice": [
+        98784,
+        132300
+      ]
+    },
+    {
+      "id": "e6-hiss-high-snr-30db-48k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "hiss_only",
+      "split": "eval",
+      "rate": 48000,
+      "channels": 2,
+      "bits": 24,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-08",
+        "fingerprint": "fp-e6-08",
+        "session": "ses-e6-08",
+        "artist": "e6-artist-08",
+        "album": "e6-album-08",
+        "stem_family": "fam-e6-08"
+      },
+      "clean": {
+        "path": "e6-hiss-high-snr-30db-48k.clean.wav",
+        "sha256": "2ec6811f9adb97a9b4299fdf77dc722e16f7e4b89c4a4e236f2d9e598d05bcb3",
+        "bytes": 864044
+      },
+      "degraded": {
+        "path": "e6-hiss-high-snr-30db-48k.degraded.wav",
+        "sha256": "af66940a48bc39e63bcb157012545986925d69274ab105b3bd5e98c969b8a183",
+        "bytes": 864044
+      },
+      "click_mask": {
+        "path": "e6-hiss-high-snr-30db-48k.click_mask.json",
+        "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+        "bytes": 40
+      },
+      "attack_mask": {
+        "path": "e6-hiss-high-snr-30db-48k.attack_mask.json",
+        "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 614,
+        "rate": 48000,
+        "seconds": 3.0,
+        "operator": "hiss_only",
+        "bits": 24,
+        "target_snr_db": 30.0,
+        "hiss_color": "tape_white_hf",
+        "quiet_tail": true
+      },
+      "tail_slice": [
+        107520,
+        144000
+      ]
+    },
+    {
+      "id": "e6-archival-vinyl-44k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "combined_archival",
+      "split": "eval",
+      "rate": 44100,
+      "channels": 2,
+      "bits": 16,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-09",
+        "fingerprint": "fp-e6-09",
+        "session": "ses-e6-09",
+        "artist": "e6-artist-09",
+        "album": "e6-album-09",
+        "stem_family": "fam-e6-09"
+      },
+      "clean": {
+        "path": "e6-archival-vinyl-44k.clean.wav",
+        "sha256": "50817e6562b5bdf1f40b5ce31c0f6c2ff5f691fe2771e8491f6d90c6b5e30def",
+        "bytes": 529244
+      },
+      "degraded": {
+        "path": "e6-archival-vinyl-44k.degraded.wav",
+        "sha256": "6b7220693bbbc31943ca09032b0e7535c78efe2ff71d912282654c04bf0ad42e",
+        "bytes": 529244
+      },
+      "click_mask": {
+        "path": "e6-archival-vinyl-44k.click_mask.json",
+        "sha256": "b811c0041507610946b1a665a246ffe61dd40fddd2f421d11562fb4a94c7554f",
+        "bytes": 845
+      },
+      "attack_mask": {
+        "path": "e6-archival-vinyl-44k.attack_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 621,
+        "rate": 44100,
+        "seconds": 3.0,
+        "operator": "combined_archival",
+        "bits": 16,
+        "target_snr_db": 18.0,
+        "hiss_color": "vinyl_pink_hf",
+        "n_clicks": 35,
+        "width_range": [
+          1,
+          5
+        ],
+        "amp_range": [
+          0.26,
+          0.65
+        ],
+        "quiet_tail": true
+      },
+      "tail_slice": [
+        98784,
+        132300
+      ]
+    },
+    {
+      "id": "e6-archival-tape-crackle-48k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "combined_archival",
+      "split": "eval",
+      "rate": 48000,
+      "channels": 2,
+      "bits": 24,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-10",
+        "fingerprint": "fp-e6-10",
+        "session": "ses-e6-10",
+        "artist": "e6-artist-10",
+        "album": "e6-album-10",
+        "stem_family": "fam-e6-10"
+      },
+      "clean": {
+        "path": "e6-archival-tape-crackle-48k.clean.wav",
+        "sha256": "65f42d43b13bd0343772c60768716dfbe516e5cbdfa7c99bf59fe8d1c5a2ccb8",
+        "bytes": 864044
+      },
+      "degraded": {
+        "path": "e6-archival-tape-crackle-48k.degraded.wav",
+        "sha256": "92a90c10ed47b6aae685133e89ec58396760b47f246dcfaeba58c898b6d3a594",
+        "bytes": 864044
+      },
+      "click_mask": {
+        "path": "e6-archival-tape-crackle-48k.click_mask.json",
+        "sha256": "cf68f81ded77aefbdcfd67954193e07c605bbdd96770face6b0a304d38d3d210",
+        "bytes": 824
+      },
+      "attack_mask": {
+        "path": "e6-archival-tape-crackle-48k.attack_mask.json",
+        "sha256": "10ea0136743c6e27d2e7db385538e8311d9fe1116aa6c67fd124fbf7b6c1bdf5",
+        "bytes": 240
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 622,
+        "rate": 48000,
+        "seconds": 3.0,
+        "operator": "combined_archival",
+        "bits": 24,
+        "target_snr_db": 16.0,
+        "hiss_color": "tape_white_hf",
+        "modulated": true,
+        "percussive": true,
+        "overlay_on_attacks": true,
+        "n_clicks": 30,
+        "width_range": [
+          1,
+          5
+        ],
+        "amp_range": [
+          0.3,
+          0.68
+        ],
+        "quiet_tail": true
+      },
+      "tail_slice": [
+        107520,
+        144000
+      ]
+    },
+    {
+      "id": "e6-archival-78rpm-shellac-44k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "combined_archival",
+      "split": "eval",
+      "rate": 44100,
+      "channels": 2,
+      "bits": 16,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-11",
+        "fingerprint": "fp-e6-11",
+        "session": "ses-e6-11",
+        "artist": "e6-artist-11",
+        "album": "e6-album-11",
+        "stem_family": "fam-e6-11"
+      },
+      "clean": {
+        "path": "e6-archival-78rpm-shellac-44k.clean.wav",
+        "sha256": "eb631a90cad5381e3420afc8102df59ed35140ec59a9ee87436df81b34e449a1",
+        "bytes": 529244
+      },
+      "degraded": {
+        "path": "e6-archival-78rpm-shellac-44k.degraded.wav",
+        "sha256": "2bd9769c2dc012f1dafd30c3217fe7d9f43f67f6db3b389cc3801d047748ceac",
+        "bytes": 529244
+      },
+      "click_mask": {
+        "path": "e6-archival-78rpm-shellac-44k.click_mask.json",
+        "sha256": "4acd9880d9f828d35529415e03f1a33481eb2c7254478d35cf2017bec0756cae",
+        "bytes": 1635
+      },
+      "attack_mask": {
+        "path": "e6-archival-78rpm-shellac-44k.attack_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 623,
+        "rate": 44100,
+        "seconds": 3.0,
+        "operator": "combined_archival",
+        "bits": 16,
+        "target_snr_db": 12.0,
+        "hiss_color": "shellac_broadband",
+        "narrowband": true,
+        "n_clicks": 70,
+        "width_range": [
+          1,
+          6
+        ],
+        "amp_range": [
+          0.24,
+          0.62
+        ]
+      },
+      "tail_slice": null
+    },
+    {
+      "id": "e6-ctl-clean-percussion-48k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "clean_control",
+      "split": "control",
+      "rate": 48000,
+      "channels": 2,
+      "bits": 24,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-12",
+        "fingerprint": "fp-e6-12",
+        "session": "ses-e6-12",
+        "artist": "e6-artist-12",
+        "album": "e6-album-12",
+        "stem_family": "fam-e6-12"
+      },
+      "clean": {
+        "path": "e6-ctl-clean-percussion-48k.clean.wav",
+        "sha256": "f9db0c4b6eae3c4565039fa2c657ca94661f9009658124ca00984113cb3d1a19",
+        "bytes": 864044
+      },
+      "degraded": {
+        "path": "e6-ctl-clean-percussion-48k.degraded.wav",
+        "sha256": "f9db0c4b6eae3c4565039fa2c657ca94661f9009658124ca00984113cb3d1a19",
+        "bytes": 864044
+      },
+      "click_mask": {
+        "path": "e6-ctl-clean-percussion-48k.click_mask.json",
+        "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+        "bytes": 40
+      },
+      "attack_mask": {
+        "path": "e6-ctl-clean-percussion-48k.attack_mask.json",
+        "sha256": "4ed82092a5251ce1fa864b5eba678af147cc7a919274cc09317803d7761ad92d",
+        "bytes": 242
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 631,
+        "rate": 48000,
+        "seconds": 3.0,
+        "operator": "clean_control",
+        "bits": 24,
+        "percussive": true
+      },
+      "tail_slice": null
+    },
+    {
+      "id": "e6-ctl-clean-plucked-44k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "clean_control",
+      "split": "control",
+      "rate": 44100,
+      "channels": 2,
+      "bits": 16,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-13",
+        "fingerprint": "fp-e6-13",
+        "session": "ses-e6-13",
+        "artist": "e6-artist-13",
+        "album": "e6-album-13",
+        "stem_family": "fam-e6-13"
+      },
+      "clean": {
+        "path": "e6-ctl-clean-plucked-44k.clean.wav",
+        "sha256": "229bf3a03f8748d5c9d7a84e5cdc7843e45f7eae782b7303f553da4148bf169a",
+        "bytes": 529244
+      },
+      "degraded": {
+        "path": "e6-ctl-clean-plucked-44k.degraded.wav",
+        "sha256": "229bf3a03f8748d5c9d7a84e5cdc7843e45f7eae782b7303f553da4148bf169a",
+        "bytes": 529244
+      },
+      "click_mask": {
+        "path": "e6-ctl-clean-plucked-44k.click_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "attack_mask": {
+        "path": "e6-ctl-clean-plucked-44k.attack_mask.json",
+        "sha256": "420e4323c431b1c55a1598f7efb87a33680495924a5e57ab45e269f6c78d8e38",
+        "bytes": 201
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 632,
+        "rate": 44100,
+        "seconds": 3.0,
+        "operator": "clean_control",
+        "bits": 16,
+        "plucked": true
+      },
+      "tail_slice": null
+    },
+    {
+      "id": "e6-ctl-clean-reverb-tail-48k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "clean_control",
+      "split": "control",
+      "rate": 48000,
+      "channels": 2,
+      "bits": 24,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-14",
+        "fingerprint": "fp-e6-14",
+        "session": "ses-e6-14",
+        "artist": "e6-artist-14",
+        "album": "e6-album-14",
+        "stem_family": "fam-e6-14"
+      },
+      "clean": {
+        "path": "e6-ctl-clean-reverb-tail-48k.clean.wav",
+        "sha256": "5b40aaf54c17fb9cf902df3257f750634cb7a7ec3fdf8cc86499bbffd0e6ddf4",
+        "bytes": 864044
+      },
+      "degraded": {
+        "path": "e6-ctl-clean-reverb-tail-48k.degraded.wav",
+        "sha256": "5b40aaf54c17fb9cf902df3257f750634cb7a7ec3fdf8cc86499bbffd0e6ddf4",
+        "bytes": 864044
+      },
+      "click_mask": {
+        "path": "e6-ctl-clean-reverb-tail-48k.click_mask.json",
+        "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+        "bytes": 40
+      },
+      "attack_mask": {
+        "path": "e6-ctl-clean-reverb-tail-48k.attack_mask.json",
+        "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 633,
+        "rate": 48000,
+        "seconds": 3.0,
+        "operator": "clean_control",
+        "bits": 24,
+        "quiet_tail": true
+      },
+      "tail_slice": [
+        107520,
+        144000
+      ]
+    },
+    {
+      "id": "e6-ctl-clean-tonal-44k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "clean_control",
+      "split": "control",
+      "rate": 44100,
+      "channels": 2,
+      "bits": 16,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-15",
+        "fingerprint": "fp-e6-15",
+        "session": "ses-e6-15",
+        "artist": "e6-artist-15",
+        "album": "e6-album-15",
+        "stem_family": "fam-e6-15"
+      },
+      "clean": {
+        "path": "e6-ctl-clean-tonal-44k.clean.wav",
+        "sha256": "1b9135b43c3f0ea69840f1727f13bb62bba6956dd05fc1afdf9905bb47b6406a",
+        "bytes": 529244
+      },
+      "degraded": {
+        "path": "e6-ctl-clean-tonal-44k.degraded.wav",
+        "sha256": "1b9135b43c3f0ea69840f1727f13bb62bba6956dd05fc1afdf9905bb47b6406a",
+        "bytes": 529244
+      },
+      "click_mask": {
+        "path": "e6-ctl-clean-tonal-44k.click_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "attack_mask": {
+        "path": "e6-ctl-clean-tonal-44k.attack_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 634,
+        "rate": 44100,
+        "seconds": 3.0,
+        "operator": "clean_control",
+        "bits": 16
+      },
+      "tail_slice": null
+    },
+    {
+      "id": "e6-ood-wide-scratch-44k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "ood",
+      "split": "eval",
+      "rate": 44100,
+      "channels": 2,
+      "bits": 16,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-16",
+        "fingerprint": "fp-e6-16",
+        "session": "ses-e6-16",
+        "artist": "e6-artist-16",
+        "album": "e6-album-16",
+        "stem_family": "fam-e6-16"
+      },
+      "clean": {
+        "path": "e6-ood-wide-scratch-44k.clean.wav",
+        "sha256": "a44ecaca72380e151f26038ede398a85b38a56e281b062933d751e1ece245361",
+        "bytes": 529244
+      },
+      "degraded": {
+        "path": "e6-ood-wide-scratch-44k.degraded.wav",
+        "sha256": "7f4905896f24d69109bc003ecee2e33fa351c55ebf42dbefc4f913664a8b3af4",
+        "bytes": 529244
+      },
+      "click_mask": {
+        "path": "e6-ood-wide-scratch-44k.click_mask.json",
+        "sha256": "085e5017110ba6f8c4c493e1d7b5a945a388453c3f0644f2a2b9fd3bfa0a7c48",
+        "bytes": 155
+      },
+      "attack_mask": {
+        "path": "e6-ood-wide-scratch-44k.attack_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 641,
+        "rate": 44100,
+        "seconds": 3.0,
+        "operator": "ood_wide_scratch",
+        "bits": 16,
+        "n_clicks": 10,
+        "width_range": [
+          20,
+          34
+        ],
+        "amp_range": [
+          0.35,
+          0.7
+        ]
+      },
+      "tail_slice": null
+    },
+    {
+      "id": "e6-ood-nonstationary-hum-hiss-48k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "ood",
+      "split": "eval",
+      "rate": 48000,
+      "channels": 2,
+      "bits": 24,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-17",
+        "fingerprint": "fp-e6-17",
+        "session": "ses-e6-17",
+        "artist": "e6-artist-17",
+        "album": "e6-album-17",
+        "stem_family": "fam-e6-17"
+      },
+      "clean": {
+        "path": "e6-ood-nonstationary-hum-hiss-48k.clean.wav",
+        "sha256": "846d4e59956ae9af0357ba6ffc557d01e030d65fe4ef5289c303800209585677",
+        "bytes": 864044
+      },
+      "degraded": {
+        "path": "e6-ood-nonstationary-hum-hiss-48k.degraded.wav",
+        "sha256": "9191e8a6e2c372f9c2f37af9e6bfbaf8b169f21871211e1a66ab85e27fec9af7",
+        "bytes": 864044
+      },
+      "click_mask": {
+        "path": "e6-ood-nonstationary-hum-hiss-48k.click_mask.json",
+        "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+        "bytes": 40
+      },
+      "attack_mask": {
+        "path": "e6-ood-nonstationary-hum-hiss-48k.attack_mask.json",
+        "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 642,
+        "rate": 48000,
+        "seconds": 3.0,
+        "operator": "ood_nonstationary_hum_hiss",
+        "bits": 24,
+        "target_snr_db": 18.0
+      },
+      "tail_slice": null
+    },
+    {
+      "id": "e6-ood-ultrasonic-perc-96k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "ood",
+      "split": "eval",
+      "rate": 96000,
+      "channels": 2,
+      "bits": 24,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-18",
+        "fingerprint": "fp-e6-18",
+        "session": "ses-e6-18",
+        "artist": "e6-artist-18",
+        "album": "e6-album-18",
+        "stem_family": "fam-e6-18"
+      },
+      "clean": {
+        "path": "e6-ood-ultrasonic-perc-96k.clean.wav",
+        "sha256": "d18845b9174ae65cc36b423e74adc8677a227fea08c6af0e40cbc83309e7af9e",
+        "bytes": 1152044
+      },
+      "degraded": {
+        "path": "e6-ood-ultrasonic-perc-96k.degraded.wav",
+        "sha256": "1e5b0517e0915bf8ee745cdb5919142535f1d1814763a3f27e51fe6555713df5",
+        "bytes": 1152044
+      },
+      "click_mask": {
+        "path": "e6-ood-ultrasonic-perc-96k.click_mask.json",
+        "sha256": "83805f78f55b03cd55b460a0fa2f793d34a578468074ad6b2d28a92b0ce7ce1c",
+        "bytes": 341
+      },
+      "attack_mask": {
+        "path": "e6-ood-ultrasonic-perc-96k.attack_mask.json",
+        "sha256": "9efcd70d0071ed5ef1a9964060eec0f01589d85ba62136f4e01f5d2cfee90320",
+        "bytes": 176
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 643,
+        "rate": 96000,
+        "seconds": 2.0,
+        "operator": "ood_ultrasonic_perc",
+        "bits": 24,
+        "percussive": true,
+        "ultrasonic": true,
+        "n_clicks": 16,
+        "width_range": [
+          1,
+          4
+        ],
+        "amp_range": [
+          0.28,
+          0.6
+        ]
+      },
+      "tail_slice": null
+    }
+  ]
+}
