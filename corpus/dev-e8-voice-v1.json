@@ -1,0 +1,429 @@
+{
+  "schema": "e8-voice-corpus/v1",
+  "contour": "A_voice",
+  "tier": "dev",
+  "dataset_version": "dev-e8-voice-2026-11-23",
+  "sealed_corpora_opened": false,
+  "external_datasets_status": {
+    "daps": "not_provisioned_on_host",
+    "voicebank_demand": "not_provisioned_on_host"
+  },
+  "rights": {
+    "local_cpu": true,
+    "colab": true,
+    "public_metrics": true,
+    "note": "100% synthetic speech-like formant + RIR + noise dev corpus; safe for authorized Colab dev runs."
+  },
+  "toolchain": {
+    "python": "3.12.3",
+    "numpy": "2.5.2",
+    "scipy": "1.17.1",
+    "ffmpeg": "125907-ga7e72069f1-20260802",
+    "libflac": "1.4.3"
+  },
+  "rng": {
+    "algorithm": "numpy-pcg64",
+    "seed_namespace": "80101..80503"
+  },
+  "strata_counts": {
+    "reverb_only": 3,
+    "noise_only": 3,
+    "reverb_plus_noise": 3,
+    "clean_voice_control": 3,
+    "ood_voice": 3
+  },
+  "files": [
+    {
+      "path": "e8-voice-rev-baritone-small-16k.clean.wav",
+      "sha256": "a450715df950c9b61b48c3cfaad9a655f8d925efb9f578804e030888e63bc54c",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-rev-baritone-small-16k.degraded.wav",
+      "sha256": "f534cf2d8c5e73a7dea520e9fc555262b110508f198470d8173c0248add248dc",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-rev-alto-medium-16k.clean.wav",
+      "sha256": "1c971c136ee507d6d25b9be0c5083deeee80ab9b975a60e2a52e2ad5cbd8e317",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-rev-alto-medium-16k.degraded.wav",
+      "sha256": "9fac793827482ec4aa7008fe4825f1b5c92050736925389f4b274952d17fa812",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-rev-soprano-hall-16k.clean.wav",
+      "sha256": "3cffeaca282159546f3078465076315e5d0646a5ad841d0498e4bfb6f5da2ded",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-rev-soprano-hall-16k.degraded.wav",
+      "sha256": "ed33175b8d2d43a6901c4555c767553b2504201050986dec5491c7bba57b5115",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-noise-baritone-15db-16k.clean.wav",
+      "sha256": "97ea1dc547cd39f586201199a5a378b9fc5d73617ef8a854dfc40effc90c257a",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-noise-baritone-15db-16k.degraded.wav",
+      "sha256": "48cc8eb536c1985fe94cd2a8a3b716b96ae57788c4b593287fe6fe0f5b8fd4fe",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-noise-alto-10db-16k.clean.wav",
+      "sha256": "ae1296b5220959850d410b2053dc41271e8211f80f5d95556a47b813a548cd93",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-noise-alto-10db-16k.degraded.wav",
+      "sha256": "8e0c03904ecbb14f219b160b8716764b921cc953ff28c8a6777c49e7166173e1",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-noise-soprano-5db-16k.clean.wav",
+      "sha256": "5126806570ff6c7ec815efa4e1b9c16a75db642c6dbe657988f1a0cf85cbaf88",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-noise-soprano-5db-16k.degraded.wav",
+      "sha256": "77bbf4b1ddab05b36af665651748bd864647becae4bac566a6fc61574ee37f98",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-revnoise-baritone-mild-16k.clean.wav",
+      "sha256": "b19ff08508561a96f748e4a364eb22f913bb9c4069951009d9d949921f683719",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-revnoise-baritone-mild-16k.degraded.wav",
+      "sha256": "92b7bfc9a5420b43f3646172e587c7c6fcfc47481ca7f4e3327b8fbff8403a57",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-revnoise-alto-mod-16k.clean.wav",
+      "sha256": "246ef6506f4520fa6ebbc49dbab459d3cf550c6df857f977e3f0d76a7d678678",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-revnoise-alto-mod-16k.degraded.wav",
+      "sha256": "884df6fbb45ab490869f70881e222c99ced56b1475daa01060cecb1ed5f2a35f",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-revnoise-soprano-heavy-16k.clean.wav",
+      "sha256": "12c806b61757cb345abddb12a02acad6dcf21423d12aca60757976c0b0be331a",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-revnoise-soprano-heavy-16k.degraded.wav",
+      "sha256": "fdfb4668a9c225ae09aa5d866f5af3c71b1d1bb30a3d1de7c4964b057b5475a9",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-ctl-clean-baritone-16k.clean.wav",
+      "sha256": "7011c66a0b66642f3d7f54ff72e6f273ba03485e71ae03d88700c600bdf992a7",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-ctl-clean-baritone-16k.degraded.wav",
+      "sha256": "7011c66a0b66642f3d7f54ff72e6f273ba03485e71ae03d88700c600bdf992a7",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-ctl-clean-alto-16k.clean.wav",
+      "sha256": "aa3e4ebef0be1a14a0eeb800154ec6e376f3af0dd7021c117d6b96ee26eacd11",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-ctl-clean-alto-16k.degraded.wav",
+      "sha256": "aa3e4ebef0be1a14a0eeb800154ec6e376f3af0dd7021c117d6b96ee26eacd11",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-ctl-clean-soprano-16k.clean.wav",
+      "sha256": "b2981f7991da0e770148c7f4ed627aac1a36727e833a4e89162bf9ad1d453e6a",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-ctl-clean-soprano-16k.degraded.wav",
+      "sha256": "b2981f7991da0e770148c7f4ed627aac1a36727e833a4e89162bf9ad1d453e6a",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-ood-hall-lowsnr-16k.clean.wav",
+      "sha256": "9c630c1cf10254937c3e149927898ec1e6e817fa98502cc2a7b7654381a8aa0d",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-ood-hall-lowsnr-16k.degraded.wav",
+      "sha256": "f8ea478013103983ba2c1b20b35f91666c699a93265cb53724b5def0fb52840d",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-ood-nonstationary-babble-16k.clean.wav",
+      "sha256": "abc85f9ad72dc340f9175dfff51d597c7071784165fa4db93368838a8b54805e",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-ood-nonstationary-babble-16k.degraded.wav",
+      "sha256": "ceb2261942609606687e73bc8def342cc8e1593f00bf50d171e2281f2de30f0d",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-ood-telephony-bandlimit-16k.clean.wav",
+      "sha256": "da57fbd1561293e96077e8bab3f257b5fdfc258ed25eab4656a07a028693b216",
+      "bytes": 80044
+    },
+    {
+      "path": "e8-voice-ood-telephony-bandlimit-16k.degraded.wav",
+      "sha256": "ef7a0cb56b7e6f0344f8662d93f76f41b104fd03e526c68fae5c640ad5d85dba",
+      "bytes": 80044
+    }
+  ],
+  "cases": [
+    {
+      "id": "e8-voice-rev-baritone-small-16k",
+      "stratum": "reverb_only",
+      "speaker": "baritone_male_synth",
+      "f0_hz": 112.0,
+      "formant_scale": 0.94,
+      "rt60_s": 0.28,
+      "drr_db": 4.0,
+      "noise_snr_db": null,
+      "noise_type": null,
+      "telephony_bandlimit": false,
+      "is_clean_control": false,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80101
+    },
+    {
+      "id": "e8-voice-rev-alto-medium-16k",
+      "stratum": "reverb_only",
+      "speaker": "alto_female_synth",
+      "f0_hz": 186.0,
+      "formant_scale": 1.08,
+      "rt60_s": 0.55,
+      "drr_db": 0.0,
+      "noise_snr_db": null,
+      "noise_type": null,
+      "telephony_bandlimit": false,
+      "is_clean_control": false,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80102
+    },
+    {
+      "id": "e8-voice-rev-soprano-hall-16k",
+      "stratum": "reverb_only",
+      "speaker": "soprano_female_synth",
+      "f0_hz": 242.0,
+      "formant_scale": 1.15,
+      "rt60_s": 0.9,
+      "drr_db": -3.0,
+      "noise_snr_db": null,
+      "noise_type": null,
+      "telephony_bandlimit": false,
+      "is_clean_control": false,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80103
+    },
+    {
+      "id": "e8-voice-noise-baritone-15db-16k",
+      "stratum": "noise_only",
+      "speaker": "baritone_male_synth",
+      "f0_hz": 118.0,
+      "formant_scale": 0.96,
+      "rt60_s": null,
+      "drr_db": null,
+      "noise_snr_db": 15.0,
+      "noise_type": "pink_hiss",
+      "telephony_bandlimit": false,
+      "is_clean_control": false,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80201
+    },
+    {
+      "id": "e8-voice-noise-alto-10db-16k",
+      "stratum": "noise_only",
+      "speaker": "alto_female_synth",
+      "f0_hz": 192.0,
+      "formant_scale": 1.07,
+      "rt60_s": null,
+      "drr_db": null,
+      "noise_snr_db": 10.0,
+      "noise_type": "speech_shaped_hiss",
+      "telephony_bandlimit": false,
+      "is_clean_control": false,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80202
+    },
+    {
+      "id": "e8-voice-noise-soprano-5db-16k",
+      "stratum": "noise_only",
+      "speaker": "soprano_female_synth",
+      "f0_hz": 236.0,
+      "formant_scale": 1.14,
+      "rt60_s": null,
+      "drr_db": null,
+      "noise_snr_db": 5.0,
+      "noise_type": "pink_hiss",
+      "telephony_bandlimit": false,
+      "is_clean_control": false,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80203
+    },
+    {
+      "id": "e8-voice-revnoise-baritone-mild-16k",
+      "stratum": "reverb_plus_noise",
+      "speaker": "baritone_male_synth",
+      "f0_hz": 115.0,
+      "formant_scale": 0.95,
+      "rt60_s": 0.35,
+      "drr_db": 3.0,
+      "noise_snr_db": 14.0,
+      "noise_type": "pink_hiss",
+      "telephony_bandlimit": false,
+      "is_clean_control": false,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80301
+    },
+    {
+      "id": "e8-voice-revnoise-alto-mod-16k",
+      "stratum": "reverb_plus_noise",
+      "speaker": "alto_female_synth",
+      "f0_hz": 182.0,
+      "formant_scale": 1.06,
+      "rt60_s": 0.55,
+      "drr_db": 0.5,
+      "noise_snr_db": 10.0,
+      "noise_type": "speech_shaped_hiss",
+      "telephony_bandlimit": false,
+      "is_clean_control": false,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80302
+    },
+    {
+      "id": "e8-voice-revnoise-soprano-heavy-16k",
+      "stratum": "reverb_plus_noise",
+      "speaker": "soprano_female_synth",
+      "f0_hz": 248.0,
+      "formant_scale": 1.16,
+      "rt60_s": 0.75,
+      "drr_db": -2.0,
+      "noise_snr_db": 7.0,
+      "noise_type": "pink_hiss",
+      "telephony_bandlimit": false,
+      "is_clean_control": false,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80303
+    },
+    {
+      "id": "e8-voice-ctl-clean-baritone-16k",
+      "stratum": "clean_voice_control",
+      "speaker": "baritone_male_synth",
+      "f0_hz": 110.0,
+      "formant_scale": 0.94,
+      "rt60_s": null,
+      "drr_db": null,
+      "noise_snr_db": null,
+      "noise_type": null,
+      "telephony_bandlimit": false,
+      "is_clean_control": true,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80401
+    },
+    {
+      "id": "e8-voice-ctl-clean-alto-16k",
+      "stratum": "clean_voice_control",
+      "speaker": "alto_female_synth",
+      "f0_hz": 185.0,
+      "formant_scale": 1.08,
+      "rt60_s": null,
+      "drr_db": null,
+      "noise_snr_db": null,
+      "noise_type": null,
+      "telephony_bandlimit": false,
+      "is_clean_control": true,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80402
+    },
+    {
+      "id": "e8-voice-ctl-clean-soprano-16k",
+      "stratum": "clean_voice_control",
+      "speaker": "soprano_female_synth",
+      "f0_hz": 245.0,
+      "formant_scale": 1.15,
+      "rt60_s": null,
+      "drr_db": null,
+      "noise_snr_db": null,
+      "noise_type": null,
+      "telephony_bandlimit": false,
+      "is_clean_control": true,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80403
+    },
+    {
+      "id": "e8-voice-ood-hall-lowsnr-16k",
+      "stratum": "ood_voice",
+      "speaker": "baritone_male_synth",
+      "f0_hz": 116.0,
+      "formant_scale": 0.95,
+      "rt60_s": 1.1,
+      "drr_db": -5.0,
+      "noise_snr_db": 2.0,
+      "noise_type": "pink_hiss",
+      "telephony_bandlimit": false,
+      "is_clean_control": false,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80501
+    },
+    {
+      "id": "e8-voice-ood-nonstationary-babble-16k",
+      "stratum": "ood_voice",
+      "speaker": "alto_female_synth",
+      "f0_hz": 190.0,
+      "formant_scale": 1.07,
+      "rt60_s": 0.45,
+      "drr_db": 1.0,
+      "noise_snr_db": 4.0,
+      "noise_type": "nonstationary_babble",
+      "telephony_bandlimit": false,
+      "is_clean_control": false,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80502
+    },
+    {
+      "id": "e8-voice-ood-telephony-bandlimit-16k",
+      "stratum": "ood_voice",
+      "speaker": "soprano_female_synth",
+      "f0_hz": 238.0,
+      "formant_scale": 1.14,
+      "rt60_s": 0.4,
+      "drr_db": 2.0,
+      "noise_snr_db": 8.0,
+      "noise_type": "pink_hiss",
+      "telephony_bandlimit": true,
+      "is_clean_control": false,
+      "rate": 16000,
+      "duration_s": 2.5,
+      "seed": 80503
+    }
+  ]
+}

@@ -1,0 +1,428 @@
+{
+  "schema": "e8-stems-corpus/v1",
+  "contour": "B_stems",
+  "tier": "dev",
+  "dataset_version": "dev-e8-stems-2026-11-23",
+  "sealed_corpora_opened": false,
+  "additive_mix_invariant_max_err": 0.0,
+  "external_datasets_status": {
+    "musdb18_hq": "not_provisioned_on_host"
+  },
+  "rights": {
+    "local_cpu": true,
+    "colab": true,
+    "public_metrics": true,
+    "note": "100% synthetic 4-stem additive stereo dev corpus; safe for authorized Colab dev runs."
+  },
+  "toolchain": {
+    "python": "3.12.3",
+    "numpy": "2.5.2",
+    "scipy": "1.17.1",
+    "ffmpeg": "125907-ga7e72069f1-20260802",
+    "libflac": "1.4.3"
+  },
+  "rng": {
+    "algorithm": "numpy-pcg64",
+    "seed_namespace": "81101..81303"
+  },
+  "strata_counts": {
+    "standard_4stem_mix": 4,
+    "sparse_clean_stem_control": 2,
+    "ood_stems": 3
+  },
+  "files": [
+    {
+      "path": "e8-stems-std-pop-rock-44k.mix.wav",
+      "sha256": "60ba286a658032fa1a657a3610875f30c98e1cfe706da70ba38b5c705c5c8a97",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-pop-rock-44k.vocals.wav",
+      "sha256": "c05e2aa1b0b099f7e7fad7d66ebf9d591081743e5540a5f9afe33d8068381bda",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-pop-rock-44k.drums.wav",
+      "sha256": "c22f8812be7e2e109be82cea145aecb27c0ffc88f3fe292938624e3928e2c3fe",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-pop-rock-44k.bass.wav",
+      "sha256": "d211a75c9ff58ebf68fa514e9dbaceb6c1b96dc90b21b61e05ed626c4e82a947",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-pop-rock-44k.other.wav",
+      "sha256": "25efe00e433a683a9edf491d57c3786186a1f2b2244dda460b8d088ba6414194",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-jazz-acoustic-44k.mix.wav",
+      "sha256": "bfff977c1d9bbb7e4cb1a4eaade3759ba0933f0070b6f6bfaaf9915646dcd91c",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-jazz-acoustic-44k.vocals.wav",
+      "sha256": "08c82957892be19b014c88194ee807b2327768267806d44111da3b718b45a4ab",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-jazz-acoustic-44k.drums.wav",
+      "sha256": "b08ba7ab978d089d68b7545037b0ed17aa1813083f89c1fe40831cd75f6f2a38",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-jazz-acoustic-44k.bass.wav",
+      "sha256": "c639f4ae6d60f2d4494465962280d241c8c7c5e82a02318ad28d9b7234a0ceea",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-jazz-acoustic-44k.other.wav",
+      "sha256": "fc5bb8295c0c2a20b129a29bddf3d876ce52392632548bbcf16146ea728185a7",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-synth-electronic-44k.mix.wav",
+      "sha256": "fe15cb23b2014d1088f919f8cf7a49489d6135d0e6aa1a52d023948e46507c46",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-synth-electronic-44k.vocals.wav",
+      "sha256": "ea90204b1c33d4e65fec2f8fea0f7d06d889b0342d2f8d0902e97f141d431af3",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-synth-electronic-44k.drums.wav",
+      "sha256": "59f22ec6ad4724e374f1702dba570cdc864e371b0a9f80cee0ace38609275afa",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-synth-electronic-44k.bass.wav",
+      "sha256": "ea3907d6b0681d72dae8af89213d7963deea0e9b46fac56c6c416a5daca8c21e",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-synth-electronic-44k.other.wav",
+      "sha256": "c71717a8712b33bc9e66c62f0c6dacf91eac574d09d956ca34171411ade8724f",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-dense-ballad-44k.mix.wav",
+      "sha256": "9ff52604c65173578d9a369b6b328a46aa0d9c1e6bdac3ba07e01bfa9d14d6af",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-dense-ballad-44k.vocals.wav",
+      "sha256": "2d5fd80f6c6b35f1fdb7225aff5a9b801ec6829c86c51ddfa8cc17431fadaead",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-dense-ballad-44k.drums.wav",
+      "sha256": "274ce7f776696f3c1008e80a307ad7a327404bb4820c08b7252a8e638b68d44a",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-dense-ballad-44k.bass.wav",
+      "sha256": "d49c61ca64aca177504f06e9aa697a890649c5161425fa4eff24cd38b404e56d",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-std-dense-ballad-44k.other.wav",
+      "sha256": "bc41333c25fe716d1ee3fc80d79aca2c932a4d5a229c00157a2d69aac52631d7",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ctl-solo-vocals-44k.mix.wav",
+      "sha256": "3d07aa19b2209004e4692a9c4e16d133bd2460f6cc055f1d90305973f1c73a74",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ctl-solo-vocals-44k.vocals.wav",
+      "sha256": "3d07aa19b2209004e4692a9c4e16d133bd2460f6cc055f1d90305973f1c73a74",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ctl-solo-vocals-44k.drums.wav",
+      "sha256": "f97ff66dc04d4ac68f14728415b938d4683ceeb7960ac5518351551187bbfd9f",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ctl-solo-vocals-44k.bass.wav",
+      "sha256": "f97ff66dc04d4ac68f14728415b938d4683ceeb7960ac5518351551187bbfd9f",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ctl-solo-vocals-44k.other.wav",
+      "sha256": "f97ff66dc04d4ac68f14728415b938d4683ceeb7960ac5518351551187bbfd9f",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ctl-bass-drums-only-44k.mix.wav",
+      "sha256": "7c13b0a3ee7007dacdb67d00aff54a0b18f7fb4201344996f9f3aa3713f84ef3",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ctl-bass-drums-only-44k.vocals.wav",
+      "sha256": "bacea5029b073b5fdd2f8994632fcfac6c0e5602cb3a136af3d0326758f2bcb1",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ctl-bass-drums-only-44k.drums.wav",
+      "sha256": "f7d05a1275c9f2d977609c83d83c21cd3438db91a767bf242e51bf9ab69ac1fd",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ctl-bass-drums-only-44k.bass.wav",
+      "sha256": "1f7c62b6fd9713b529e3ed6087c9b72690429d239cc6acb87f28be917dcb5f43",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ctl-bass-drums-only-44k.other.wav",
+      "sha256": "bacea5029b073b5fdd2f8994632fcfac6c0e5602cb3a136af3d0326758f2bcb1",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-vocal-other-clash-44k.mix.wav",
+      "sha256": "47b6c9521ddc04af8781ef15f3700c97f2aa585eef2dc7a36501fdff8c2d1662",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-vocal-other-clash-44k.vocals.wav",
+      "sha256": "4af33b89a68c1bb133e8e5e35e73e93431525a7d6609965c8f08af0a1d60506d",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-vocal-other-clash-44k.drums.wav",
+      "sha256": "951430e6ea72078ee7c2c5a8bbe68ce38a060c51dfe0a165b92fcffed803a0ab",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-vocal-other-clash-44k.bass.wav",
+      "sha256": "529a7b927dcc850fffe413808751ecfada7ed0da7a9511db3ccfecd335ae6b4c",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-vocal-other-clash-44k.other.wav",
+      "sha256": "48b36aa73eb6f1f4b6addd786b08ff5d2341a0f862ead28c4c444a4e95aec00c",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-wide-antiphase-cymbals-44k.mix.wav",
+      "sha256": "3c6600582c3163bca944e66c2441c3b921659c5c30df49a9335926eb222b022b",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-wide-antiphase-cymbals-44k.vocals.wav",
+      "sha256": "db04a24067415a26e5a5ee1d21ec88f0ddf857af51512d59ffcfd194fb6636b7",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-wide-antiphase-cymbals-44k.drums.wav",
+      "sha256": "3b459d157bef51107040d951239cf1e9eb91d67af18892812329bc4e42172278",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-wide-antiphase-cymbals-44k.bass.wav",
+      "sha256": "a38e4de60f2ff6d32130a2fb16a9fa2f8db63efa31f3c89a8396dbd383f1d845",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-wide-antiphase-cymbals-44k.other.wav",
+      "sha256": "69c97a39f27df6c2e792112d6de7e81dd6968ad11a1c5a639bafe04ecb9698cb",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-mono-collapsed-mix-44k.mix.wav",
+      "sha256": "a11ceece2f4bbf1b4e46f0b6f68ae1b3beaabdb80c8c07606beaafde29871ea3",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-mono-collapsed-mix-44k.vocals.wav",
+      "sha256": "50ba65950d71a47f7108336bc32a9e5652898c91a47e89afc026dd3bcc50554e",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-mono-collapsed-mix-44k.drums.wav",
+      "sha256": "47d999979593abec7558f5d7c58bdb52c2ad7aa5b4e26aba0273e07643c7ec69",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-mono-collapsed-mix-44k.bass.wav",
+      "sha256": "2dec7a0a610ef1c82417f154f6693e49b426c6295fa8c619be74607d6fd64da1",
+      "bytes": 441044
+    },
+    {
+      "path": "e8-stems-ood-mono-collapsed-mix-44k.other.wav",
+      "sha256": "53329fcb2aecb873405e42ebf8170ec47aef1542bf5f28c8728ae598a4988137",
+      "bytes": 441044
+    }
+  ],
+  "cases": [
+    {
+      "id": "e8-stems-std-pop-rock-44k",
+      "stratum": "standard_4stem_mix",
+      "style": "pop_rock",
+      "tempo_bpm": 120.0,
+      "root_hz": 110.0,
+      "active_stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "spectral_clash": false,
+      "wide_antiphase": false,
+      "mono_collapse": false,
+      "rate": 44100,
+      "duration_s": 2.5,
+      "seed": 81101
+    },
+    {
+      "id": "e8-stems-std-jazz-acoustic-44k",
+      "stratum": "standard_4stem_mix",
+      "style": "jazz_acoustic",
+      "tempo_bpm": 104.0,
+      "root_hz": 98.0,
+      "active_stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "spectral_clash": false,
+      "wide_antiphase": false,
+      "mono_collapse": false,
+      "rate": 44100,
+      "duration_s": 2.5,
+      "seed": 81102
+    },
+    {
+      "id": "e8-stems-std-synth-electronic-44k",
+      "stratum": "standard_4stem_mix",
+      "style": "synth_electronic",
+      "tempo_bpm": 128.0,
+      "root_hz": 82.41,
+      "active_stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "spectral_clash": false,
+      "wide_antiphase": false,
+      "mono_collapse": false,
+      "rate": 44100,
+      "duration_s": 2.5,
+      "seed": 81103
+    },
+    {
+      "id": "e8-stems-std-dense-ballad-44k",
+      "stratum": "standard_4stem_mix",
+      "style": "dense_ballad",
+      "tempo_bpm": 88.0,
+      "root_hz": 130.81,
+      "active_stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "spectral_clash": false,
+      "wide_antiphase": false,
+      "mono_collapse": false,
+      "rate": 44100,
+      "duration_s": 2.5,
+      "seed": 81104
+    },
+    {
+      "id": "e8-stems-ctl-solo-vocals-44k",
+      "stratum": "sparse_clean_stem_control",
+      "style": "solo_vocals",
+      "tempo_bpm": 100.0,
+      "root_hz": 110.0,
+      "active_stems": [
+        "vocals"
+      ],
+      "spectral_clash": false,
+      "wide_antiphase": false,
+      "mono_collapse": false,
+      "rate": 44100,
+      "duration_s": 2.5,
+      "seed": 81201
+    },
+    {
+      "id": "e8-stems-ctl-bass-drums-only-44k",
+      "stratum": "sparse_clean_stem_control",
+      "style": "rhythm_section",
+      "tempo_bpm": 116.0,
+      "root_hz": 87.31,
+      "active_stems": [
+        "drums",
+        "bass"
+      ],
+      "spectral_clash": false,
+      "wide_antiphase": false,
+      "mono_collapse": false,
+      "rate": 44100,
+      "duration_s": 2.5,
+      "seed": 81202
+    },
+    {
+      "id": "e8-stems-ood-vocal-other-clash-44k",
+      "stratum": "ood_stems",
+      "style": "center_clash",
+      "tempo_bpm": 122.0,
+      "root_hz": 110.0,
+      "active_stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "spectral_clash": true,
+      "wide_antiphase": false,
+      "mono_collapse": false,
+      "rate": 44100,
+      "duration_s": 2.5,
+      "seed": 81301
+    },
+    {
+      "id": "e8-stems-ood-wide-antiphase-cymbals-44k",
+      "stratum": "ood_stems",
+      "style": "wide_antiphase",
+      "tempo_bpm": 132.0,
+      "root_hz": 92.5,
+      "active_stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "spectral_clash": false,
+      "wide_antiphase": true,
+      "mono_collapse": false,
+      "rate": 44100,
+      "duration_s": 2.5,
+      "seed": 81302
+    },
+    {
+      "id": "e8-stems-ood-mono-collapsed-mix-44k",
+      "stratum": "ood_stems",
+      "style": "mono_collapsed",
+      "tempo_bpm": 118.0,
+      "root_hz": 103.83,
+      "active_stems": [
+        "vocals",
+        "drums",
+        "bass",
+        "other"
+      ],
+      "spectral_clash": false,
+      "wide_antiphase": false,
+      "mono_collapse": true,
+      "rate": 44100,
+      "duration_s": 2.5,
+      "seed": 81303
+    }
+  ]
+}
