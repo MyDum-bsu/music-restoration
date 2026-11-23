@@ -60,7 +60,7 @@ def test_ar_declick_removes_clicks_and_preserves_unmasked_samples() -> None:
 
 
 def test_clean_sharp_attacks_protected_from_false_positives() -> None:
-    """AR de-clicker and hiss reducers protect clean percussive & plucked attacks."""
+    """AR de-clicker protects clean percussive/plucked attacks; hiss arms bypass on -82 dBFS floor."""
     for cid in ("e6-ctl-clean-percussion-48k", "e6-ctl-clean-plucked-44k"):
         case = _case_by_id(cid)
         clean, degraded, click_mask, attack_mask, tail_slice = e6_corpus.synthesize_e6_arrays(case)
@@ -74,8 +74,8 @@ def test_clean_sharp_attacks_protected_from_false_positives() -> None:
             click_mask=click_mask, attack_mask=attack_mask, tail_slice=tail_slice,
         )
         assert ar_m["transient_fp_rate"] == 0.0
-        assert ar_m["clean_attack_residual_energy_db"] is not None
-        assert ar_m["clean_attack_residual_energy_db"] < -80.0
+        assert ar_m["clean_attack_zero_residual"] is True
+        assert ar_m["clean_attack_residual_energy_db"] is None
 
         for hiss_arm in ("wiener_hiss", "mmse_stsa_hiss", "ar_declick_wiener_hiss", "ar_declick_mmse_stsa"):
             h_res = e6.run_arm(hiss_arm, degraded, sr)
@@ -83,7 +83,82 @@ def test_clean_sharp_attacks_protected_from_false_positives() -> None:
                 clean, degraded, h_res, sr,
                 click_mask=click_mask, attack_mask=attack_mask, tail_slice=tail_slice,
             )
-            assert h_m["transient_fp_rate"] is not None and h_m["transient_fp_rate"] < 0.001
+            assert h_m["bypassed_channels"] == 2
+            assert h_m["transient_fp_rate"] == 0.0
+
+
+def test_active_hiss_reducers_without_bypass_and_on_roomtone_control() -> None:
+    """Measure real active Wiener/MMSE-STSA behavior when clean bypass does NOT fire."""
+    # 1. Room-tone clean control (-58 dBFS floor > -70 dBFS bypass threshold): active suppression runs.
+    rt_case = _case_by_id("e6-ctl-clean-roomtone-tail-48k")
+    c_rt, d_rt, cm_rt, am_rt, ts_rt = e6_corpus.synthesize_e6_arrays(rt_case)
+    sr_rt = int(rt_case["rate"])
+    assert ts_rt is not None and am_rt.any()
+    for arm in ("wiener_hiss", "mmse_stsa_hiss"):
+        res = e6.run_arm(arm, d_rt, sr_rt)
+        m = e6.evaluate_e6_case(
+            c_rt, d_rt, res, sr_rt,
+            click_mask=cm_rt, attack_mask=am_rt, tail_slice=ts_rt,
+        )
+        assert m["bypassed_channels"] == 0, f"{arm} unexpectedly bypassed on -58 dBFS room-tone"
+        assert m["residual_identity_max_err"] <= e6.RESIDUAL_IDENTITY_TOL
+        assert m["clean_attack_zero_residual"] is False
+        assert m["clean_attack_residual_energy_db"] is not None
+        assert m["quiet_tail_drift_db"] is not None and m["quiet_tail_drift_db"] > 0.0
+
+    # 2. Explicit bypass-disabled check on clean reverb tail (-120 dBFS bypass threshold).
+    tail_case = _case_by_id("e6-ctl-clean-reverb-tail-48k")
+    c_t, d_t, cm_t, am_t, ts_t = e6_corpus.synthesize_e6_arrays(tail_case)
+    sr_t = int(tail_case["rate"])
+    for fn in (e6.restore_wiener_hiss, e6.restore_mmse_stsa_hiss):
+        res_nb = fn(d_t, sr_t, clean_bypass_dbfs=-120.0)
+        m_nb = e6.evaluate_e6_case(
+            c_t, d_t, res_nb, sr_t,
+            click_mask=cm_t, attack_mask=am_t, tail_slice=ts_t,
+        )
+        assert m_nb["bypassed_channels"] == 0
+        assert m_nb["residual_identity_max_err"] <= e6.RESIDUAL_IDENTITY_TOL
+        assert m_nb["quiet_tail_drift_db"] is not None and m_nb["quiet_tail_drift_db"] < 3.0
+
+
+def test_low_level_crackle_and_wide_scratch_honest_diagnostics() -> None:
+    """Verify quiet crackle sensitivity case and wide-scratch partial-fragmentation behavior."""
+    ll_case = _case_by_id("e6-clicks-low-level-crackle-44k")
+    c_ll, d_ll, cm_ll, am_ll, ts_ll = e6_corpus.synthesize_e6_arrays(ll_case)
+    res_ll = e6.run_arm("ar_declick", d_ll, int(ll_case["rate"]))
+    m_ll = e6.evaluate_e6_case(
+        c_ll, d_ll, res_ll, int(ll_case["rate"]),
+        click_mask=cm_ll, attack_mask=am_ll, tail_slice=ts_ll,
+    )
+    assert m_ll["click_sample_recall"] is not None and m_ll["click_sample_recall"] < 0.25
+
+    ws_case = _case_by_id("e6-ood-wide-scratch-44k")
+    c_ws, d_ws, cm_ws, am_ws, ts_ws = e6_corpus.synthesize_e6_arrays(ws_case)
+    res_ws = e6.run_arm("ar_declick", d_ws, int(ws_case["rate"]))
+    m_ws = e6.evaluate_e6_case(
+        c_ws, d_ws, res_ws, int(ws_case["rate"]),
+        click_mask=cm_ws, attack_mask=am_ws, tail_slice=ts_ws,
+    )
+    # Honest partial fragmentation (neither full repair nor zero-sample abstention).
+    assert m_ws["click_sample_recall"] is not None
+    assert 0.0 < m_ws["click_sample_recall"] < 0.5
+
+
+def test_median_impulse_linear_interpolation_does_not_duplicate_endpoints() -> None:
+    """Linear interpolation across a detected click run excludes left/right boundary values."""
+    import numpy as np
+
+    sig = np.linspace(0.0, 0.2, 2048, dtype=np.float64)
+    # Inject a 3-sample impulse at indices 1000..1002.
+    corrupted = sig.copy()
+    corrupted[1000:1003] += 0.65
+    res = e6.restore_median_impulse(corrupted, 44100)
+    assert res.click_mask is not None and res.click_mask[1000:1003].all()
+    left = float(corrupted[999])
+    right = float(corrupted[1003])
+    # Interior interpolated points must lie strictly between left and right (no endpoint duplication).
+    assert float(res.restored[1000]) > left
+    assert float(res.restored[1002]) < right
 
 
 def test_hiss_reducers_improve_snr_and_preserve_clean_reverb_tails() -> None:

@@ -2,7 +2,7 @@
   "schema": "e6-declick-hiss-results/v1",
   "board_card": 1131,
   "dataset_version": "dev-e6-archival-2026-11-23",
-  "n_cases": 18,
+  "n_cases": 20,
   "sealed_corpora_opened": false,
   "preserve_pipeline_modified": false,
   "colab_launched": false,
@@ -16,11 +16,11 @@
   },
   "provenance": {
     "manifest_path": "corpus/dev-e6-archival-v1.json",
-    "manifest_sha256": "2194a576fc01ff0b6c0e9398f6817f758cb2fdd80aa0776ec320c0c8a8721201",
+    "manifest_sha256": "43be9dbc1ced833b734f8a5b1339c1d8bb68123723b061213a6873f09a67a48a",
     "builder_path": "research/build_e6_archival_corpus.py",
-    "builder_sha256": "6ead3777e1a9da837942df59e0e72d4157173e0e62b8967c58298acb930d804b",
+    "builder_sha256": "cca31046af6da002e7ceb2576cd2f1f19d6507729d528b6a4b5c8725334f5ce8",
     "harness_path": "research/e6_declick_hiss.py",
-    "harness_sha256": "cc9c2e59864c6d835b4f4277b3865cc8ceaeeeae2924b793029cace8fe850bf1"
+    "harness_sha256": "ee164cd68f0b1e48e33c774f5c475c99fcbdad144434706e403d5457bb4f7643"
   },
   "e4_freeze_integrity": {
     "freeze_manifest": "docs/validation/e4-freeze-manifest.json",
@@ -30,7 +30,7 @@
     "mismatches": []
   },
   "invariants": {
-    "total_runs": 126,
+    "total_runs": 140,
     "max_residual_identity_err": 1.1102230246251565e-16,
     "any_input_mutated": false
   },
@@ -124,98 +124,392 @@
       ]
     }
   },
+  "diagnostics": {
+    "low_level_crackle": {
+      "ar_declick": {
+        "arm": "ar_declick",
+        "snr_in_db": 44.007065644391275,
+        "snr_out_db": 47.90307937926755,
+        "delta_snr_db": 3.896013734876277,
+        "si_sdr_in_db": 44.00708372183725,
+        "si_sdr_out_db": 47.90305984116632,
+        "si_sdri_db": 3.8959761193290703,
+        "click_sample_precision": 1.0,
+        "click_sample_recall": 0.1872791519434629,
+        "click_sample_f1": 0.31547619047619047,
+        "transient_fp_rate": null,
+        "clean_attack_residual_energy_db": null,
+        "clean_attack_zero_residual": null,
+        "bypassed_channels": null,
+        "quiet_tail_drift_db": null,
+        "tail_snr_in_db": null,
+        "tail_snr_out_db": null,
+        "tail_snr_loss_db": null,
+        "residual_rms_db": -61.18668521129041,
+        "residual_identity_max_err": 6.938893903907228e-18,
+        "input_mutated": false,
+        "outside_click_max_diff": 0.0,
+        "masked_samples": 53,
+        "true_click_samples": 283,
+        "wall_s": 0.18346495903097093,
+        "wall_s_per_audio_min": 3.6692991806194186
+      },
+      "median_impulse_declick": {
+        "arm": "median_impulse_declick",
+        "snr_in_db": 44.007065644391275,
+        "snr_out_db": 49.35690416613275,
+        "delta_snr_db": 5.349838521741475,
+        "si_sdr_in_db": 44.00708372183725,
+        "si_sdr_out_db": 49.35689366452016,
+        "si_sdri_db": 5.34980994268291,
+        "click_sample_precision": 0.9705882352941176,
+        "click_sample_recall": 0.2332155477031802,
+        "click_sample_f1": 0.37606837606837606,
+        "transient_fp_rate": null,
+        "clean_attack_residual_energy_db": null,
+        "clean_attack_zero_residual": null,
+        "bypassed_channels": null,
+        "quiet_tail_drift_db": null,
+        "tail_snr_in_db": null,
+        "tail_snr_out_db": null,
+        "tail_snr_loss_db": null,
+        "residual_rms_db": -60.987364988456754,
+        "residual_identity_max_err": 0.0,
+        "input_mutated": false,
+        "outside_click_max_diff": 0.0,
+        "masked_samples": 68,
+        "true_click_samples": 283,
+        "wall_s": 0.013217984000220895,
+        "wall_s_per_audio_min": 0.2643596800044179
+      }
+    },
+    "ood_wide_scratch": {
+      "ar_declick": {
+        "arm": "ar_declick",
+        "snr_in_db": 26.313180832224965,
+        "snr_out_db": 29.619702587809922,
+        "delta_snr_db": 3.3065217555849564,
+        "si_sdr_in_db": 26.315463227607463,
+        "si_sdr_out_db": 29.620526437977954,
+        "si_sdri_db": 3.3050632103704913,
+        "click_sample_precision": 1.0,
+        "click_sample_recall": 0.1482889733840304,
+        "click_sample_f1": 0.2582781456953642,
+        "transient_fp_rate": null,
+        "clean_attack_residual_energy_db": null,
+        "clean_attack_zero_residual": null,
+        "bypassed_channels": null,
+        "quiet_tail_drift_db": null,
+        "tail_snr_in_db": null,
+        "tail_snr_out_db": null,
+        "tail_snr_loss_db": null,
+        "residual_rms_db": -45.37812230200341,
+        "residual_identity_max_err": 0.0,
+        "input_mutated": false,
+        "outside_click_max_diff": 0.0,
+        "masked_samples": 78,
+        "true_click_samples": 526,
+        "wall_s": 0.14603059203363955,
+        "wall_s_per_audio_min": 2.920611840672791
+      },
+      "median_impulse_declick": {
+        "arm": "median_impulse_declick",
+        "snr_in_db": 26.313180832224965,
+        "snr_out_db": 26.88032893832224,
+        "delta_snr_db": 0.5671481060972745,
+        "si_sdr_in_db": 26.315463227607463,
+        "si_sdr_out_db": 26.88258206810129,
+        "si_sdri_db": 0.5671188404938263,
+        "click_sample_precision": 0.5,
+        "click_sample_recall": 0.03802281368821293,
+        "click_sample_f1": 0.0706713780918728,
+        "transient_fp_rate": null,
+        "clean_attack_residual_energy_db": null,
+        "clean_attack_zero_residual": null,
+        "bypassed_channels": null,
+        "quiet_tail_drift_db": null,
+        "tail_snr_in_db": null,
+        "tail_snr_out_db": null,
+        "tail_snr_loss_db": null,
+        "residual_rms_db": -53.27412349791045,
+        "residual_identity_max_err": 1.3877787807814457e-17,
+        "input_mutated": false,
+        "outside_click_max_diff": 0.0,
+        "masked_samples": 40,
+        "true_click_samples": 526,
+        "wall_s": 0.012086052040103823,
+        "wall_s_per_audio_min": 0.24172104080207646
+      }
+    },
+    "roomtone_clean_control": {
+      "wiener_hiss": {
+        "arm": "wiener_hiss",
+        "snr_in_db": null,
+        "snr_out_db": 47.28593767266156,
+        "delta_snr_db": null,
+        "si_sdr_in_db": null,
+        "si_sdr_out_db": 47.313624993448364,
+        "si_sdri_db": null,
+        "click_sample_precision": null,
+        "click_sample_recall": null,
+        "click_sample_f1": null,
+        "transient_fp_rate": 0.09162457912457912,
+        "clean_attack_residual_energy_db": -48.449504144516105,
+        "clean_attack_zero_residual": false,
+        "bypassed_channels": 0,
+        "quiet_tail_drift_db": 2.3622570115247825,
+        "tail_snr_in_db": null,
+        "tail_snr_out_db": 6.801629129946529,
+        "tail_snr_loss_db": 113.19837087005347,
+        "residual_rms_db": -68.19348276162187,
+        "residual_identity_max_err": 8.673617379884035e-19,
+        "input_mutated": false,
+        "outside_click_max_diff": null,
+        "masked_samples": null,
+        "true_click_samples": 0,
+        "wall_s": 0.20119544595945626,
+        "wall_s_per_audio_min": 4.023908919189125
+      },
+      "mmse_stsa_hiss": {
+        "arm": "mmse_stsa_hiss",
+        "snr_in_db": null,
+        "snr_out_db": 48.325035503039544,
+        "delta_snr_db": null,
+        "si_sdr_in_db": null,
+        "si_sdr_out_db": 48.35849856021394,
+        "si_sdri_db": null,
+        "click_sample_precision": null,
+        "click_sample_recall": null,
+        "click_sample_f1": null,
+        "transient_fp_rate": 0.0867003367003367,
+        "clean_attack_residual_energy_db": -48.6843703431137,
+        "clean_attack_zero_residual": false,
+        "bypassed_channels": 0,
+        "quiet_tail_drift_db": 2.1399894324989788,
+        "tail_snr_in_db": null,
+        "tail_snr_out_db": 7.607681757261565,
+        "tail_snr_loss_db": 112.39231824273844,
+        "residual_rms_db": -69.23258059199985,
+        "residual_identity_max_err": 2.168404344971009e-19,
+        "input_mutated": false,
+        "outside_click_max_diff": null,
+        "masked_samples": null,
+        "true_click_samples": 0,
+        "wall_s": 0.2262064930400811,
+        "wall_s_per_audio_min": 4.524129860801622
+      }
+    },
+    "hiss_without_clean_bypass": {
+      "clean_percussion": {
+        "wiener_hiss": {
+          "arm": "wiener_hiss",
+          "snr_in_db": null,
+          "snr_out_db": 23.82510214562542,
+          "delta_snr_db": null,
+          "si_sdr_in_db": null,
+          "si_sdr_out_db": 24.657637635338688,
+          "si_sdri_db": null,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": 0.9258838383838384,
+          "clean_attack_residual_energy_db": -22.982229324043907,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 0,
+          "quiet_tail_drift_db": null,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": null,
+          "tail_snr_loss_db": null,
+          "residual_rms_db": -44.0073792598352,
+          "residual_identity_max_err": 6.938893903907228e-18,
+          "input_mutated": false,
+          "outside_click_max_diff": null,
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.1861753230332397,
+          "wall_s_per_audio_min": 3.723506460664794
+        },
+        "mmse_stsa_hiss": {
+          "arm": "mmse_stsa_hiss",
+          "snr_in_db": null,
+          "snr_out_db": 26.05652107736816,
+          "delta_snr_db": null,
+          "si_sdr_in_db": null,
+          "si_sdr_out_db": 26.99709798292954,
+          "si_sdri_db": null,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": 0.9015572390572391,
+          "clean_attack_residual_energy_db": -24.27902219130768,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 0,
+          "quiet_tail_drift_db": null,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": null,
+          "tail_snr_loss_db": null,
+          "residual_rms_db": -46.23879819157793,
+          "residual_identity_max_err": 3.469446951953614e-18,
+          "input_mutated": false,
+          "outside_click_max_diff": null,
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.23563092801487073,
+          "wall_s_per_audio_min": 4.712618560297415
+        }
+      },
+      "clean_reverb_tail": {
+        "wiener_hiss": {
+          "arm": "wiener_hiss",
+          "snr_in_db": null,
+          "snr_out_db": 64.44461073596747,
+          "delta_snr_db": null,
+          "si_sdr_in_db": null,
+          "si_sdr_out_db": 64.44496814467878,
+          "si_sdri_db": null,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": null,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
+          "quiet_tail_drift_db": 0.2067000813358959,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": 21.438853945262828,
+          "tail_snr_loss_db": 98.56114605473718,
+          "residual_rms_db": -78.07083427481412,
+          "residual_identity_max_err": 1.0842021724855044e-19,
+          "input_mutated": false,
+          "outside_click_max_diff": null,
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.18250113597605377,
+          "wall_s_per_audio_min": 3.6500227195210755
+        },
+        "mmse_stsa_hiss": {
+          "arm": "mmse_stsa_hiss",
+          "snr_in_db": null,
+          "snr_out_db": 66.38651034222592,
+          "delta_snr_db": null,
+          "si_sdr_in_db": null,
+          "si_sdr_out_db": 66.38704762140571,
+          "si_sdri_db": null,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": null,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
+          "quiet_tail_drift_db": 0.16622182460939428,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": 23.711947870013127,
+          "tail_snr_loss_db": 96.28805212998688,
+          "residual_rms_db": -80.01273388107258,
+          "residual_identity_max_err": 1.0842021724855044e-19,
+          "input_mutated": false,
+          "outside_click_max_diff": null,
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.26483530102996156,
+          "wall_s_per_audio_min": 5.296706020599231
+        }
+      }
+    }
+  },
   "summary_by_stratum": {
     "clicks_only": {
       "identity": {
-        "n_cases": 4,
+        "n_cases": 5,
         "mean_delta_snr_db": 0.0,
         "mean_si_sdri_db": 0.0,
         "mean_click_f1": 0.0,
         "mean_transient_fp_rate": 0.0,
         "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -226.44806564984805,
+        "mean_clean_attack_residual_energy_db": null,
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 0.02917694509960711
+        "mean_wall_s_per_audio_min": 0.029114700388163328
       },
       "ar_declick": {
-        "n_cases": 4,
-        "mean_delta_snr_db": 19.94980084683241,
-        "mean_si_sdri_db": 19.94965250965695,
-        "mean_click_f1": 0.8075523061333258,
+        "n_cases": 5,
+        "mean_delta_snr_db": 16.739043424441185,
+        "mean_si_sdri_db": 16.738917231591376,
+        "mean_click_f1": 0.7091370830018988,
         "mean_transient_fp_rate": 0.001097324217101376,
         "max_transient_fp_rate": 0.001097324217101376,
         "mean_clean_attack_residual_energy_db": -34.08139757699859,
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 3.969028485007584
+        "mean_wall_s_per_audio_min": 3.9905813524965197
       },
       "median_impulse_declick": {
-        "n_cases": 4,
-        "mean_delta_snr_db": 9.627371570414162,
-        "mean_si_sdri_db": 9.612044440116382,
-        "mean_click_f1": 0.47573610511633224,
+        "n_cases": 5,
+        "mean_delta_snr_db": 9.396641271524846,
+        "mean_si_sdri_db": 9.38417326319697,
+        "mean_click_f1": 0.455802559306741,
         "mean_transient_fp_rate": 0.08854562336456487,
         "max_transient_fp_rate": 0.08854562336456487,
-        "mean_clean_attack_residual_energy_db": -12.054961014122847,
+        "mean_clean_attack_residual_energy_db": -11.995823581218463,
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 0.29831160529283807
+        "mean_wall_s_per_audio_min": 0.3135763523168862
       },
       "wiener_hiss": {
-        "n_cases": 4,
+        "n_cases": 5,
         "mean_delta_snr_db": 0.0,
         "mean_si_sdri_db": 0.0,
         "mean_click_f1": null,
         "mean_transient_fp_rate": 0.0,
         "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -226.44806564984805,
+        "mean_clean_attack_residual_energy_db": null,
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 3.2971509447088465
+        "mean_wall_s_per_audio_min": 3.1679900879971683
       },
       "mmse_stsa_hiss": {
-        "n_cases": 4,
+        "n_cases": 5,
         "mean_delta_snr_db": 0.0,
         "mean_si_sdri_db": 0.0,
         "mean_click_f1": null,
         "mean_transient_fp_rate": 0.0,
         "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -226.44806564984805,
+        "mean_clean_attack_residual_energy_db": null,
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 2.9082853597356007
+        "mean_wall_s_per_audio_min": 3.1560923322103918
       },
       "ar_declick_wiener_hiss": {
-        "n_cases": 4,
-        "mean_delta_snr_db": 19.94980084683241,
-        "mean_si_sdri_db": 19.94965250965695,
-        "mean_click_f1": 0.8075523061333258,
+        "n_cases": 5,
+        "mean_delta_snr_db": 16.739043424441185,
+        "mean_si_sdri_db": 16.738917231591376,
+        "mean_click_f1": 0.7091370830018988,
         "mean_transient_fp_rate": 0.001097324217101376,
         "max_transient_fp_rate": 0.001097324217101376,
         "mean_clean_attack_residual_energy_db": -34.08139757699859,
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 7.021489539765753
+        "mean_wall_s_per_audio_min": 7.404574352083728
       },
       "ar_declick_mmse_stsa": {
-        "n_cases": 4,
-        "mean_delta_snr_db": 19.94980084683241,
-        "mean_si_sdri_db": 19.94965250965695,
-        "mean_click_f1": 0.8075523061333258,
+        "n_cases": 5,
+        "mean_delta_snr_db": 16.739043424441185,
+        "mean_si_sdri_db": 16.738917231591376,
+        "mean_click_f1": 0.7091370830018988,
         "mean_transient_fp_rate": 0.001097324217101376,
         "max_transient_fp_rate": 0.001097324217101376,
         "mean_clean_attack_residual_energy_db": -34.08139757699859,
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 7.281664474867284
+        "mean_wall_s_per_audio_min": 7.506109812296927
       }
     },
     "hiss_only": {
@@ -230,7 +524,7 @@
         "mean_quiet_tail_drift_db": 20.190952428415095,
         "max_quiet_tail_drift_db": 23.024132691046646,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 0.03088353987550363
+        "mean_wall_s_per_audio_min": 0.018993235134985298
       },
       "ar_declick": {
         "n_cases": 4,
@@ -243,7 +537,7 @@
         "mean_quiet_tail_drift_db": 20.190952428415095,
         "max_quiet_tail_drift_db": 23.024132691046646,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 3.9726654745754786
+        "mean_wall_s_per_audio_min": 2.8231449602753855
       },
       "median_impulse_declick": {
         "n_cases": 4,
@@ -256,7 +550,7 @@
         "mean_quiet_tail_drift_db": 20.190952428415095,
         "max_quiet_tail_drift_db": 23.024132691046646,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 0.33431248972192407
+        "mean_wall_s_per_audio_min": 0.2345164550933987
       },
       "wiener_hiss": {
         "n_cases": 4,
@@ -269,7 +563,7 @@
         "mean_quiet_tail_drift_db": 11.282244216036974,
         "max_quiet_tail_drift_db": 13.922051294447321,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 4.505897765047848
+        "mean_wall_s_per_audio_min": 4.916551829664968
       },
       "mmse_stsa_hiss": {
         "n_cases": 4,
@@ -282,7 +576,7 @@
         "mean_quiet_tail_drift_db": 13.595775906840766,
         "max_quiet_tail_drift_db": 16.297835468009204,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 7.117770490294788
+        "mean_wall_s_per_audio_min": 5.972698104742449
       },
       "ar_declick_wiener_hiss": {
         "n_cases": 4,
@@ -295,7 +589,7 @@
         "mean_quiet_tail_drift_db": 11.282244216036974,
         "max_quiet_tail_drift_db": 13.922051294447321,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 7.8503077605273575
+        "mean_wall_s_per_audio_min": 7.807213594787754
       },
       "ar_declick_mmse_stsa": {
         "n_cases": 4,
@@ -308,7 +602,7 @@
         "mean_quiet_tail_drift_db": 13.595775906840766,
         "max_quiet_tail_drift_db": 16.297835468009204,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 9.188137755263597
+        "mean_wall_s_per_audio_min": 9.177767410001252
       }
     },
     "combined_archival": {
@@ -319,11 +613,11 @@
         "mean_click_f1": 0.0,
         "mean_transient_fp_rate": 0.0,
         "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -228.0873196918352,
+        "mean_clean_attack_residual_energy_db": null,
         "mean_quiet_tail_drift_db": 25.089294713349148,
         "max_quiet_tail_drift_db": 26.27931825998658,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 0.0223900331184268
+        "mean_wall_s_per_audio_min": 0.022293166257441044
       },
       "ar_declick": {
         "n_cases": 3,
@@ -332,24 +626,24 @@
         "mean_click_f1": 0.596736049644789,
         "mean_transient_fp_rate": 0.0,
         "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -228.0873196918352,
+        "mean_clean_attack_residual_energy_db": null,
         "mean_quiet_tail_drift_db": 25.089294713349148,
         "max_quiet_tail_drift_db": 26.27931825998658,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 3.3357918995898217
+        "mean_wall_s_per_audio_min": 3.2750227802898735
       },
       "median_impulse_declick": {
         "n_cases": 3,
-        "mean_delta_snr_db": -0.19787448670927135,
-        "mean_si_sdri_db": -0.2269151542392264,
+        "mean_delta_snr_db": -0.155030058371563,
+        "mean_si_sdri_db": -0.1842551367540827,
         "mean_click_f1": 0.33531850140103386,
         "mean_transient_fp_rate": 0.031496394990934776,
         "max_transient_fp_rate": 0.031496394990934776,
-        "mean_clean_attack_residual_energy_db": -13.357089230597337,
+        "mean_clean_attack_residual_energy_db": -13.738019223503677,
         "mean_quiet_tail_drift_db": 25.089294713349148,
         "max_quiet_tail_drift_db": 26.27931825998658,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 0.26102328673005104
+        "mean_wall_s_per_audio_min": 0.2654482866637409
       },
       "wiener_hiss": {
         "n_cases": 3,
@@ -362,7 +656,7 @@
         "mean_quiet_tail_drift_db": 15.60936499522861,
         "max_quiet_tail_drift_db": 16.508576097678905,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 3.3548136796647063
+        "mean_wall_s_per_audio_min": 3.7037700127499797
       },
       "mmse_stsa_hiss": {
         "n_cases": 3,
@@ -375,7 +669,7 @@
         "mean_quiet_tail_drift_db": 17.9346348468357,
         "max_quiet_tail_drift_db": 18.81015803446421,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 4.93375458017302
+        "mean_wall_s_per_audio_min": 4.897746474016458
       },
       "ar_declick_wiener_hiss": {
         "n_cases": 3,
@@ -388,7 +682,7 @@
         "mean_quiet_tail_drift_db": 15.73140979573311,
         "max_quiet_tail_drift_db": 16.63409901561979,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 7.448390680365264
+        "mean_wall_s_per_audio_min": 6.915384919848293
       },
       "ar_declick_mmse_stsa": {
         "n_cases": 3,
@@ -401,100 +695,100 @@
         "mean_quiet_tail_drift_db": 18.07884460023014,
         "max_quiet_tail_drift_db": 18.967994595957137,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 8.130820666750273
+        "mean_wall_s_per_audio_min": 8.232782766378174
       }
     },
     "clean_control": {
       "identity": {
-        "n_cases": 4,
+        "n_cases": 5,
         "mean_delta_snr_db": 0.0,
         "mean_si_sdri_db": 0.0,
         "mean_click_f1": null,
         "mean_transient_fp_rate": 0.0,
         "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -228.58971671385814,
+        "mean_clean_attack_residual_energy_db": null,
         "mean_quiet_tail_drift_db": 0.0,
         "max_quiet_tail_drift_db": 0.0,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 0.022898824827279896
+        "mean_wall_s_per_audio_min": 0.02476631593890488
       },
       "ar_declick": {
-        "n_cases": 4,
+        "n_cases": 5,
         "mean_delta_snr_db": 0.0,
         "mean_si_sdri_db": 0.0,
         "mean_click_f1": null,
         "mean_transient_fp_rate": 0.0,
         "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -228.58971671385814,
+        "mean_clean_attack_residual_energy_db": null,
         "mean_quiet_tail_drift_db": 0.0,
         "max_quiet_tail_drift_db": 0.0,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 2.9872265650192276
+        "mean_wall_s_per_audio_min": 3.2777046200353652
       },
       "median_impulse_declick": {
-        "n_cases": 4,
+        "n_cases": 5,
         "mean_delta_snr_db": 0.0,
         "mean_si_sdri_db": 0.0,
         "mean_click_f1": null,
-        "mean_transient_fp_rate": 0.03161774568024568,
+        "mean_transient_fp_rate": 0.03890958578458579,
         "max_transient_fp_rate": 0.06077441077441077,
-        "mean_clean_attack_residual_energy_db": -22.287045443225907,
+        "mean_clean_attack_residual_energy_db": -19.810700942092392,
         "mean_quiet_tail_drift_db": 0.0,
         "max_quiet_tail_drift_db": 0.0,
         "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 0.26026887964690104
+        "mean_wall_s_per_audio_min": 0.2783934841863811
       },
       "wiener_hiss": {
-        "n_cases": 4,
+        "n_cases": 5,
         "mean_delta_snr_db": 0.0,
         "mean_si_sdri_db": 0.0,
         "mean_click_f1": null,
-        "mean_transient_fp_rate": 0.0,
-        "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -228.58971671385814,
-        "mean_quiet_tail_drift_db": 0.0,
-        "max_quiet_tail_drift_db": 0.0,
-        "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 2.6931603252887726
+        "mean_transient_fp_rate": 0.03054152637485971,
+        "max_transient_fp_rate": 0.09162457912457912,
+        "mean_clean_attack_residual_energy_db": -48.449504144516105,
+        "mean_quiet_tail_drift_db": 1.1811285057623913,
+        "max_quiet_tail_drift_db": 2.3622570115247825,
+        "mean_tail_snr_loss_db": 56.59918543502673,
+        "mean_wall_s_per_audio_min": 3.056479483610019
       },
       "mmse_stsa_hiss": {
-        "n_cases": 4,
+        "n_cases": 5,
         "mean_delta_snr_db": 0.0,
         "mean_si_sdri_db": 0.0,
         "mean_click_f1": null,
-        "mean_transient_fp_rate": 0.0,
-        "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -228.58971671385814,
-        "mean_quiet_tail_drift_db": 0.0,
-        "max_quiet_tail_drift_db": 0.0,
-        "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 2.6297676598187536
+        "mean_transient_fp_rate": 0.028900112233445564,
+        "max_transient_fp_rate": 0.0867003367003367,
+        "mean_clean_attack_residual_energy_db": -48.6843703431137,
+        "mean_quiet_tail_drift_db": 1.0699947162494894,
+        "max_quiet_tail_drift_db": 2.1399894324989788,
+        "mean_tail_snr_loss_db": 56.19615912136922,
+        "mean_wall_s_per_audio_min": 3.133110051974654
       },
       "ar_declick_wiener_hiss": {
-        "n_cases": 4,
+        "n_cases": 5,
         "mean_delta_snr_db": 0.0,
         "mean_si_sdri_db": 0.0,
         "mean_click_f1": null,
         "mean_transient_fp_rate": 0.0,
         "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -228.58971671385814,
-        "mean_quiet_tail_drift_db": 0.0,
-        "max_quiet_tail_drift_db": 0.0,
-        "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 5.727565324923489
+        "mean_clean_attack_residual_energy_db": -48.44854133021657,
+        "mean_quiet_tail_drift_db": 1.1811317692320884,
+        "max_quiet_tail_drift_db": 2.362263538464177,
+        "mean_tail_snr_loss_db": 56.59920330796763,
+        "mean_wall_s_per_audio_min": 6.40622882777825
       },
       "ar_declick_mmse_stsa": {
-        "n_cases": 4,
+        "n_cases": 5,
         "mean_delta_snr_db": 0.0,
         "mean_si_sdri_db": 0.0,
         "mean_click_f1": null,
         "mean_transient_fp_rate": 0.0,
         "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -228.58971671385814,
-        "mean_quiet_tail_drift_db": 0.0,
-        "max_quiet_tail_drift_db": 0.0,
-        "mean_tail_snr_loss_db": 0.0,
-        "mean_wall_s_per_audio_min": 5.562541360268369
+        "mean_clean_attack_residual_energy_db": -48.683389692049275,
+        "mean_quiet_tail_drift_db": 1.0700029628025227,
+        "max_quiet_tail_drift_db": 2.1400059256050454,
+        "mean_tail_snr_loss_db": 56.19620547056644,
+        "mean_wall_s_per_audio_min": 6.678666724124923
       }
     },
     "ood": {
@@ -505,11 +799,11 @@
         "mean_click_f1": 0.0,
         "mean_transient_fp_rate": 0.0,
         "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -228.3729831923884,
+        "mean_clean_attack_residual_energy_db": null,
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 0.03761703090276569
+        "mean_wall_s_per_audio_min": 0.0599758195069929
       },
       "ar_declick": {
         "n_cases": 3,
@@ -522,20 +816,20 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 4.724145573563874
+        "mean_wall_s_per_audio_min": 4.013743153579223
       },
       "median_impulse_declick": {
         "n_cases": 3,
-        "mean_delta_snr_db": -3.875439295011015,
-        "mean_si_sdri_db": -3.915691316147784,
+        "mean_delta_snr_db": -3.7512003451404237,
+        "mean_si_sdri_db": -3.791668287886512,
         "mean_click_f1": 0.04205740980645109,
         "mean_transient_fp_rate": 0.16063977746870653,
         "max_transient_fp_rate": 0.16063977746870653,
-        "mean_clean_attack_residual_energy_db": -9.600061325623063,
+        "mean_clean_attack_residual_energy_db": -9.59419060184293,
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 0.4360032597711931
+        "mean_wall_s_per_audio_min": 0.38033846047862124
       },
       "wiener_hiss": {
         "n_cases": 3,
@@ -544,11 +838,11 @@
         "mean_click_f1": null,
         "mean_transient_fp_rate": 0.0,
         "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -228.3729831923884,
+        "mean_clean_attack_residual_energy_db": null,
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 5.071313453760619
+        "mean_wall_s_per_audio_min": 4.771873377224741
       },
       "mmse_stsa_hiss": {
         "n_cases": 3,
@@ -557,11 +851,11 @@
         "mean_click_f1": null,
         "mean_transient_fp_rate": 0.0,
         "max_transient_fp_rate": 0.0,
-        "mean_clean_attack_residual_energy_db": -228.3729831923884,
+        "mean_clean_attack_residual_energy_db": null,
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 5.307429832949613
+        "mean_wall_s_per_audio_min": 4.950166053604335
       },
       "ar_declick_wiener_hiss": {
         "n_cases": 3,
@@ -574,7 +868,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 8.73293355689384
+        "mean_wall_s_per_audio_min": 8.429351979866624
       },
       "ar_declick_mmse_stsa": {
         "n_cases": 3,
@@ -587,7 +881,7 @@
         "mean_quiet_tail_drift_db": null,
         "max_quiet_tail_drift_db": null,
         "mean_tail_snr_loss_db": null,
-        "mean_wall_s_per_audio_min": 9.090523290021034
+        "mean_wall_s_per_audio_min": 9.071497599749515
       }
     }
   },
@@ -614,6 +908,8 @@
           "click_sample_f1": 0.0,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -622,8 +918,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.002094987954478711,
-          "wall_s_per_audio_min": 0.04189975908957422
+          "masked_samples": 0,
+          "true_click_samples": 80,
+          "wall_s": 0.002118733013048768,
+          "wall_s_per_audio_min": 0.04237466026097536
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -638,6 +936,8 @@
           "click_sample_f1": 0.8652482269503546,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -646,32 +946,38 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.19735359196783975,
-          "wall_s_per_audio_min": 3.947071839356795
+          "masked_samples": 61,
+          "true_click_samples": 80,
+          "wall_s": 0.17319724900880828,
+          "wall_s_per_audio_min": 3.4639449801761657
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
           "snr_in_db": 31.136735422379523,
-          "snr_out_db": 46.643907679875966,
-          "delta_snr_db": 15.507172257496443,
+          "snr_out_db": 47.83522469429572,
+          "delta_snr_db": 16.698489271916195,
           "si_sdr_in_db": 31.136250769201958,
-          "si_sdr_out_db": 46.64412026417207,
-          "si_sdri_db": 15.507869494970109,
+          "si_sdr_out_db": 47.83543754585098,
+          "si_sdri_db": 16.69918677664902,
           "click_sample_precision": 0.6067415730337079,
           "click_sample_recall": 0.675,
           "click_sample_f1": 0.6390532544378699,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
           "tail_snr_loss_db": null,
-          "residual_rms_db": -45.906694595075194,
+          "residual_rms_db": -45.86170866106925,
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.014735247008502483,
-          "wall_s_per_audio_min": 0.29470494017004967
+          "masked_samples": 89,
+          "true_click_samples": 80,
+          "wall_s": 0.014559722039848566,
+          "wall_s_per_audio_min": 0.2911944407969713
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -686,6 +992,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -694,8 +1002,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.17732772399904206,
-          "wall_s_per_audio_min": 3.5465544799808413
+          "masked_samples": null,
+          "true_click_samples": 80,
+          "wall_s": 0.15893686999334022,
+          "wall_s_per_audio_min": 3.1787373998668045
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -710,6 +1020,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -718,8 +1030,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.15641283395234495,
-          "wall_s_per_audio_min": 3.128256679046899
+          "masked_samples": null,
+          "true_click_samples": 80,
+          "wall_s": 0.14485926902852952,
+          "wall_s_per_audio_min": 2.8971853805705905
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -734,6 +1048,8 @@
           "click_sample_f1": 0.8652482269503546,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -742,8 +1058,10 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.3237852430320345,
-          "wall_s_per_audio_min": 6.47570486064069
+          "masked_samples": 61,
+          "true_click_samples": 80,
+          "wall_s": 0.3866493710083887,
+          "wall_s_per_audio_min": 7.732987420167774
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -758,6 +1076,8 @@
           "click_sample_f1": 0.8652482269503546,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -766,8 +1086,10 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.3526564220082946,
-          "wall_s_per_audio_min": 7.053128440165892
+          "masked_samples": 61,
+          "true_click_samples": 80,
+          "wall_s": 0.3455112029914744,
+          "wall_s_per_audio_min": 6.910224059829488
         }
       }
     },
@@ -793,6 +1115,8 @@
           "click_sample_f1": 0.0,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -801,8 +1125,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0013371300301514566,
-          "wall_s_per_audio_min": 0.026742600603029132
+          "masked_samples": 0,
+          "true_click_samples": 268,
+          "wall_s": 0.0016922070062719285,
+          "wall_s_per_audio_min": 0.03384414012543857
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -817,6 +1143,8 @@
           "click_sample_f1": 0.9105691056910569,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -825,32 +1153,38 @@
           "residual_identity_max_err": 1.1102230246251565e-16,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.2243689229944721,
-          "wall_s_per_audio_min": 4.487378459889442
+          "masked_samples": 224,
+          "true_click_samples": 268,
+          "wall_s": 0.22613846702734008,
+          "wall_s_per_audio_min": 4.522769340546802
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
           "snr_in_db": 28.47251635903442,
-          "snr_out_db": 46.11247448471178,
-          "delta_snr_db": 17.639958125677364,
+          "snr_out_db": 47.16898933167365,
+          "delta_snr_db": 18.69647297263923,
           "si_sdr_in_db": 28.47357502447299,
-          "si_sdr_out_db": 46.11283225650624,
-          "si_sdri_db": 17.63925723203325,
+          "si_sdr_out_db": 47.1693567330336,
+          "si_sdri_db": 18.695781708560613,
           "click_sample_precision": 0.5647382920110193,
           "click_sample_recall": 0.7649253731343284,
           "click_sample_f1": 0.6497622820919176,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
           "tail_snr_loss_db": null,
-          "residual_rms_db": -41.61124039982535,
-          "residual_identity_max_err": 1.1102230246251565e-16,
+          "residual_rms_db": -41.58575378437011,
+          "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.015235388011205941,
-          "wall_s_per_audio_min": 0.30470776022411883
+          "masked_samples": 363,
+          "true_click_samples": 268,
+          "wall_s": 0.01534872903721407,
+          "wall_s_per_audio_min": 0.3069745807442814
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -865,6 +1199,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -873,8 +1209,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.1642288799630478,
-          "wall_s_per_audio_min": 3.284577599260956
+          "masked_samples": null,
+          "true_click_samples": 268,
+          "wall_s": 0.17612356698373333,
+          "wall_s_per_audio_min": 3.5224713396746665
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -889,6 +1227,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -897,8 +1237,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.14744432002771646,
-          "wall_s_per_audio_min": 2.948886400554329
+          "masked_samples": null,
+          "true_click_samples": 268,
+          "wall_s": 0.1495648860000074,
+          "wall_s_per_audio_min": 2.991297720000148
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -913,6 +1255,8 @@
           "click_sample_f1": 0.9105691056910569,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -921,8 +1265,10 @@
           "residual_identity_max_err": 1.1102230246251565e-16,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.37314974499167874,
-          "wall_s_per_audio_min": 7.462994899833575
+          "masked_samples": 224,
+          "true_click_samples": 268,
+          "wall_s": 0.3848358479444869,
+          "wall_s_per_audio_min": 7.696716958889738
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -937,6 +1283,8 @@
           "click_sample_f1": 0.9105691056910569,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -945,8 +1293,10 @@
           "residual_identity_max_err": 1.1102230246251565e-16,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.3755289889522828,
-          "wall_s_per_audio_min": 7.510579779045656
+          "masked_samples": 224,
+          "true_click_samples": 268,
+          "wall_s": 0.4178987230407074,
+          "wall_s_per_audio_min": 8.357974460814148
         }
       }
     },
@@ -971,7 +1321,9 @@
           "click_sample_recall": 0.0,
           "click_sample_f1": 0.0,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -226.44806564984805,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -980,8 +1332,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0014458740479312837,
-          "wall_s_per_audio_min": 0.028917480958625674
+          "masked_samples": 0,
+          "true_click_samples": 112,
+          "wall_s": 0.0013862280175089836,
+          "wall_s_per_audio_min": 0.027724560350179672
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -996,6 +1350,8 @@
           "click_sample_f1": 0.5625,
           "transient_fp_rate": 0.001097324217101376,
           "clean_attack_residual_energy_db": -34.08139757699859,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -1004,32 +1360,38 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.20167068002047017,
-          "wall_s_per_audio_min": 4.033413600409403
+          "masked_samples": 80,
+          "true_click_samples": 112,
+          "wall_s": 0.2280723280273378,
+          "wall_s_per_audio_min": 4.561446560546756
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
           "snr_in_db": 22.339150033534196,
-          "snr_out_db": 18.23242556354249,
-          "delta_snr_db": -4.106724469991708,
+          "snr_out_db": 18.21378817782208,
+          "delta_snr_db": -4.125361855712114,
           "si_sdr_in_db": 22.33795774200651,
-          "si_sdr_out_db": 18.17027681222729,
-          "si_sdri_db": -4.16768092977922,
+          "si_sdr_out_db": 18.15062682933079,
+          "si_sdri_db": -4.187330912675719,
           "click_sample_precision": 0.024300779458963778,
           "click_sample_recall": 0.4732142857142857,
           "click_sample_f1": 0.04622764936764064,
           "transient_fp_rate": 0.08854562336456487,
-          "clean_attack_residual_energy_db": -12.054961014122847,
+          "clean_attack_residual_energy_db": -11.995823581218463,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
           "tail_snr_loss_db": null,
-          "residual_rms_db": -39.10809760554316,
+          "residual_rms_db": -39.009383251161445,
           "residual_identity_max_err": 1.1102230246251565e-16,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.01744861900806427,
-          "wall_s_per_audio_min": 0.3489723801612854
+          "masked_samples": 2181,
+          "true_click_samples": 112,
+          "wall_s": 0.02077351202024147,
+          "wall_s_per_audio_min": 0.4154702404048294
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -1043,7 +1405,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -226.44806564984805,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -1052,8 +1416,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.1624795409734361,
-          "wall_s_per_audio_min": 3.2495908194687217
+          "masked_samples": null,
+          "true_click_samples": 112,
+          "wall_s": 0.15496445604367182,
+          "wall_s_per_audio_min": 3.0992891208734363
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -1067,7 +1433,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -226.44806564984805,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -1076,8 +1444,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.15109490498434752,
-          "wall_s_per_audio_min": 3.0218980996869504
+          "masked_samples": null,
+          "true_click_samples": 112,
+          "wall_s": 0.14626623899675906,
+          "wall_s_per_audio_min": 2.925324779935181
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -1092,6 +1462,8 @@
           "click_sample_f1": 0.5625,
           "transient_fp_rate": 0.001097324217101376,
           "clean_attack_residual_energy_db": -34.08139757699859,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -1100,8 +1472,10 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.3802474609692581,
-          "wall_s_per_audio_min": 7.604949219385162
+          "masked_samples": 80,
+          "true_click_samples": 112,
+          "wall_s": 0.40964561101282015,
+          "wall_s_per_audio_min": 8.192912220256403
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -1116,6 +1490,8 @@
           "click_sample_f1": 0.5625,
           "transient_fp_rate": 0.001097324217101376,
           "clean_attack_residual_energy_db": -34.08139757699859,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -1124,8 +1500,10 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.3814933769754134,
-          "wall_s_per_audio_min": 7.629867539508268
+          "masked_samples": 80,
+          "true_click_samples": 112,
+          "wall_s": 0.40851472603389993,
+          "wall_s_per_audio_min": 8.170294520677999
         }
       }
     },
@@ -1151,6 +1529,8 @@
           "click_sample_f1": 0.0,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -1159,8 +1539,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0009573969873599708,
-          "wall_s_per_audio_min": 0.019147939747199416
+          "masked_samples": 0,
+          "true_click_samples": 123,
+          "wall_s": 0.0009206600370816886,
+          "wall_s_per_audio_min": 0.018413200741633773
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -1175,6 +1557,8 @@
           "click_sample_f1": 0.8918918918918919,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -1183,32 +1567,38 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.1704125020187348,
-          "wall_s_per_audio_min": 3.4082500403746963
+          "masked_samples": 99,
+          "true_click_samples": 123,
+          "wall_s": 0.18677233502967283,
+          "wall_s_per_audio_min": 3.7354467005934566
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
           "snr_in_db": 29.737994030077523,
-          "snr_out_db": 39.20707439855207,
-          "delta_snr_db": 9.46908036847455,
+          "snr_out_db": 40.101761477116966,
+          "delta_snr_db": 10.363767447039443,
           "si_sdr_in_db": 29.73860578290619,
-          "si_sdr_out_db": 39.20733774614759,
-          "si_sdri_db": 9.468731963241396,
+          "si_sdr_out_db": 40.10202458367422,
+          "si_sdri_db": 10.36341880076803,
           "click_sample_precision": 0.575,
           "click_sample_recall": 0.5609756097560976,
           "click_sample_f1": 0.5679012345679012,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
           "tail_snr_loss_db": null,
-          "residual_rms_db": -44.91941097870444,
-          "residual_identity_max_err": 1.1102230246251565e-16,
+          "residual_rms_db": -44.742843563600694,
+          "residual_identity_max_err": 2.7755575615628914e-17,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.012243067030794919,
-          "wall_s_per_audio_min": 0.24486134061589837
+          "masked_samples": 120,
+          "true_click_samples": 123,
+          "wall_s": 0.014494140981696546,
+          "wall_s_per_audio_min": 0.2898828196339309
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -1223,6 +1613,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -1231,8 +1623,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.15539404400624335,
-          "wall_s_per_audio_min": 3.107880880124867
+          "masked_samples": null,
+          "true_click_samples": 123,
+          "wall_s": 0.141620336973574,
+          "wall_s_per_audio_min": 2.8324067394714803
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -1247,6 +1641,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -1255,8 +1651,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.1267050129827112,
-          "wall_s_per_audio_min": 2.534100259654224
+          "masked_samples": null,
+          "true_click_samples": 123,
+          "wall_s": 0.21455807401798666,
+          "wall_s_per_audio_min": 4.291161480359733
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -1271,6 +1669,8 @@
           "click_sample_f1": 0.8918918918918919,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -1279,8 +1679,10 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.32711545896017924,
-          "wall_s_per_audio_min": 6.542309179203585
+          "masked_samples": 99,
+          "true_click_samples": 123,
+          "wall_s": 0.33126074203755707,
+          "wall_s_per_audio_min": 6.625214840751141
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -1295,6 +1697,8 @@
           "click_sample_f1": 0.8918918918918919,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -1303,8 +1707,217 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.346654107037466,
-          "wall_s_per_audio_min": 6.93308214074932
+          "masked_samples": 99,
+          "true_click_samples": 123,
+          "wall_s": 0.3610708560445346,
+          "wall_s_per_audio_min": 7.221417120890692
+        }
+      }
+    },
+    {
+      "id": "e6-clicks-low-level-crackle-44k",
+      "stratum": "clicks_only",
+      "rate": 44100,
+      "bits": 24,
+      "has_clicks": true,
+      "has_attacks": false,
+      "has_quiet_tail": false,
+      "arms": {
+        "identity": {
+          "arm": "identity",
+          "snr_in_db": 44.007065644391275,
+          "snr_out_db": 44.007065644391275,
+          "delta_snr_db": 0.0,
+          "si_sdr_in_db": 44.00708372183725,
+          "si_sdr_out_db": 44.00708372183725,
+          "si_sdri_db": 0.0,
+          "click_sample_precision": 1.0,
+          "click_sample_recall": 0.0,
+          "click_sample_f1": 0.0,
+          "transient_fp_rate": null,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
+          "quiet_tail_drift_db": null,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": null,
+          "tail_snr_loss_db": null,
+          "residual_rms_db": -200.0,
+          "residual_identity_max_err": 0.0,
+          "input_mutated": false,
+          "outside_click_max_diff": 0.0,
+          "masked_samples": 0,
+          "true_click_samples": 283,
+          "wall_s": 0.0011608470231294632,
+          "wall_s_per_audio_min": 0.023216940462589264
+        },
+        "ar_declick": {
+          "arm": "ar_declick",
+          "snr_in_db": 44.007065644391275,
+          "snr_out_db": 47.90307937926755,
+          "delta_snr_db": 3.896013734876277,
+          "si_sdr_in_db": 44.00708372183725,
+          "si_sdr_out_db": 47.90305984116632,
+          "si_sdri_db": 3.8959761193290703,
+          "click_sample_precision": 1.0,
+          "click_sample_recall": 0.1872791519434629,
+          "click_sample_f1": 0.31547619047619047,
+          "transient_fp_rate": null,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
+          "quiet_tail_drift_db": null,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": null,
+          "tail_snr_loss_db": null,
+          "residual_rms_db": -61.18668521129041,
+          "residual_identity_max_err": 6.938893903907228e-18,
+          "input_mutated": false,
+          "outside_click_max_diff": 0.0,
+          "masked_samples": 53,
+          "true_click_samples": 283,
+          "wall_s": 0.18346495903097093,
+          "wall_s_per_audio_min": 3.6692991806194186
+        },
+        "median_impulse_declick": {
+          "arm": "median_impulse_declick",
+          "snr_in_db": 44.007065644391275,
+          "snr_out_db": 49.35690416613275,
+          "delta_snr_db": 5.349838521741475,
+          "si_sdr_in_db": 44.00708372183725,
+          "si_sdr_out_db": 49.35689366452016,
+          "si_sdri_db": 5.34980994268291,
+          "click_sample_precision": 0.9705882352941176,
+          "click_sample_recall": 0.2332155477031802,
+          "click_sample_f1": 0.37606837606837606,
+          "transient_fp_rate": null,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
+          "quiet_tail_drift_db": null,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": null,
+          "tail_snr_loss_db": null,
+          "residual_rms_db": -60.987364988456754,
+          "residual_identity_max_err": 0.0,
+          "input_mutated": false,
+          "outside_click_max_diff": 0.0,
+          "masked_samples": 68,
+          "true_click_samples": 283,
+          "wall_s": 0.013217984000220895,
+          "wall_s_per_audio_min": 0.2643596800044179
+        },
+        "wiener_hiss": {
+          "arm": "wiener_hiss",
+          "snr_in_db": 44.007065644391275,
+          "snr_out_db": 44.007065644391275,
+          "delta_snr_db": 0.0,
+          "si_sdr_in_db": 44.00708372183725,
+          "si_sdr_out_db": 44.00708372183725,
+          "si_sdri_db": 0.0,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": null,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
+          "quiet_tail_drift_db": null,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": null,
+          "tail_snr_loss_db": null,
+          "residual_rms_db": -200.0,
+          "residual_identity_max_err": 0.0,
+          "input_mutated": false,
+          "outside_click_max_diff": null,
+          "masked_samples": null,
+          "true_click_samples": 283,
+          "wall_s": 0.1603522920049727,
+          "wall_s_per_audio_min": 3.207045840099454
+        },
+        "mmse_stsa_hiss": {
+          "arm": "mmse_stsa_hiss",
+          "snr_in_db": 44.007065644391275,
+          "snr_out_db": 44.007065644391275,
+          "delta_snr_db": 0.0,
+          "si_sdr_in_db": 44.00708372183725,
+          "si_sdr_out_db": 44.00708372183725,
+          "si_sdri_db": 0.0,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": null,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
+          "quiet_tail_drift_db": null,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": null,
+          "tail_snr_loss_db": null,
+          "residual_rms_db": -200.0,
+          "residual_identity_max_err": 0.0,
+          "input_mutated": false,
+          "outside_click_max_diff": null,
+          "masked_samples": null,
+          "true_click_samples": 283,
+          "wall_s": 0.1337746150093153,
+          "wall_s_per_audio_min": 2.6754923001863062
+        },
+        "ar_declick_wiener_hiss": {
+          "arm": "ar_declick_wiener_hiss",
+          "snr_in_db": 44.007065644391275,
+          "snr_out_db": 47.90307937926755,
+          "delta_snr_db": 3.896013734876277,
+          "si_sdr_in_db": 44.00708372183725,
+          "si_sdr_out_db": 47.90305984116632,
+          "si_sdri_db": 3.8959761193290703,
+          "click_sample_precision": 1.0,
+          "click_sample_recall": 0.1872791519434629,
+          "click_sample_f1": 0.31547619047619047,
+          "transient_fp_rate": null,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
+          "quiet_tail_drift_db": null,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": null,
+          "tail_snr_loss_db": null,
+          "residual_rms_db": -61.18668521129041,
+          "residual_identity_max_err": 6.938893903907228e-18,
+          "input_mutated": false,
+          "outside_click_max_diff": null,
+          "masked_samples": 53,
+          "true_click_samples": 283,
+          "wall_s": 0.3387520160176791,
+          "wall_s_per_audio_min": 6.7750403203535825
+        },
+        "ar_declick_mmse_stsa": {
+          "arm": "ar_declick_mmse_stsa",
+          "snr_in_db": 44.007065644391275,
+          "snr_out_db": 47.90307937926755,
+          "delta_snr_db": 3.896013734876277,
+          "si_sdr_in_db": 44.00708372183725,
+          "si_sdr_out_db": 47.90305984116632,
+          "si_sdri_db": 3.8959761193290703,
+          "click_sample_precision": 1.0,
+          "click_sample_recall": 0.1872791519434629,
+          "click_sample_f1": 0.31547619047619047,
+          "transient_fp_rate": null,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
+          "quiet_tail_drift_db": null,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": null,
+          "tail_snr_loss_db": null,
+          "residual_rms_db": -61.18668521129041,
+          "residual_identity_max_err": 6.938893903907228e-18,
+          "input_mutated": false,
+          "outside_click_max_diff": null,
+          "masked_samples": 53,
+          "true_click_samples": 283,
+          "wall_s": 0.3435319449636154,
+          "wall_s_per_audio_min": 6.870638899272308
         }
       }
     },
@@ -1330,6 +1943,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 22.623567850647376,
           "tail_snr_in_db": -22.599439179361056,
           "tail_snr_out_db": -22.599439179361056,
@@ -1338,8 +1953,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0013562659732997417,
-          "wall_s_per_audio_min": 0.027125319465994835
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.0008581510046496987,
+          "wall_s_per_audio_min": 0.017163020092993975
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -1354,6 +1971,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 22.623567850647376,
           "tail_snr_in_db": -22.599439179361056,
           "tail_snr_out_db": -22.599439179361056,
@@ -1362,8 +1981,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.153253867989406,
-          "wall_s_per_audio_min": 3.06507735978812
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.13609770499169827,
+          "wall_s_per_audio_min": 2.7219540998339653
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -1378,6 +1999,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 22.623567850647376,
           "tail_snr_in_db": -22.599439179361056,
           "tail_snr_out_db": -22.599439179361056,
@@ -1386,8 +2009,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.012861310970038176,
-          "wall_s_per_audio_min": 0.2572262194007635
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.011334619019180536,
+          "wall_s_per_audio_min": 0.22669238038361073
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -1402,6 +2027,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 13.658695947429237,
           "tail_snr_in_db": -22.599439179361056,
           "tail_snr_out_db": -13.659661835097692,
@@ -1410,8 +2037,10 @@
           "residual_identity_max_err": 6.938893903907228e-18,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.1887006249744445,
-          "wall_s_per_audio_min": 3.77401249948889
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.3076846019830555,
+          "wall_s_per_audio_min": 6.1536920396611094
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -1426,6 +2055,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 15.995216729430517,
           "tail_snr_in_db": -22.599439179361056,
           "tail_snr_out_db": -15.970043602468582,
@@ -1434,8 +2065,10 @@
           "residual_identity_max_err": 6.938893903907228e-18,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.2458420600160025,
-          "wall_s_per_audio_min": 4.91684120032005
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.2849367919843644,
+          "wall_s_per_audio_min": 5.698735839687288
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -1450,6 +2083,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 13.658695947429237,
           "tail_snr_in_db": -22.599439179361056,
           "tail_snr_out_db": -13.659661835097692,
@@ -1458,8 +2093,10 @@
           "residual_identity_max_err": 6.938893903907228e-18,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.32313626602990553,
-          "wall_s_per_audio_min": 6.462725320598111
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.3458590169902891,
+          "wall_s_per_audio_min": 6.917180339805782
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -1474,6 +2111,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 15.995216729430517,
           "tail_snr_in_db": -22.599439179361056,
           "tail_snr_out_db": -15.970043602468582,
@@ -1482,8 +2121,10 @@
           "residual_identity_max_err": 6.938893903907228e-18,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.41584032599348575,
-          "wall_s_per_audio_min": 8.316806519869715
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.4317304790019989,
+          "wall_s_per_audio_min": 8.634609580039978
         }
       }
     },
@@ -1509,6 +2150,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 23.024132691046646,
           "tail_snr_in_db": -23.00148125583544,
           "tail_snr_out_db": -23.00148125583544,
@@ -1517,8 +2160,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0015979899908415973,
-          "wall_s_per_audio_min": 0.031959799816831946
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.0008713509887456894,
+          "wall_s_per_audio_min": 0.017427019774913788
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -1533,6 +2178,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 23.024132691046646,
           "tail_snr_in_db": -23.00148125583544,
           "tail_snr_out_db": -23.00148125583544,
@@ -1541,8 +2188,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.15249558998038992,
-          "wall_s_per_audio_min": 3.0499117996077985
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.13503009802661836,
+          "wall_s_per_audio_min": 2.7006019605323672
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -1557,6 +2206,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 23.024132691046646,
           "tail_snr_in_db": -23.00148125583544,
           "tail_snr_out_db": -23.00148125583544,
@@ -1565,8 +2216,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.012437297962605953,
-          "wall_s_per_audio_min": 0.24874595925211906
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.01179166603833437,
+          "wall_s_per_audio_min": 0.2358333207666874
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -1581,6 +2234,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 13.922051294447321,
           "tail_snr_in_db": -23.00148125583544,
           "tail_snr_out_db": -13.966922151912511,
@@ -1589,8 +2244,10 @@
           "residual_identity_max_err": 1.3877787807814457e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.19313050800701603,
-          "wall_s_per_audio_min": 3.8626101601403207
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.26559860596898943,
+          "wall_s_per_audio_min": 5.311972119379789
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -1605,6 +2262,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 16.297835468009204,
           "tail_snr_in_db": -23.00148125583544,
           "tail_snr_out_db": -16.299913194353465,
@@ -1613,8 +2272,10 @@
           "residual_identity_max_err": 1.3877787807814457e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.2711662990041077,
-          "wall_s_per_audio_min": 5.423325980082154
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.3326696679578163,
+          "wall_s_per_audio_min": 6.6533933591563255
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -1629,6 +2290,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 13.922051294447321,
           "tail_snr_in_db": -23.00148125583544,
           "tail_snr_out_db": -13.966922151912511,
@@ -1637,8 +2300,10 @@
           "residual_identity_max_err": 1.3877787807814457e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.3790639820508659,
-          "wall_s_per_audio_min": 7.581279641017318
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.4425908699631691,
+          "wall_s_per_audio_min": 8.851817399263382
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -1653,6 +2318,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 16.297835468009204,
           "tail_snr_in_db": -23.00148125583544,
           "tail_snr_out_db": -16.299913194353465,
@@ -1661,8 +2328,10 @@
           "residual_identity_max_err": 1.3877787807814457e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.5899780710460618,
-          "wall_s_per_audio_min": 11.799561420921236
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.47941593296127394,
+          "wall_s_per_audio_min": 9.588318659225479
         }
       }
     },
@@ -1688,6 +2357,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 21.680659351790965,
           "tail_snr_in_db": -21.65075097170883,
           "tail_snr_out_db": -21.65075097170883,
@@ -1696,8 +2367,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.001282164012081921,
-          "wall_s_per_audio_min": 0.025643280241638422
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.0009573270217515528,
+          "wall_s_per_audio_min": 0.019146540435031056
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -1712,6 +2385,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 21.680659351790965,
           "tail_snr_in_db": -21.65075097170883,
           "tail_snr_out_db": -21.65075097170883,
@@ -1720,8 +2395,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.31043398496694863,
-          "wall_s_per_audio_min": 6.208679699338973
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.1377533139893785,
+          "wall_s_per_audio_min": 2.7550662797875702
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -1736,6 +2413,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 21.680659351790965,
           "tail_snr_in_db": -21.65075097170883,
           "tail_snr_out_db": -21.65075097170883,
@@ -1744,8 +2423,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.02588556200498715,
-          "wall_s_per_audio_min": 0.517711240099743
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.011506430979352444,
+          "wall_s_per_audio_min": 0.2301286195870489
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -1760,6 +2441,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 12.598139610828795,
           "tail_snr_in_db": -21.65075097170883,
           "tail_snr_out_db": -12.613568681435684,
@@ -1768,8 +2451,10 @@
           "residual_identity_max_err": 1.3877787807814457e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.29564509802730754,
-          "wall_s_per_audio_min": 5.912901960546151
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.1985994119895622,
+          "wall_s_per_audio_min": 3.9719882397912443
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -1784,6 +2469,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 15.014350422549754,
           "tail_snr_in_db": -21.65075097170883,
           "tail_snr_out_db": -14.98604762951944,
@@ -1792,8 +2479,10 @@
           "residual_identity_max_err": 6.938893903907228e-18,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.661705988983158,
-          "wall_s_per_audio_min": 13.23411977966316
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.2519909730181098,
+          "wall_s_per_audio_min": 5.039819460362196
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -1808,6 +2497,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 12.598139610828795,
           "tail_snr_in_db": -21.65075097170883,
           "tail_snr_out_db": -12.613568681435684,
@@ -1816,8 +2507,10 @@
           "residual_identity_max_err": 1.3877787807814457e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.5507054940098897,
-          "wall_s_per_audio_min": 11.014109880197793
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.3567845009965822,
+          "wall_s_per_audio_min": 7.135690019931644
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -1832,6 +2525,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 15.014350422549754,
           "tail_snr_in_db": -21.65075097170883,
           "tail_snr_out_db": -14.98604762951944,
@@ -1840,8 +2535,10 @@
           "residual_identity_max_err": 6.938893903907228e-18,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.4494019669946283,
-          "wall_s_per_audio_min": 8.988039339892566
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.4301487630000338,
+          "wall_s_per_audio_min": 8.602975260000676
         }
       }
     },
@@ -1867,6 +2564,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 13.4354498201754,
           "tail_snr_in_db": -13.236948097001786,
           "tail_snr_out_db": -13.236948097001786,
@@ -1875,8 +2574,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0019402879988774657,
-          "wall_s_per_audio_min": 0.038805759977549314
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.0011118180118501186,
+          "wall_s_per_audio_min": 0.022236360237002373
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -1891,6 +2592,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 13.4354498201754,
           "tail_snr_in_db": -13.236948097001786,
           "tail_snr_out_db": -13.236948097001786,
@@ -1899,8 +2602,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.17834965197835118,
-          "wall_s_per_audio_min": 3.5669930395670235
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.15574787504738197,
+          "wall_s_per_audio_min": 3.1149575009476393
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -1915,6 +2620,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 13.4354498201754,
           "tail_snr_in_db": -13.236948097001786,
           "tail_snr_out_db": -13.236948097001786,
@@ -1923,8 +2630,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.015678327006753534,
-          "wall_s_per_audio_min": 0.3135665401350707
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.012270574981812388,
+          "wall_s_per_audio_min": 0.24541149963624775
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -1939,6 +2648,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 4.950090011442541,
           "tail_snr_in_db": -13.236948097001786,
           "tail_snr_out_db": -4.364174336037378,
@@ -1947,8 +2658,10 @@
           "residual_identity_max_err": 3.469446951953614e-18,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.22370332200080156,
-          "wall_s_per_audio_min": 4.474066440016031
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.21142774599138647,
+          "wall_s_per_audio_min": 4.2285549198277295
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -1963,6 +2676,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 7.075701007373588,
           "tail_snr_in_db": -13.236948097001786,
           "tail_snr_out_db": -6.58631914931532,
@@ -1971,8 +2686,10 @@
           "residual_identity_max_err": 1.734723475976807e-18,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.24483975005568936,
-          "wall_s_per_audio_min": 4.896795001113787
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.3249421879881993,
+          "wall_s_per_audio_min": 6.498843759763986
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -1987,6 +2704,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 4.950090011442541,
           "tail_snr_in_db": -13.236948097001786,
           "tail_snr_out_db": -4.364174336037378,
@@ -1995,8 +2714,10 @@
           "residual_identity_max_err": 3.469446951953614e-18,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.3171558100148104,
-          "wall_s_per_audio_min": 6.343116200296208
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.4162083310075104,
+          "wall_s_per_audio_min": 8.324166620150208
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -2011,6 +2732,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 7.075701007373588,
           "tail_snr_in_db": -13.236948097001786,
           "tail_snr_out_db": -6.58631914931532,
@@ -2019,8 +2742,10 @@
           "residual_identity_max_err": 1.734723475976807e-18,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.3824071870185435,
-          "wall_s_per_audio_min": 7.64814374037087
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.49425830703694373,
+          "wall_s_per_audio_min": 9.885166140738875
         }
       }
     },
@@ -2046,6 +2771,8 @@
           "click_sample_f1": 0.0,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 23.899271166711717,
           "tail_snr_in_db": -23.882150178128438,
           "tail_snr_out_db": -23.882150178128438,
@@ -2054,8 +2781,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0011199209839105606,
-          "wall_s_per_audio_min": 0.022398419678211212
+          "masked_samples": 0,
+          "true_click_samples": 126,
+          "wall_s": 0.0008283989736810327,
+          "wall_s_per_audio_min": 0.016567979473620653
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -2070,6 +2799,8 @@
           "click_sample_f1": 0.5921787709497207,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 23.899271166711717,
           "tail_snr_in_db": -23.882150178128438,
           "tail_snr_out_db": -23.882150178128438,
@@ -2078,32 +2809,38 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.15597757295472547,
-          "wall_s_per_audio_min": 3.1195514590945095
+          "masked_samples": 53,
+          "true_click_samples": 126,
+          "wall_s": 0.14915931300492957,
+          "wall_s_per_audio_min": 2.9831862600985914
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
           "snr_in_db": 16.46948999029368,
-          "snr_out_db": 16.68162542283123,
-          "delta_snr_db": 0.21213543253755063,
+          "snr_out_db": 16.68796462790313,
+          "delta_snr_db": 0.21847463760945018,
           "si_sdr_in_db": 16.466811029408404,
-          "si_sdr_out_db": 16.679623763033458,
-          "si_sdri_db": 0.2128127336250536,
+          "si_sdr_out_db": 16.685868344388183,
+          "si_sdri_db": 0.21905731497977854,
           "click_sample_precision": 0.6233766233766234,
           "click_sample_recall": 0.38095238095238093,
           "click_sample_f1": 0.4729064039408867,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 23.899271166711717,
           "tail_snr_in_db": -23.882150178128438,
           "tail_snr_out_db": -23.882150178128438,
           "tail_snr_loss_db": 0.0,
-          "residual_rms_db": -45.700953602807985,
-          "residual_identity_max_err": 5.551115123125783e-17,
+          "residual_rms_db": -45.547410579611025,
+          "residual_identity_max_err": 1.1102230246251565e-16,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.01192884601186961,
-          "wall_s_per_audio_min": 0.2385769202373922
+          "masked_samples": 77,
+          "true_click_samples": 126,
+          "wall_s": 0.01243959297426045,
+          "wall_s_per_audio_min": 0.248791859485209
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -2118,6 +2855,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 14.710153892778315,
           "tail_snr_in_db": -23.882150178128438,
           "tail_snr_out_db": -14.764945003195031,
@@ -2126,8 +2865,10 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.1597503119846806,
-          "wall_s_per_audio_min": 3.195006239693612
+          "masked_samples": null,
+          "true_click_samples": 126,
+          "wall_s": 0.18025403295177966,
+          "wall_s_per_audio_min": 3.6050806590355933
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -2142,6 +2883,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 17.05911165920719,
           "tail_snr_in_db": -23.882150178128438,
           "tail_snr_out_db": -17.080654449374087,
@@ -2150,8 +2893,10 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.2542260600021109,
-          "wall_s_per_audio_min": 5.084521200042218
+          "masked_samples": null,
+          "true_click_samples": 126,
+          "wall_s": 0.2422667050268501,
+          "wall_s_per_audio_min": 4.845334100537002
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -2166,6 +2911,8 @@
           "click_sample_f1": 0.5921787709497207,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 14.828720575846432,
           "tail_snr_in_db": -23.882150178128438,
           "tail_snr_out_db": -14.882074579756893,
@@ -2174,8 +2921,10 @@
           "residual_identity_max_err": 2.7755575615628914e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.3525221770396456,
-          "wall_s_per_audio_min": 7.050443540792912
+          "masked_samples": 53,
+          "true_click_samples": 126,
+          "wall_s": 0.35482626501470804,
+          "wall_s_per_audio_min": 7.096525300294161
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -2190,6 +2939,8 @@
           "click_sample_f1": 0.5921787709497207,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 17.189694604503146,
           "tail_snr_in_db": -23.882150178128438,
           "tail_snr_out_db": -17.21069815798367,
@@ -2198,8 +2949,10 @@
           "residual_identity_max_err": 1.1102230246251565e-16,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.3747264940175228,
-          "wall_s_per_audio_min": 7.494529880350456
+          "masked_samples": 53,
+          "true_click_samples": 126,
+          "wall_s": 0.4124350369675085,
+          "wall_s_per_audio_min": 8.24870073935017
         }
       }
     },
@@ -2224,7 +2977,9 @@
           "click_sample_recall": 0.0,
           "click_sample_f1": 0.0,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -228.0873196918352,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 26.27931825998658,
           "tail_snr_in_db": -26.268909797981816,
           "tail_snr_out_db": -26.268909797981816,
@@ -2233,8 +2988,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0012517129653133452,
-          "wall_s_per_audio_min": 0.025034259306266904
+          "masked_samples": 0,
+          "true_click_samples": 106,
+          "wall_s": 0.00079647998791188,
+          "wall_s_per_audio_min": 0.0159295997582376
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -2248,7 +3005,9 @@
           "click_sample_recall": 0.33962264150943394,
           "click_sample_f1": 0.5070422535211268,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -228.0873196918352,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 26.27931825998658,
           "tail_snr_in_db": -26.268909797981816,
           "tail_snr_out_db": -26.268909797981816,
@@ -2257,32 +3016,38 @@
           "residual_identity_max_err": 1.1102230246251565e-16,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.17676653701346368,
-          "wall_s_per_audio_min": 3.5353307402692735
+          "masked_samples": 36,
+          "true_click_samples": 106,
+          "wall_s": 0.16526052204426378,
+          "wall_s_per_audio_min": 3.3052104408852756
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
           "snr_in_db": 14.193841435234638,
-          "snr_out_db": 13.243668986368117,
-          "delta_snr_db": -0.9501724488665211,
+          "snr_out_db": 13.35522937004452,
+          "delta_snr_db": -0.8386120651901177,
           "si_sdr_in_db": 14.200056352443022,
-          "si_sdr_out_db": 13.162724582565426,
-          "si_sdri_db": -1.0373317698775963,
+          "si_sdr_out_db": 13.273875305705493,
+          "si_sdri_db": -0.9261810467375291,
           "click_sample_precision": 0.046019900497512436,
           "click_sample_recall": 0.3490566037735849,
           "click_sample_f1": 0.08131868131868132,
           "transient_fp_rate": 0.031496394990934776,
-          "clean_attack_residual_energy_db": -13.357089230597337,
+          "clean_attack_residual_energy_db": -13.738019223503677,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 26.27931825998658,
           "tail_snr_in_db": -26.268909797981816,
           "tail_snr_out_db": -26.268909797981816,
           "tail_snr_loss_db": 0.0,
-          "residual_rms_db": -39.0710132749092,
+          "residual_rms_db": -39.333580915874556,
           "residual_identity_max_err": 1.1102230246251565e-16,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.015390088025014848,
-          "wall_s_per_audio_min": 0.30780176050029695
+          "masked_samples": 804,
+          "true_click_samples": 106,
+          "wall_s": 0.014774208015296608,
+          "wall_s_per_audio_min": 0.29548416030593216
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -2297,6 +3062,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": 0.9667748872117047,
           "clean_attack_residual_energy_db": -15.302466214052115,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 16.508576097678905,
           "tail_snr_in_db": -26.268909797981816,
           "tail_snr_out_db": -16.515489784510645,
@@ -2305,8 +3072,10 @@
           "residual_identity_max_err": 2.7755575615628914e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.1782839999650605,
-          "wall_s_per_audio_min": 3.56567999930121
+          "masked_samples": null,
+          "true_click_samples": 106,
+          "wall_s": 0.21876382996561006,
+          "wall_s_per_audio_min": 4.375276599312201
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -2321,6 +3090,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": 0.9639077454990091,
           "clean_attack_residual_energy_db": -15.85975311449002,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 18.81015803446421,
           "tail_snr_in_db": -26.268909797981816,
           "tail_snr_out_db": -18.801246654993264,
@@ -2329,8 +3100,10 @@
           "residual_identity_max_err": 2.7755575615628914e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.2423417009995319,
-          "wall_s_per_audio_min": 4.846834019990638
+          "masked_samples": null,
+          "true_click_samples": 106,
+          "wall_s": 0.2748645000392571,
+          "wall_s_per_audio_min": 5.497290000785142
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -2345,6 +3118,8 @@
           "click_sample_f1": 0.5070422535211268,
           "transient_fp_rate": 0.0,
           "clean_attack_residual_energy_db": -15.78860228394175,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 16.63409901561979,
           "tail_snr_in_db": -26.268909797981816,
           "tail_snr_out_db": -16.641577949850834,
@@ -2353,8 +3128,10 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.4263832159922458,
-          "wall_s_per_audio_min": 8.527664319844916
+          "masked_samples": 36,
+          "true_click_samples": 106,
+          "wall_s": 0.35331425099866465,
+          "wall_s_per_audio_min": 7.066285019973293
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -2369,6 +3146,8 @@
           "click_sample_f1": 0.5070422535211268,
           "transient_fp_rate": 0.0,
           "clean_attack_residual_energy_db": -16.33815491959236,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": 18.967994595957137,
           "tail_snr_in_db": -26.268909797981816,
           "tail_snr_out_db": -18.9598001472154,
@@ -2377,8 +3156,10 @@
           "residual_identity_max_err": 1.1102230246251565e-16,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.44669278198853135,
-          "wall_s_per_audio_min": 8.933855639770627
+          "masked_samples": 36,
+          "true_click_samples": 106,
+          "wall_s": 0.4253647819859907,
+          "wall_s_per_audio_min": 8.507295639719814
         }
       }
     },
@@ -2404,6 +3185,8 @@
           "click_sample_f1": 0.0,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2412,8 +3195,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0009868710185401142,
-          "wall_s_per_audio_min": 0.019737420370802283
+          "masked_samples": 0,
+          "true_click_samples": 305,
+          "wall_s": 0.001719095977023244,
+          "wall_s_per_audio_min": 0.03438191954046488
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -2428,6 +3213,8 @@
           "click_sample_f1": 0.6909871244635193,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2436,32 +3223,38 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.1676246749702841,
-          "wall_s_per_audio_min": 3.352493499405682
+          "masked_samples": 161,
+          "true_click_samples": 305,
+          "wall_s": 0.17683358199428767,
+          "wall_s_per_audio_min": 3.5366716398857534
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
           "snr_in_db": 11.810944430210926,
-          "snr_out_db": 11.955357986412082,
-          "delta_snr_db": 0.14441355620115637,
+          "snr_out_db": 11.965991682676904,
+          "delta_snr_db": 0.1550472524659785,
           "si_sdr_in_db": 11.81514203492519,
-          "si_sdr_out_db": 11.958915608460053,
-          "si_sdri_db": 0.14377357353486353,
+          "si_sdr_out_db": 11.969500356420692,
+          "si_sdri_db": 0.15435832149550244,
           "click_sample_precision": 0.5081967213114754,
           "click_sample_recall": 0.4065573770491803,
           "click_sample_f1": 0.4517304189435337,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
           "tail_snr_loss_db": null,
-          "residual_rms_db": -43.63294496926932,
+          "residual_rms_db": -43.098783040182624,
           "residual_identity_max_err": 1.1102230246251565e-16,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0118345589726232,
-          "wall_s_per_audio_min": 0.23669117945246398
+          "masked_samples": 244,
+          "true_click_samples": 305,
+          "wall_s": 0.012603442010004073,
+          "wall_s_per_audio_min": 0.25206884020008147
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -2476,6 +3269,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2484,8 +3279,10 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.16518773999996483,
-          "wall_s_per_audio_min": 3.3037547999992967
+          "masked_samples": null,
+          "true_click_samples": 305,
+          "wall_s": 0.15654763899510726,
+          "wall_s_per_audio_min": 3.1309527799021453
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -2500,6 +3297,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2508,8 +3307,10 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.2434954260243103,
-          "wall_s_per_audio_min": 4.869908520486206
+          "masked_samples": null,
+          "true_click_samples": 305,
+          "wall_s": 0.21753076603636146,
+          "wall_s_per_audio_min": 4.350615320727229
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -2524,6 +3325,8 @@
           "click_sample_f1": 0.6909871244635193,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2532,8 +3335,10 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.3383532090228982,
-          "wall_s_per_audio_min": 6.7670641804579645
+          "masked_samples": 161,
+          "true_click_samples": 305,
+          "wall_s": 0.32916722196387127,
+          "wall_s_per_audio_min": 6.583344439277425
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -2548,6 +3353,8 @@
           "click_sample_f1": 0.6909871244635193,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2556,8 +3363,10 @@
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.3982038240064867,
-          "wall_s_per_audio_min": 7.964076480129734
+          "masked_samples": 161,
+          "true_click_samples": 305,
+          "wall_s": 0.39711759600322694,
+          "wall_s_per_audio_min": 7.942351920064539
         }
       }
     },
@@ -2582,7 +3391,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -227.6405135067318,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2591,8 +3402,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0009983249474316835,
-          "wall_s_per_audio_min": 0.01996649894863367
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.0007395590073429048,
+          "wall_s_per_audio_min": 0.014791180146858096
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -2606,7 +3419,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -227.6405135067318,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2615,32 +3430,38 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.17979252099758014,
-          "wall_s_per_audio_min": 3.595850419951603
+          "masked_samples": 5,
+          "true_click_samples": 0,
+          "wall_s": 0.16273069800809026,
+          "wall_s_per_audio_min": 3.254613960161805
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
           "snr_in_db": null,
-          "snr_out_db": 21.79504244544261,
+          "snr_out_db": 21.80348548249194,
           "delta_snr_db": null,
           "si_sdr_in_db": null,
-          "si_sdr_out_db": 21.766749517429368,
+          "si_sdr_out_db": 21.77496039066002,
           "si_sdri_db": null,
           "click_sample_precision": null,
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.06077441077441077,
-          "clean_attack_residual_energy_db": -15.026011642239219,
+          "clean_attack_residual_energy_db": -15.03400341304207,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
           "tail_snr_loss_db": null,
-          "residual_rms_db": -41.977319559652386,
-          "residual_identity_max_err": 2.7755575615628914e-17,
+          "residual_rms_db": -41.985762596701704,
+          "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.014758015982806683,
-          "wall_s_per_audio_min": 0.29516031965613365
+          "masked_samples": 1448,
+          "true_click_samples": 0,
+          "wall_s": 0.014912495040334761,
+          "wall_s_per_audio_min": 0.2982499008066952
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -2654,7 +3475,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -227.6405135067318,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2663,8 +3486,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.14342957403277978,
-          "wall_s_per_audio_min": 2.8685914806555957
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.14389404997928068,
+          "wall_s_per_audio_min": 2.8778809995856136
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -2678,7 +3503,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -227.6405135067318,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2687,8 +3514,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.13632480200612918,
-          "wall_s_per_audio_min": 2.7264960401225835
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.14792918198509142,
+          "wall_s_per_audio_min": 2.9585836397018284
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -2702,7 +3531,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -227.6405135067318,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2711,8 +3542,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.29217917198548093,
-          "wall_s_per_audio_min": 5.843583439709619
+          "masked_samples": 5,
+          "true_click_samples": 0,
+          "wall_s": 0.34186229697661474,
+          "wall_s_per_audio_min": 6.837245939532295
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -2726,7 +3559,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -227.6405135067318,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2735,8 +3570,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.2977777260239236,
-          "wall_s_per_audio_min": 5.955554520478472
+          "masked_samples": 5,
+          "true_click_samples": 0,
+          "wall_s": 0.3524226450244896,
+          "wall_s_per_audio_min": 7.048452900489792
         }
       }
     },
@@ -2761,7 +3598,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -229.5389199209845,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2770,8 +3609,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0008337069884873927,
-          "wall_s_per_audio_min": 0.016674139769747853
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.0024711560108698905,
+          "wall_s_per_audio_min": 0.04942312021739781
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -2785,7 +3626,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -229.5389199209845,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2794,32 +3637,38 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.13244164298521355,
-          "wall_s_per_audio_min": 2.648832859704271
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.1611435340018943,
+          "wall_s_per_audio_min": 3.222870680037886
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
           "snr_in_db": null,
-          "snr_out_db": 37.8423447401862,
+          "snr_out_db": 40.0820181276864,
           "delta_snr_db": null,
           "si_sdr_in_db": null,
-          "si_sdr_out_db": 37.84288963028128,
+          "si_sdr_out_db": 40.08564806257699,
           "si_sdri_db": null,
           "click_sample_precision": null,
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.002461080586080586,
-          "clean_attack_residual_energy_db": -29.548079244212595,
+          "clean_attack_residual_energy_db": -31.7877526317128,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
           "tail_snr_loss_db": null,
-          "residual_rms_db": -54.23505772174289,
-          "residual_identity_max_err": 5.551115123125783e-17,
+          "residual_rms_db": -56.474731109243095,
+          "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.011542618973180652,
-          "wall_s_per_audio_min": 0.23085237946361303
+          "masked_samples": 43,
+          "true_click_samples": 0,
+          "wall_s": 0.011443433002568781,
+          "wall_s_per_audio_min": 0.22886866005137563
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -2833,7 +3682,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -229.5389199209845,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2842,8 +3693,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.1229524560039863,
-          "wall_s_per_audio_min": 2.459049120079726
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.12576336599886417,
+          "wall_s_per_audio_min": 2.5152673199772835
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -2857,7 +3710,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -229.5389199209845,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2866,8 +3721,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.12072392995469272,
-          "wall_s_per_audio_min": 2.4144785990938544
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.13561223301803693,
+          "wall_s_per_audio_min": 2.7122446603607386
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -2881,7 +3738,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -229.5389199209845,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2890,8 +3749,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.25876978400629014,
-          "wall_s_per_audio_min": 5.175395680125803
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.26212479500100017,
+          "wall_s_per_audio_min": 5.242495900020003
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -2905,7 +3766,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -229.5389199209845,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2914,8 +3777,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.2554172160453163,
-          "wall_s_per_audio_min": 5.108344320906326
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.3045067120110616,
+          "wall_s_per_audio_min": 6.090134240221232
         }
       }
     },
@@ -2941,6 +3806,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 0.0,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2949,8 +3816,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0017677069990895689,
-          "wall_s_per_audio_min": 0.03535413998179138
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.0012088979710824788,
+          "wall_s_per_audio_min": 0.024177959421649575
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -2965,6 +3834,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 0.0,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2973,8 +3844,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.14310711203143,
-          "wall_s_per_audio_min": 2.8621422406286
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.18435265199514106,
+          "wall_s_per_audio_min": 3.687053039902821
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -2989,6 +3862,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": 0.0,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -2997,8 +3872,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.014498411968816072,
-          "wall_s_per_audio_min": 0.28996823937632143
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.013301933999173343,
+          "wall_s_per_audio_min": 0.26603867998346686
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -3013,6 +3890,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": 0.0,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3021,8 +3900,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.1441403579665348,
-          "wall_s_per_audio_min": 2.882807159330696
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.15024382196133956,
+          "wall_s_per_audio_min": 3.0048764392267913
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -3037,6 +3918,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": 0.0,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3045,8 +3928,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.14300947199808434,
-          "wall_s_per_audio_min": 2.8601894399616867
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.1385869499645196,
+          "wall_s_per_audio_min": 2.771738999290392
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -3061,6 +3946,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": 0.0,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3069,8 +3956,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.325757856015116,
-          "wall_s_per_audio_min": 6.5151571203023195
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.3080697819823399,
+          "wall_s_per_audio_min": 6.161395639646798
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -3085,6 +3974,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": 0.0,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3093,8 +3984,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.290324789006263,
-          "wall_s_per_audio_min": 5.80649578012526
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.29319835297064856,
+          "wall_s_per_audio_min": 5.863967059412971
         }
       }
     },
@@ -3120,6 +4013,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3128,8 +4023,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.000980026030447334,
-          "wall_s_per_audio_min": 0.01960052060894668
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.0008776370086707175,
+          "wall_s_per_audio_min": 0.01755274017341435
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -3144,6 +4041,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3152,8 +4051,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.14210403698962182,
-          "wall_s_per_audio_min": 2.8420807397924364
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.14510630001313984,
+          "wall_s_per_audio_min": 2.902126000262797
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -3168,6 +4069,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3176,8 +4079,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.011254729004576802,
-          "wall_s_per_audio_min": 0.22509458009153605
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.01304044498829171,
+          "wall_s_per_audio_min": 0.2608088997658342
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -3192,6 +4097,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3200,8 +4107,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.12810967705445364,
-          "wall_s_per_audio_min": 2.562193541089073
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.1430231870035641,
+          "wall_s_per_audio_min": 2.860463740071282
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -3216,6 +4125,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3224,8 +4135,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.1258953280048445,
-          "wall_s_per_audio_min": 2.5179065600968897
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.1349426549859345,
+          "wall_s_per_audio_min": 2.69885309971869
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -3240,6 +4153,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3248,8 +4163,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.2688062529778108,
-          "wall_s_per_audio_min": 5.376125059556216
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.2791596539900638,
+          "wall_s_per_audio_min": 5.583193079801276
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -3264,6 +4181,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3272,8 +4191,217 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.26898854097817093,
-          "wall_s_per_audio_min": 5.379770819563419
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.28704847005428746,
+          "wall_s_per_audio_min": 5.740969401085749
+        }
+      }
+    },
+    {
+      "id": "e6-ctl-clean-roomtone-tail-48k",
+      "stratum": "clean_control",
+      "rate": 48000,
+      "bits": 24,
+      "has_clicks": false,
+      "has_attacks": true,
+      "has_quiet_tail": true,
+      "arms": {
+        "identity": {
+          "arm": "identity",
+          "snr_in_db": null,
+          "snr_out_db": null,
+          "delta_snr_db": 0.0,
+          "si_sdr_in_db": null,
+          "si_sdr_out_db": null,
+          "si_sdri_db": 0.0,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": 0.0,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": null,
+          "quiet_tail_drift_db": 0.0,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": null,
+          "tail_snr_loss_db": 0.0,
+          "residual_rms_db": -200.0,
+          "residual_identity_max_err": 0.0,
+          "input_mutated": false,
+          "outside_click_max_diff": 0.0,
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.0008943289867602289,
+          "wall_s_per_audio_min": 0.017886579735204577
+        },
+        "ar_declick": {
+          "arm": "ar_declick",
+          "snr_in_db": null,
+          "snr_out_db": 77.8833199441629,
+          "delta_snr_db": null,
+          "si_sdr_in_db": null,
+          "si_sdr_out_db": 77.88333209589088,
+          "si_sdri_db": null,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": 0.0,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": null,
+          "quiet_tail_drift_db": 0.0,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": null,
+          "tail_snr_loss_db": 0.0,
+          "residual_rms_db": -98.79086503312321,
+          "residual_identity_max_err": 0.0,
+          "input_mutated": false,
+          "outside_click_max_diff": 0.0,
+          "masked_samples": 1,
+          "true_click_samples": 0,
+          "wall_s": 0.16609297099057585,
+          "wall_s_per_audio_min": 3.321859419811517
+        },
+        "median_impulse_declick": {
+          "arm": "median_impulse_declick",
+          "snr_in_db": null,
+          "snr_out_db": 18.429103619060605,
+          "delta_snr_db": null,
+          "si_sdr_in_db": null,
+          "si_sdr_out_db": 18.366979320819233,
+          "si_sdri_db": null,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": 0.053493265993265995,
+          "clean_attack_residual_energy_db": -12.610346781522303,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": null,
+          "quiet_tail_drift_db": 0.0,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": null,
+          "tail_snr_loss_db": 0.0,
+          "residual_rms_db": -39.33664870802091,
+          "residual_identity_max_err": 5.551115123125783e-17,
+          "input_mutated": false,
+          "outside_click_max_diff": 0.0,
+          "masked_samples": 1272,
+          "true_click_samples": 0,
+          "wall_s": 0.01690006401622668,
+          "wall_s_per_audio_min": 0.3380012803245336
+        },
+        "wiener_hiss": {
+          "arm": "wiener_hiss",
+          "snr_in_db": null,
+          "snr_out_db": 47.28593767266156,
+          "delta_snr_db": null,
+          "si_sdr_in_db": null,
+          "si_sdr_out_db": 47.313624993448364,
+          "si_sdri_db": null,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": 0.09162457912457912,
+          "clean_attack_residual_energy_db": -48.449504144516105,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 0,
+          "quiet_tail_drift_db": 2.3622570115247825,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": 6.801629129946529,
+          "tail_snr_loss_db": 113.19837087005347,
+          "residual_rms_db": -68.19348276162187,
+          "residual_identity_max_err": 8.673617379884035e-19,
+          "input_mutated": false,
+          "outside_click_max_diff": null,
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.20119544595945626,
+          "wall_s_per_audio_min": 4.023908919189125
+        },
+        "mmse_stsa_hiss": {
+          "arm": "mmse_stsa_hiss",
+          "snr_in_db": null,
+          "snr_out_db": 48.325035503039544,
+          "delta_snr_db": null,
+          "si_sdr_in_db": null,
+          "si_sdr_out_db": 48.35849856021394,
+          "si_sdri_db": null,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": 0.0867003367003367,
+          "clean_attack_residual_energy_db": -48.6843703431137,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 0,
+          "quiet_tail_drift_db": 2.1399894324989788,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": 7.607681757261565,
+          "tail_snr_loss_db": 112.39231824273844,
+          "residual_rms_db": -69.23258059199985,
+          "residual_identity_max_err": 2.168404344971009e-19,
+          "input_mutated": false,
+          "outside_click_max_diff": null,
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.2262064930400811,
+          "wall_s_per_audio_min": 4.524129860801622
+        },
+        "ar_declick_wiener_hiss": {
+          "arm": "ar_declick_wiener_hiss",
+          "snr_in_db": null,
+          "snr_out_db": 47.28174273185544,
+          "delta_snr_db": null,
+          "si_sdr_in_db": null,
+          "si_sdr_out_db": 47.3094416907131,
+          "si_sdri_db": null,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": 0.0,
+          "clean_attack_residual_energy_db": -48.44854133021657,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 0,
+          "quiet_tail_drift_db": 2.362263538464177,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": 6.8015933840647484,
+          "tail_snr_loss_db": 113.19840661593526,
+          "residual_rms_db": -68.18928782081574,
+          "residual_identity_max_err": 8.673617379884035e-19,
+          "input_mutated": false,
+          "outside_click_max_diff": null,
+          "masked_samples": 1,
+          "true_click_samples": 0,
+          "wall_s": 0.41034067899454385,
+          "wall_s_per_audio_min": 8.206813579890877
+        },
+        "ar_declick_mmse_stsa": {
+          "arm": "ar_declick_mmse_stsa",
+          "snr_in_db": null,
+          "snr_out_db": 48.319677731984044,
+          "delta_snr_db": null,
+          "si_sdr_in_db": null,
+          "si_sdr_out_db": 48.35314677026631,
+          "si_sdri_db": null,
+          "click_sample_precision": null,
+          "click_sample_recall": null,
+          "click_sample_f1": null,
+          "transient_fp_rate": 0.0,
+          "clean_attack_residual_energy_db": -48.683389692049275,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 0,
+          "quiet_tail_drift_db": 2.1400059256050454,
+          "tail_snr_in_db": null,
+          "tail_snr_out_db": 7.607589058867124,
+          "tail_snr_loss_db": 112.39241094113288,
+          "residual_rms_db": -69.22722282094435,
+          "residual_identity_max_err": 2.168404344971009e-19,
+          "input_mutated": false,
+          "outside_click_max_diff": null,
+          "masked_samples": 1,
+          "true_click_samples": 0,
+          "wall_s": 0.4324905009707436,
+          "wall_s_per_audio_min": 8.649810019414872
         }
       }
     },
@@ -3299,6 +4427,8 @@
           "click_sample_f1": 0.0,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3307,8 +4437,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.001395867031533271,
-          "wall_s_per_audio_min": 0.02791734063066542
+          "masked_samples": 0,
+          "true_click_samples": 526,
+          "wall_s": 0.0017193749663420022,
+          "wall_s_per_audio_min": 0.03438749932684004
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -3323,6 +4455,8 @@
           "click_sample_f1": 0.2582781456953642,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3331,32 +4465,38 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.18071590398903936,
-          "wall_s_per_audio_min": 3.6143180797807872
+          "masked_samples": 78,
+          "true_click_samples": 526,
+          "wall_s": 0.14603059203363955,
+          "wall_s_per_audio_min": 2.920611840672791
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
           "snr_in_db": 26.313180832224965,
-          "snr_out_db": 26.507870113572032,
-          "delta_snr_db": 0.19468928134706687,
+          "snr_out_db": 26.88032893832224,
+          "delta_snr_db": 0.5671481060972745,
           "si_sdr_in_db": 26.315463227607463,
-          "si_sdr_out_db": 26.5101167948149,
-          "si_sdri_db": 0.19465356720743543,
+          "si_sdr_out_db": 26.88258206810129,
+          "si_sdri_db": 0.5671188404938263,
           "click_sample_precision": 0.5,
           "click_sample_recall": 0.03802281368821293,
           "click_sample_f1": 0.0706713780918728,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
           "tail_snr_loss_db": null,
-          "residual_rms_db": -66.52423485816242,
-          "residual_identity_max_err": 0.0,
+          "residual_rms_db": -53.27412349791045,
+          "residual_identity_max_err": 1.3877787807814457e-17,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.014951479039154947,
-          "wall_s_per_audio_min": 0.29902958078309894
+          "masked_samples": 40,
+          "true_click_samples": 526,
+          "wall_s": 0.012086052040103823,
+          "wall_s_per_audio_min": 0.24172104080207646
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -3371,6 +4511,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3379,8 +4521,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.17285306402482092,
-          "wall_s_per_audio_min": 3.4570612804964185
+          "masked_samples": null,
+          "true_click_samples": 526,
+          "wall_s": 0.12790801003575325,
+          "wall_s_per_audio_min": 2.558160200715065
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -3395,6 +4539,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3403,8 +4549,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.1514306309982203,
-          "wall_s_per_audio_min": 3.028612619964406
+          "masked_samples": null,
+          "true_click_samples": 526,
+          "wall_s": 0.12299838301260024,
+          "wall_s_per_audio_min": 2.459967660252005
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -3419,6 +4567,8 @@
           "click_sample_f1": 0.2582781456953642,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3427,8 +4577,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.32622363296104595,
-          "wall_s_per_audio_min": 6.524472659220919
+          "masked_samples": 78,
+          "true_click_samples": 526,
+          "wall_s": 0.2578373219585046,
+          "wall_s_per_audio_min": 5.156746439170092
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -3443,6 +4595,8 @@
           "click_sample_f1": 0.2582781456953642,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3451,8 +4605,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.2889567179954611,
-          "wall_s_per_audio_min": 5.7791343599092215
+          "masked_samples": 78,
+          "true_click_samples": 526,
+          "wall_s": 0.2758705060114153,
+          "wall_s_per_audio_min": 5.5174101202283055
         }
       }
     },
@@ -3478,6 +4634,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3486,8 +4644,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.001022700045723468,
-          "wall_s_per_audio_min": 0.02045400091446936
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.0009210089920088649,
+          "wall_s_per_audio_min": 0.018420179840177298
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -3502,6 +4662,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3510,8 +4672,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.1469082750263624,
-          "wall_s_per_audio_min": 2.938165500527248
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.148449017025996,
+          "wall_s_per_audio_min": 2.96898034051992
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
@@ -3526,6 +4690,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3534,8 +4700,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.012915646948385984,
-          "wall_s_per_audio_min": 0.2583129389677197
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.012540164985693991,
+          "wall_s_per_audio_min": 0.2508032997138798
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -3550,6 +4718,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3558,8 +4728,10 @@
           "residual_identity_max_err": 2.7755575615628914e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.2056986140087247,
-          "wall_s_per_audio_min": 4.113972280174494
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.18923161801649258,
+          "wall_s_per_audio_min": 3.7846323603298515
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -3574,6 +4746,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3582,8 +4756,10 @@
           "residual_identity_max_err": 2.7755575615628914e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.29455701797269285,
-          "wall_s_per_audio_min": 5.891140359453857
+          "masked_samples": null,
+          "true_click_samples": 0,
+          "wall_s": 0.24871237098705024,
+          "wall_s_per_audio_min": 4.974247419741005
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -3598,6 +4774,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3606,8 +4784,10 @@
           "residual_identity_max_err": 2.7755575615628914e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.34537926403572783,
-          "wall_s_per_audio_min": 6.907585280714557
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.3380765009787865,
+          "wall_s_per_audio_min": 6.76153001957573
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -3622,6 +4802,8 @@
           "click_sample_f1": null,
           "transient_fp_rate": null,
           "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": null,
+          "bypassed_channels": 0,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3630,8 +4812,10 @@
           "residual_identity_max_err": 2.7755575615628914e-17,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.4261933080269955,
-          "wall_s_per_audio_min": 8.52386616053991
+          "masked_samples": 0,
+          "true_click_samples": 0,
+          "wall_s": 0.4067356340237893,
+          "wall_s_per_audio_min": 8.134712680475786
         }
       }
     },
@@ -3656,7 +4840,9 @@
           "click_sample_recall": 0.0,
           "click_sample_f1": 0.0,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -228.3729831923884,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3665,8 +4851,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.0021493250387720764,
-          "wall_s_per_audio_min": 0.06447975116316229
+          "masked_samples": 0,
+          "true_click_samples": 67,
+          "wall_s": 0.004237325978465378,
+          "wall_s_per_audio_min": 0.12711977935396135
         },
         "ar_declick": {
           "arm": "ar_declick",
@@ -3681,6 +4869,8 @@
           "click_sample_f1": 0.38095238095238093,
           "transient_fp_rate": 3.160955873056012e-05,
           "clean_attack_residual_energy_db": -56.90561556008675,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3689,32 +4879,38 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.2539984380127862,
-          "wall_s_per_audio_min": 7.619953140383586
+          "masked_samples": 17,
+          "true_click_samples": 67,
+          "wall_s": 0.2050545759848319,
+          "wall_s_per_audio_min": 6.151637279544957
         },
         "median_impulse_declick": {
           "arm": "median_impulse_declick",
           "snr_in_db": 27.314363971652966,
-          "snr_out_db": 15.493356805272855,
-          "delta_snr_db": -11.821007166380111,
+          "snr_out_db": 15.49361483013442,
+          "delta_snr_db": -11.820749141518545,
           "si_sdr_in_db": 27.314115058637153,
-          "si_sdr_out_db": 15.372387542986365,
-          "si_sdri_db": -11.941727515650788,
+          "si_sdr_out_db": 15.371991354483791,
+          "si_sdri_db": -11.942123704153362,
           "click_sample_precision": 0.006809338521400778,
           "click_sample_recall": 0.5223880597014925,
           "click_sample_f1": 0.013443441521029383,
           "transient_fp_rate": 0.16063977746870653,
-          "clean_attack_residual_energy_db": -9.600061325623063,
+          "clean_attack_residual_energy_db": -9.59419060184293,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": null,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
           "tail_snr_loss_db": null,
-          "residual_rms_db": -36.8945337889505,
+          "residual_rms_db": -36.89104366549185,
           "residual_identity_max_err": 5.551115123125783e-17,
           "input_mutated": false,
           "outside_click_max_diff": 0.0,
-          "wall_s": 0.025022241985425353,
-          "wall_s_per_audio_min": 0.7506672595627606
+          "masked_samples": 5140,
+          "true_click_samples": 67,
+          "wall_s": 0.02161636803066358,
+          "wall_s_per_audio_min": 0.6484910409199074
         },
         "wiener_hiss": {
           "arm": "wiener_hiss",
@@ -3728,7 +4924,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -228.3729831923884,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3737,8 +4935,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.2547635600203648,
-          "wall_s_per_audio_min": 7.642906800610945
+          "masked_samples": null,
+          "true_click_samples": 67,
+          "wall_s": 0.26576091902097687,
+          "wall_s_per_audio_min": 7.972827570629306
         },
         "mmse_stsa_hiss": {
           "arm": "mmse_stsa_hiss",
@@ -3752,7 +4952,9 @@
           "click_sample_recall": null,
           "click_sample_f1": null,
           "transient_fp_rate": 0.0,
-          "clean_attack_residual_energy_db": -228.3729831923884,
+          "clean_attack_residual_energy_db": null,
+          "clean_attack_zero_residual": true,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3761,8 +4963,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.23341788398101926,
-          "wall_s_per_audio_min": 7.002536519430578
+          "masked_samples": null,
+          "true_click_samples": 67,
+          "wall_s": 0.24720943602733314,
+          "wall_s_per_audio_min": 7.416283080819994
         },
         "ar_declick_wiener_hiss": {
           "arm": "ar_declick_wiener_hiss",
@@ -3777,6 +4981,8 @@
           "click_sample_f1": 0.38095238095238093,
           "transient_fp_rate": 3.160955873056012e-05,
           "clean_attack_residual_energy_db": -56.90561556008675,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3785,8 +4991,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.4255580910248682,
-          "wall_s_per_audio_min": 12.766742730746046
+          "masked_samples": 17,
+          "true_click_samples": 67,
+          "wall_s": 0.4456593160284683,
+          "wall_s_per_audio_min": 13.36977948085405
         },
         "ar_declick_mmse_stsa": {
           "arm": "ar_declick_mmse_stsa",
@@ -3801,6 +5009,8 @@
           "click_sample_f1": 0.38095238095238093,
           "transient_fp_rate": 3.160955873056012e-05,
           "clean_attack_residual_energy_db": -56.90561556008675,
+          "clean_attack_zero_residual": false,
+          "bypassed_channels": 2,
           "quiet_tail_drift_db": null,
           "tail_snr_in_db": null,
           "tail_snr_out_db": null,
@@ -3809,8 +5019,10 @@
           "residual_identity_max_err": 0.0,
           "input_mutated": false,
           "outside_click_max_diff": null,
-          "wall_s": 0.4322856449871324,
-          "wall_s_per_audio_min": 12.968569349613972
+          "masked_samples": 17,
+          "true_click_samples": 67,
+          "wall_s": 0.4520789999514818,
+          "wall_s_per_audio_min": 13.562369998544455
         }
       }
     }

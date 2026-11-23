@@ -380,7 +380,7 @@ def restore_median_impulse(
                 continue
             left = restored[rs - 1, ch] if rs > 0 else 0.0
             right = restored[re, ch] if re < n else left
-            restored[rs:re, ch] = np.linspace(left, right, re - rs, dtype=np.float64)
+            restored[rs:re, ch] = np.linspace(left, right, re - rs + 2, dtype=np.float64)[1:-1]
             detected_mask[rs:re, ch] = True
 
     residual = work - restored
@@ -867,9 +867,13 @@ def evaluate_e6_case(
         click_f1 = float(2.0 * tp / (2 * tp + fp + fn)) if (2 * tp + fp + fn) > 0 else 0.0
 
     # Transient false-positive rate on clean attack samples (attack_mask & ~click_mask).
+    # Note: for masked de-clickers this counts masked samples; for broadband STFT hiss
+    # reducers (click_mask is None) it counts samples with |residual| > 1e-3, so
+    # clean_attack_residual_energy_db is reported alongside for cross-arm comparison.
     clean_attack = attack_mask.astype(bool) & (~click_mask.astype(bool))
     transient_fp_rate: float | None = None
     clean_attack_residual_energy_db: float | None = None
+    clean_attack_zero_residual: bool | None = None
     if clean_attack.any():
         if result.click_mask is not None:
             fp_count = int(np.count_nonzero(result.click_mask.astype(bool) & clean_attack))
@@ -879,7 +883,12 @@ def evaluate_e6_case(
         atk_clean_e = float(np.sum(c[clean_attack] ** 2))
         atk_res_e = float(np.sum(r[clean_attack] ** 2))
         if atk_clean_e > EPS:
-            clean_attack_residual_energy_db = float(10.0 * np.log10(max(atk_res_e, EPS) / atk_clean_e))
+            if atk_res_e <= EPS:
+                clean_attack_zero_residual = True
+                clean_attack_residual_energy_db = None
+            else:
+                clean_attack_zero_residual = False
+                clean_attack_residual_energy_db = float(10.0 * np.log10(atk_res_e / atk_clean_e))
 
     # Quiet reverb tail preservation metrics.
     quiet_tail_drift_db: float | None = None
@@ -910,6 +919,10 @@ def evaluate_e6_case(
         unmasked = ~result.click_mask.astype(bool)
         outside_click_max_diff = float(np.max(np.abs(y[unmasked] - d[unmasked]))) if unmasked.any() else 0.0
 
+    bypassed_channels = result.meta.get("bypassed_channels")
+    if bypassed_channels is None and isinstance(result.meta.get("stage2"), dict):
+        bypassed_channels = result.meta["stage2"].get("bypassed_channels")
+
     audio_min = max(c.shape[0] / float(sr) / 60.0, 1e-9)
     return {
         "arm": result.arm,
@@ -924,6 +937,8 @@ def evaluate_e6_case(
         "click_sample_f1": click_f1,
         "transient_fp_rate": transient_fp_rate,
         "clean_attack_residual_energy_db": clean_attack_residual_energy_db,
+        "clean_attack_zero_residual": clean_attack_zero_residual,
+        "bypassed_channels": bypassed_channels,
         "quiet_tail_drift_db": quiet_tail_drift_db,
         "tail_snr_in_db": tail_snr_in_db,
         "tail_snr_out_db": tail_snr_out_db,
@@ -932,6 +947,8 @@ def evaluate_e6_case(
         "residual_identity_max_err": res_err,
         "input_mutated": input_mutated,
         "outside_click_max_diff": outside_click_max_diff,
+        "masked_samples": int(np.count_nonzero(result.click_mask)) if result.click_mask is not None else None,
+        "true_click_samples": int(np.count_nonzero(click_mask)),
         "wall_s": float(result.wall_s),
         "wall_s_per_audio_min": float(result.wall_s / audio_min),
     }
@@ -970,10 +987,22 @@ def _fmt(val: float | None, fmt: str = "+.2f", suffix: str = "") -> str:
     return "-" if val is None else f"{val:{fmt}}{suffix}"
 
 
+def _fmt_res_db(val: float | None, *, has_zero_residual: bool = False) -> str:
+    if val is not None:
+        return f"{val:.1f}"
+    return "0 (no edit)" if has_zero_residual else "-"
+
+
 def _render_report_md(results: dict) -> str:
     learned = results["learned_arm"]
     e4_check = results["e4_freeze_integrity"]
     prov = results["provenance"]
+    diag = results["diagnostics"]
+    n_clk = results["summary_by_stratum"]["clicks_only"]["identity"]["n_cases"]
+    n_hiss = results["summary_by_stratum"]["hiss_only"]["identity"]["n_cases"]
+    n_arc = results["summary_by_stratum"]["combined_archival"]["identity"]["n_cases"]
+    n_ctl = results["summary_by_stratum"]["clean_control"]["identity"]["n_cases"]
+    n_ood = results["summary_by_stratum"]["ood"]["identity"]["n_cases"]
     lines = [
         "# E6 · Archival De-Click & Hiss: DSP vs Learned Research Report",
         "",
@@ -995,7 +1024,9 @@ def _render_report_md(results: dict) -> str:
         "",
         "## 2. DSP Arm Comparison by Stratum",
         "",
-        "### 2.1 Clicks & Crackles (`clicks_only`, n=4) + Clean Attack Protection (`clean_control` percussive/plucked)",
+        f"### 2.1 Clicks & Crackles (`clicks_only`, n={n_clk}, incl. low-level crackle) + Clean Attack Protection (`clean_control`, n={n_ctl})",
+        "",
+        "> **Note on Clean Controls:** Ultra-clean controls (`-82 dBFS` floor) trigger the spectral hiss `clean_bypass_dbfs = -70.0` gate (`0 (no edit)`). The `e6-ctl-clean-roomtone-tail-48k` control (`-58 dBFS` studio room-tone) does **not** bypass, exposing active Wiener/MMSE trade-offs (see Section 3.3 and Section 6).",
         "",
         "| Arm | Mean ΔSNR (dB) | Mean SI-SDRi (dB) | Click F1 | Clean Attack FP Rate | Clean Attack Residual (dB) | Wall (s/min) |",
         "|---|---:|---:|---:|---:|---:|---:|",
@@ -1007,13 +1038,13 @@ def _render_report_md(results: dict) -> str:
         lines.append(
             f"| `{arm}` | {_fmt(s_clk['mean_delta_snr_db'])} | {_fmt(s_clk['mean_si_sdri_db'])} | "
             f"{_fmt(s_clk['mean_click_f1'], '.3f')} | {_fmt(fp_pct, '.4f', '%')} | "
-            f"{_fmt(s_ctl['mean_clean_attack_residual_energy_db'], '.1f')} | "
+            f"{_fmt_res_db(s_ctl['mean_clean_attack_residual_energy_db'], has_zero_residual=True)} | "
             f"{_fmt(s_clk['mean_wall_s_per_audio_min'], '.2f')} |"
         )
 
     lines += [
         "",
-        "### 2.2 Stationary & Modulated Hiss (`hiss_only`, n=4) + Reverb Tail Preservation",
+        f"### 2.2 Stationary & Modulated Hiss (`hiss_only`, n={n_hiss}) + Reverb Tail Preservation",
         "",
         "| Arm | Mean ΔSNR (dB) | Mean SI-SDRi (dB) | Hiss Tail Drift (dB) | Clean Tail Drift (dB) | Clean Tail SNR Loss (dB) | Wall (s/min) |",
         "|---|---:|---:|---:|---:|---:|---:|",
@@ -1031,7 +1062,7 @@ def _render_report_md(results: dict) -> str:
 
     lines += [
         "",
-        "### 2.3 Combined Archival Transfers (`combined_archival`, n=3) & OOD Stress Cases (`ood`, n=3)",
+        f"### 2.3 Combined Archival Transfers (`combined_archival`, n={n_arc}) & OOD Stress Cases (`ood`, n={n_ood})",
         "",
         "| Arm | Archival Mean ΔSNR (dB) | Archival SI-SDRi (dB) | Archival Tail Drift (dB) | OOD Mean ΔSNR (dB) | OOD SI-SDRi (dB) | OOD Attack FP Rate |",
         "|---|---:|---:|---:|---:|---:|---:|",
@@ -1047,11 +1078,72 @@ def _render_report_md(results: dict) -> str:
             f"{_fmt(ood_fp, '.4f', '%')} |"
         )
 
+    # Section 3: Sensitivity Diagnostics & Active-Algorithm Trade-Offs (B1, B2, B3)
+    ll = diag["low_level_crackle"]
+    ws = diag["ood_wide_scratch"]
+    nb = diag["hiss_without_clean_bypass"]
+    rt = diag["roomtone_clean_control"]
     lines += [
         "",
         "---",
         "",
-        "## 3. Learned Arm Audit (Historical U-Net / RESTORE) & Colab Contract",
+        "## 3. Sensitivity Diagnostics & Active-Algorithm Trade-Offs",
+        "",
+        "### 3.1 Quiet Crackle Sensitivity (`e6-clicks-low-level-crackle-44k`, amp `0.03-0.08`)",
+        "",
+        "| Arm | ΔSNR (dB) | Click Precision | Click Recall | Click F1 | Detected / True Samples |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for arm in ("ar_declick", "median_impulse_declick"):
+        row = ll[arm]
+        lines.append(
+            f"| `{arm}` | {_fmt(row['delta_snr_db'])} | {_fmt(row['click_sample_precision'], '.3f')} | "
+            f"{_fmt(row['click_sample_recall'], '.3f')} | {_fmt(row['click_sample_f1'], '.3f')} | "
+            f"{row['masked_samples']} / {row['true_click_samples']} |"
+        )
+
+    lines += [
+        "",
+        "### 3.2 OOD Wide Scratch Fragmentation (`e6-ood-wide-scratch-44k`, width `20-34` samples)",
+        "",
+        "| Arm | ΔSNR (dB) | Click Precision | Click Recall | Click F1 | Detected / True Samples |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for arm in ("ar_declick", "median_impulse_declick"):
+        row = ws[arm]
+        lines.append(
+            f"| `{arm}` | {_fmt(row['delta_snr_db'])} | {_fmt(row['click_sample_precision'], '.3f')} | "
+            f"{_fmt(row['click_sample_recall'], '.3f')} | {_fmt(row['click_sample_f1'], '.3f')} | "
+            f"{row['masked_samples']} / {row['true_click_samples']} |"
+        )
+
+    lines += [
+        "",
+        "### 3.3 Active Wiener / MMSE-STSA Without Bypass vs Room-Tone Clean Control",
+        "",
+        "| Case / Mode | Arm | Bypassed Ch | Attack FP (`|r|>1e-3`) | Attack Residual (dB) | Quiet Tail Drift (dB) | Tail SNR Loss (dB) |",
+        "|---|---|---:|---:|---:|---:|---:|",
+    ]
+    for label, entry in (
+        ("`e6-ctl-clean-percussion-48k` (bypass disabled)", nb["clean_percussion"]),
+        ("`e6-ctl-clean-reverb-tail-48k` (bypass disabled)", nb["clean_reverb_tail"]),
+        ("`e6-ctl-clean-roomtone-tail-48k` (`-58 dBFS` room-tone, default)", rt),
+    ):
+        for arm in ("wiener_hiss", "mmse_stsa_hiss"):
+            m = entry[arm]
+            fp_pct = None if m["transient_fp_rate"] is None else 100.0 * m["transient_fp_rate"]
+            lines.append(
+                f"| {label} | `{arm}` | {m['bypassed_channels']}/2 | "
+                f"{_fmt(fp_pct, '.2f', '%')} | "
+                f"{_fmt_res_db(m['clean_attack_residual_energy_db'], has_zero_residual=bool(m['clean_attack_zero_residual']))} | "
+                f"{_fmt(m['quiet_tail_drift_db'], '.2f')} | {_fmt(m['tail_snr_loss_db'], '.2f')} |"
+            )
+
+    lines += [
+        "",
+        "---",
+        "",
+        "## 4. Learned Arm Audit (Historical U-Net / RESTORE) & Colab Contract",
         "",
         f"- **Status:** `{learned['status']}` (`executed = {learned['executed']}`)",
         f"- **Blocked Reasons:** `{', '.join(learned['blocked_reasons'])}`",
@@ -1062,17 +1154,18 @@ def _render_report_md(results: dict) -> str:
         "- **Policy Compliance:** No learned metrics fabricated; no weights downloaded or executed without license/checkpoint SHA-256 verification; no Colab session launched.",
         "- **Handoff Interface:** Future authorized Colab run must evaluate on `corpus/dev-e6-archival-v1.json` (`rights.colab == True` only, never sealed corpora), export `restored` + `residual = input - restored` with pinned checkpoint SHA-256 and GPU/CUDA/PyTorch metadata, and pass local verification via `research/e6_declick_hiss.py`.",
         "",
-        "## 4. Unpaired Real Archival Transfers Protocol",
+        "## 5. Unpaired Real Archival Transfers Protocol",
         "",
         f"- **Status:** `{learned['unpaired_real_protocol']['status']}` (`clean_reference_fabricated = False`).",
         "- No rights-cleared real archival vinyl/tape audio files are bundled in the repository. When rights-cleared real transfers are provided locally, evaluation uses loudness-matched (`<= 0.2 LU`) blind A/B preference + isolated residual (`removed = input - restored`) auditioning for attack/cymbal/reverb leakage — never synthetic paired SDR.",
         "",
-        "## 5. Key Research Takeaways",
+        "## 6. Limitations & Honest Method Boundaries",
         "",
-        "1. **AR De-Click + Transient Guard vs Naive Median Impulse:** Bidirectional AR prediction (`min(|e_f|, |e_b|)`) with pre/post energy-jump and impulsiveness gating removes short clicks/crackles with exact bit-preservation outside the click mask while keeping false positives on clean sharp percussive/plucked attacks near zero, whereas naive median/high-pass impulse detection triggers significantly more false positives on sharp musical attacks.",
-        "2. **Spectral Hiss Reduction (Wiener vs Ephraim-Malah MMSE-STSA):** Both Wiener and MMSE-STSA with minimum-statistics tracking, clean-floor bypass (`< -70 dBFS`), and a `-11 dB` gain floor improve SNR on stationary and modulated hiss while preserving clean reverb tails (`0.00 dB` drift on clean controls).",
-        "3. **Two-Stage Cascade (`ar_declick -> hiss_reducer`):** Running AR de-click before spectral hiss reduction prevents impulsive clicks from smearing across STFT frames and biasing noise-floor estimation, delivering the strongest overall ΔSNR / SI-SDRi on combined vinyl/tape/78 rpm archival profiles while exposing an exact auditionable `residual = input - restored`.",
-        "4. **OOD Limits:** Wide physical scratches (`20-34` samples) exceed the conservative click-width guard (`max_click_ms = 0.45 ms`) by design so the de-clicker abstains rather than hallucinating or destroying musical transients; non-stationary mains hum (50/100/150 Hz) requires a dedicated harmonic notch stage rather than broadband hiss suppression.",
+        (f"1. **Quiet Crackle Sensitivity Floor:** `ar_declick` uses `min_abs_residual = 0.035` and a strict transient guard to maintain `0.0000%` false positives on clean sharp percussion/plucked attacks. Consequently, on high-amplitude pops (`0.22-0.72`) it achieves `F1 ~ 0.81` and `~+20 dB ΔSNR`, whereas on quiet vinyl/shellac crackle (`e6-clicks-low-level-crackle-44k`, amp `0.03-0.08`) recall drops to `{ll['ar_declick']['click_sample_recall']:.3f}` (`ΔSNR = {_fmt(ll['ar_declick']['delta_snr_db'])} dB`). Lowering the residual threshold would trade away clean-attack protection."),
+        (f"2. **Role of `clean_bypass_dbfs = -70.0` in Spectral Hiss Reduction:** Zero drift (`0.00 dB`) and zero residual (`0 (no edit)`) on the ultra-clean `-82 dBFS` controls are achieved by the high-frequency clean-floor bypass gate, **not** by Wiener/MMSE-STSA selectivity alone. When bypass is disabled (`clean_bypass_dbfs = -120.0`) or when a clean recording carries realistic `-58 dBFS` room-tone (`e6-ctl-clean-roomtone-tail-48k`), active Wiener/MMSE-STSA modifies both percussive attacks (`clean_attack_residual_energy_db` ≈ `{_fmt_res_db(rt['wiener_hiss']['clean_attack_residual_energy_db'])} dB`) and quiet reverb tails (`quiet_tail_drift_db` ≈ `{_fmt(rt['wiener_hiss']['quiet_tail_drift_db'], '.2f')} dB`)."),
+        (f"3. **Partial Fragmentation on OOD Wide Scratches:** On `e6-ood-wide-scratch-44k` (20-34 sample scratches exceeding `max_click_samples = 20`), `ar_declick` does **not** achieve full abstention: the bidirectional AR residual fragments wide scratches into shorter sub-runs (`<= 20` samples) and partially interpolates `{ws['ar_declick']['masked_samples']}/{ws['ar_declick']['true_click_samples']}` samples (`recall = {ws['ar_declick']['click_sample_recall']:.3f}`, `ΔSNR = {_fmt(ws['ar_declick']['delta_snr_db'])} dB`), leaving residual scratch artifacts. Wide physical scratches require dedicated multi-scale/gap-inpainting detection rather than single-scale AR run-length gating."),
+        "4. **Metric Semantics Across Arm Families:** `transient_fp_rate` counts masked samples inside `attack_mask & ~click_mask` for de-clickers (`ar_declick`, `median_impulse_declick`, and cascade stage 1), whereas for standalone broadband STFT hiss reducers (`wiener_hiss`, `mmse_stsa_hiss`) it counts attack samples with `|residual| > 1e-3`. Cross-family comparison on clean attacks should therefore use `clean_attack_residual_energy_db` alongside `transient_fp_rate`.",
+        "5. **Non-Stationary Mains Hum & Learned Comparison:** Broadband spectral hiss reducers do not remove tonal 50/100/150 Hz mains hum (`e6-ood-nonstationary-hum-hiss-48k`), which requires a dedicated harmonic notch stage; and comparison against learned models (Historical U-Net / RESTORE) remains blocked until licensed weights and authorized Colab GPU execution are provisioned.",
     ]
     return "\n".join(lines) + "\n"
 
@@ -1148,6 +1241,40 @@ def run_e6_benchmark(
                 "mean_wall_s_per_audio_min": _mean([m["wall_s_per_audio_min"] for m in ms]),
             }
 
+    # Build explicit diagnostics (B1 wide-scratch fragmentation, B2 bypass-disabled & room-tone, B3 quiet crackle).
+    case_map = {c["id"]: c for c in per_case}
+    manifest_map = {c["id"]: c for c in manifest["cases"]}
+    no_bypass_diag: dict[str, dict[str, dict]] = {}
+    for key, cid in (
+        ("clean_percussion", "e6-ctl-clean-percussion-48k"),
+        ("clean_reverb_tail", "e6-ctl-clean-reverb-tail-48k"),
+    ):
+        c_arr, d_arr, cm_arr, am_arr, ts_arr = build_e6_archival_corpus.synthesize_e6_arrays(manifest_map[cid])
+        sr_d = int(manifest_map[cid]["rate"])
+        no_bypass_diag[key] = {}
+        for arm_name, fn in (("wiener_hiss", restore_wiener_hiss), ("mmse_stsa_hiss", restore_mmse_stsa_hiss)):
+            res_nb = fn(d_arr, sr_d, clean_bypass_dbfs=-120.0)
+            no_bypass_diag[key][arm_name] = evaluate_e6_case(
+                c_arr, d_arr, res_nb, sr_d,
+                click_mask=cm_arr, attack_mask=am_arr, tail_slice=ts_arr,
+            )
+
+    diagnostics = {
+        "low_level_crackle": {
+            arm: case_map["e6-clicks-low-level-crackle-44k"]["arms"][arm]
+            for arm in ("ar_declick", "median_impulse_declick")
+        },
+        "ood_wide_scratch": {
+            arm: case_map["e6-ood-wide-scratch-44k"]["arms"][arm]
+            for arm in ("ar_declick", "median_impulse_declick")
+        },
+        "roomtone_clean_control": {
+            arm: case_map["e6-ctl-clean-roomtone-tail-48k"]["arms"][arm]
+            for arm in ("wiener_hiss", "mmse_stsa_hiss")
+        },
+        "hiss_without_clean_bypass": no_bypass_diag,
+    }
+
     learned = audit_learned_arm()
     e4_check = _verify_e4_freeze_untouched()
     results = {
@@ -1178,6 +1305,7 @@ def run_e6_benchmark(
         },
         "dsp_arms": list(DSP_ARMS),
         "learned_arm": learned,
+        "diagnostics": diagnostics,
         "summary_by_stratum": summary_by_stratum,
         "cases": per_case,
     }

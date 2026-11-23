@@ -1,44 +1,46 @@
 # E6 · Archival De-Click & Hiss: DSP vs Learned Research Report
 
-**Card:** Board #1131 · **Spec:** E0 charter + spec v1 (Section E6) · **Dataset:** `dev-e6-archival-2026-11-23` (`18` stereo cases) · **Learned Arm:** `blocked_external_weights_or_colab`
+**Card:** Board #1131 · **Spec:** E0 charter + spec v1 (Section E6) · **Dataset:** `dev-e6-archival-2026-11-23` (`20` stereo cases) · **Learned Arm:** `blocked_external_weights_or_colab`
 
 ## 1. Scope, Safety Boundaries & Provenance
 
 - **Sealed corpora (`corpus/sealed-v1.json`, `corpus/sealed-e5-v1.json`):** `sealed_corpora_opened = False` (strictly untouched).
 - **Frozen E4 Preserve hard-declip pipeline:** `18/18` SHA-256 pins verified untouched (`all_untouched = True`).
 - **Preserve promotion / Colab automation:** `False` (isolated research study only; does not extend Preserve stereo).
-- **Manifest SHA-256 (`corpus/dev-e6-archival-v1.json`):** `2194a576fc01ff0b6c0e9398f6817f758cb2fdd80aa0776ec320c0c8a8721201`
-- **Corpus Builder SHA-256 (`research/build_e6_archival_corpus.py`):** `6ead3777e1a9da837942df59e0e72d4157173e0e62b8967c58298acb930d804b`
-- **E6 Harness SHA-256 (`research/e6_declick_hiss.py`):** `cc9c2e59864c6d835b4f4277b3865cc8ceaeeeae2924b793029cace8fe850bf1`
-- **Residual & Immutability Contract:** `126/126` runs passed `restored + residual == input` (`max_err = 1.11e-16`) with `0` input mutations.
+- **Manifest SHA-256 (`corpus/dev-e6-archival-v1.json`):** `43be9dbc1ced833b734f8a5b1339c1d8bb68123723b061213a6873f09a67a48a`
+- **Corpus Builder SHA-256 (`research/build_e6_archival_corpus.py`):** `cca31046af6da002e7ceb2576cd2f1f19d6507729d528b6a4b5c8725334f5ce8`
+- **E6 Harness SHA-256 (`research/e6_declick_hiss.py`):** `ee164cd68f0b1e48e33c774f5c475c99fcbdad144434706e403d5457bb4f7643`
+- **Residual & Immutability Contract:** `140/140` runs passed `restored + residual == input` (`max_err = 1.11e-16`) with `0` input mutations.
 
 ---
 
 ## 2. DSP Arm Comparison by Stratum
 
-### 2.1 Clicks & Crackles (`clicks_only`, n=4) + Clean Attack Protection (`clean_control` percussive/plucked)
+### 2.1 Clicks & Crackles (`clicks_only`, n=5, incl. low-level crackle) + Clean Attack Protection (`clean_control`, n=5)
+
+> **Note on Clean Controls:** Ultra-clean controls (`-82 dBFS` floor) trigger the spectral hiss `clean_bypass_dbfs = -70.0` gate (`0 (no edit)`). The `e6-ctl-clean-roomtone-tail-48k` control (`-58 dBFS` studio room-tone) does **not** bypass, exposing active Wiener/MMSE trade-offs (see Section 3.3 and Section 6).
 
 | Arm | Mean ΔSNR (dB) | Mean SI-SDRi (dB) | Click F1 | Clean Attack FP Rate | Clean Attack Residual (dB) | Wall (s/min) |
 |---|---:|---:|---:|---:|---:|---:|
-| `identity` | +0.00 | +0.00 | 0.000 | 0.0000% | -228.6 | 0.03 |
-| `ar_declick` | +19.95 | +19.95 | 0.808 | 0.0000% | -228.6 | 3.97 |
-| `median_impulse_declick` | +9.63 | +9.61 | 0.476 | 3.1618% | -22.3 | 0.30 |
-| `wiener_hiss` | +0.00 | +0.00 | - | 0.0000% | -228.6 | 3.30 |
-| `mmse_stsa_hiss` | +0.00 | +0.00 | - | 0.0000% | -228.6 | 2.91 |
-| `ar_declick_wiener_hiss` | +19.95 | +19.95 | 0.808 | 0.0000% | -228.6 | 7.02 |
-| `ar_declick_mmse_stsa` | +19.95 | +19.95 | 0.808 | 0.0000% | -228.6 | 7.28 |
+| `identity` | +0.00 | +0.00 | 0.000 | 0.0000% | 0 (no edit) | 0.03 |
+| `ar_declick` | +16.74 | +16.74 | 0.709 | 0.0000% | 0 (no edit) | 3.99 |
+| `median_impulse_declick` | +9.40 | +9.38 | 0.456 | 3.8910% | -19.8 | 0.31 |
+| `wiener_hiss` | +0.00 | +0.00 | - | 3.0542% | -48.4 | 3.17 |
+| `mmse_stsa_hiss` | +0.00 | +0.00 | - | 2.8900% | -48.7 | 3.16 |
+| `ar_declick_wiener_hiss` | +16.74 | +16.74 | 0.709 | 0.0000% | -48.4 | 7.40 |
+| `ar_declick_mmse_stsa` | +16.74 | +16.74 | 0.709 | 0.0000% | -48.7 | 7.51 |
 
 ### 2.2 Stationary & Modulated Hiss (`hiss_only`, n=4) + Reverb Tail Preservation
 
 | Arm | Mean ΔSNR (dB) | Mean SI-SDRi (dB) | Hiss Tail Drift (dB) | Clean Tail Drift (dB) | Clean Tail SNR Loss (dB) | Wall (s/min) |
 |---|---:|---:|---:|---:|---:|---:|
-| `identity` | +0.00 | +0.00 | 20.19 | 0.00 | 0.00 | 0.03 |
-| `ar_declick` | +0.00 | +0.00 | 20.19 | 0.00 | 0.00 | 3.97 |
-| `median_impulse_declick` | +0.00 | +0.00 | 20.19 | 0.00 | 0.00 | 0.33 |
-| `wiener_hiss` | +8.59 | +8.58 | 11.28 | 0.00 | 0.00 | 4.51 |
-| `mmse_stsa_hiss` | +6.45 | +6.45 | 13.60 | 0.00 | 0.00 | 7.12 |
-| `ar_declick_wiener_hiss` | +8.59 | +8.58 | 11.28 | 0.00 | 0.00 | 7.85 |
-| `ar_declick_mmse_stsa` | +6.45 | +6.45 | 13.60 | 0.00 | 0.00 | 9.19 |
+| `identity` | +0.00 | +0.00 | 20.19 | 0.00 | 0.00 | 0.02 |
+| `ar_declick` | +0.00 | +0.00 | 20.19 | 0.00 | 0.00 | 2.82 |
+| `median_impulse_declick` | +0.00 | +0.00 | 20.19 | 0.00 | 0.00 | 0.23 |
+| `wiener_hiss` | +8.59 | +8.58 | 11.28 | 1.18 | 56.60 | 4.92 |
+| `mmse_stsa_hiss` | +6.45 | +6.45 | 13.60 | 1.07 | 56.20 | 5.97 |
+| `ar_declick_wiener_hiss` | +8.59 | +8.58 | 11.28 | 1.18 | 56.60 | 7.81 |
+| `ar_declick_mmse_stsa` | +6.45 | +6.45 | 13.60 | 1.07 | 56.20 | 9.18 |
 
 ### 2.3 Combined Archival Transfers (`combined_archival`, n=3) & OOD Stress Cases (`ood`, n=3)
 
@@ -46,7 +48,7 @@
 |---|---:|---:|---:|---:|---:|---:|
 | `identity` | +0.00 | +0.00 | 25.09 | +0.00 | +0.00 | 0.0000% |
 | `ar_declick` | +0.26 | +0.26 | 25.09 | +1.81 | +1.81 | 0.0032% |
-| `median_impulse_declick` | -0.20 | -0.23 | 25.09 | -3.88 | -3.92 | 16.0640% |
+| `median_impulse_declick` | -0.16 | -0.18 | 25.09 | -3.75 | -3.79 | 16.0640% |
 | `wiener_hiss` | +5.81 | +5.80 | 15.61 | +0.66 | +0.74 | 0.0000% |
 | `mmse_stsa_hiss` | +5.00 | +4.95 | 17.93 | +0.86 | +0.88 | 0.0000% |
 | `ar_declick_wiener_hiss` | +6.19 | +6.15 | 15.73 | +2.47 | +2.55 | 0.0032% |
@@ -54,7 +56,36 @@
 
 ---
 
-## 3. Learned Arm Audit (Historical U-Net / RESTORE) & Colab Contract
+## 3. Sensitivity Diagnostics & Active-Algorithm Trade-Offs
+
+### 3.1 Quiet Crackle Sensitivity (`e6-clicks-low-level-crackle-44k`, amp `0.03-0.08`)
+
+| Arm | ΔSNR (dB) | Click Precision | Click Recall | Click F1 | Detected / True Samples |
+|---|---:|---:|---:|---:|---:|
+| `ar_declick` | +3.90 | 1.000 | 0.187 | 0.315 | 53 / 283 |
+| `median_impulse_declick` | +5.35 | 0.971 | 0.233 | 0.376 | 68 / 283 |
+
+### 3.2 OOD Wide Scratch Fragmentation (`e6-ood-wide-scratch-44k`, width `20-34` samples)
+
+| Arm | ΔSNR (dB) | Click Precision | Click Recall | Click F1 | Detected / True Samples |
+|---|---:|---:|---:|---:|---:|
+| `ar_declick` | +3.31 | 1.000 | 0.148 | 0.258 | 78 / 526 |
+| `median_impulse_declick` | +0.57 | 0.500 | 0.038 | 0.071 | 40 / 526 |
+
+### 3.3 Active Wiener / MMSE-STSA Without Bypass vs Room-Tone Clean Control
+
+| Case / Mode | Arm | Bypassed Ch | Attack FP (`|r|>1e-3`) | Attack Residual (dB) | Quiet Tail Drift (dB) | Tail SNR Loss (dB) |
+|---|---|---:|---:|---:|---:|---:|
+| `e6-ctl-clean-percussion-48k` (bypass disabled) | `wiener_hiss` | 0/2 | 92.59% | -23.0 | - | - |
+| `e6-ctl-clean-percussion-48k` (bypass disabled) | `mmse_stsa_hiss` | 0/2 | 90.16% | -24.3 | - | - |
+| `e6-ctl-clean-reverb-tail-48k` (bypass disabled) | `wiener_hiss` | 0/2 | - | - | 0.21 | 98.56 |
+| `e6-ctl-clean-reverb-tail-48k` (bypass disabled) | `mmse_stsa_hiss` | 0/2 | - | - | 0.17 | 96.29 |
+| `e6-ctl-clean-roomtone-tail-48k` (`-58 dBFS` room-tone, default) | `wiener_hiss` | 0/2 | 9.16% | -48.4 | 2.36 | 113.20 |
+| `e6-ctl-clean-roomtone-tail-48k` (`-58 dBFS` room-tone, default) | `mmse_stsa_hiss` | 0/2 | 8.67% | -48.7 | 2.14 | 112.39 |
+
+---
+
+## 4. Learned Arm Audit (Historical U-Net / RESTORE) & Colab Contract
 
 - **Status:** `blocked_external_weights_or_colab` (`executed = False`)
 - **Blocked Reasons:** `no_local_historical_unet_or_restore_weights, no_local_cuda_gpu, colab_connection_not_authorized_or_configured`
@@ -62,14 +93,15 @@
 - **Policy Compliance:** No learned metrics fabricated; no weights downloaded or executed without license/checkpoint SHA-256 verification; no Colab session launched.
 - **Handoff Interface:** Future authorized Colab run must evaluate on `corpus/dev-e6-archival-v1.json` (`rights.colab == True` only, never sealed corpora), export `restored` + `residual = input - restored` with pinned checkpoint SHA-256 and GPU/CUDA/PyTorch metadata, and pass local verification via `research/e6_declick_hiss.py`.
 
-## 4. Unpaired Real Archival Transfers Protocol
+## 5. Unpaired Real Archival Transfers Protocol
 
 - **Status:** `not_provisioned_in_repo` (`clean_reference_fabricated = False`).
 - No rights-cleared real archival vinyl/tape audio files are bundled in the repository. When rights-cleared real transfers are provided locally, evaluation uses loudness-matched (`<= 0.2 LU`) blind A/B preference + isolated residual (`removed = input - restored`) auditioning for attack/cymbal/reverb leakage — never synthetic paired SDR.
 
-## 5. Key Research Takeaways
+## 6. Limitations & Honest Method Boundaries
 
-1. **AR De-Click + Transient Guard vs Naive Median Impulse:** Bidirectional AR prediction (`min(|e_f|, |e_b|)`) with pre/post energy-jump and impulsiveness gating removes short clicks/crackles with exact bit-preservation outside the click mask while keeping false positives on clean sharp percussive/plucked attacks near zero, whereas naive median/high-pass impulse detection triggers significantly more false positives on sharp musical attacks.
-2. **Spectral Hiss Reduction (Wiener vs Ephraim-Malah MMSE-STSA):** Both Wiener and MMSE-STSA with minimum-statistics tracking, clean-floor bypass (`< -70 dBFS`), and a `-11 dB` gain floor improve SNR on stationary and modulated hiss while preserving clean reverb tails (`0.00 dB` drift on clean controls).
-3. **Two-Stage Cascade (`ar_declick -> hiss_reducer`):** Running AR de-click before spectral hiss reduction prevents impulsive clicks from smearing across STFT frames and biasing noise-floor estimation, delivering the strongest overall ΔSNR / SI-SDRi on combined vinyl/tape/78 rpm archival profiles while exposing an exact auditionable `residual = input - restored`.
-4. **OOD Limits:** Wide physical scratches (`20-34` samples) exceed the conservative click-width guard (`max_click_ms = 0.45 ms`) by design so the de-clicker abstains rather than hallucinating or destroying musical transients; non-stationary mains hum (50/100/150 Hz) requires a dedicated harmonic notch stage rather than broadband hiss suppression.
+1. **Quiet Crackle Sensitivity Floor:** `ar_declick` uses `min_abs_residual = 0.035` and a strict transient guard to maintain `0.0000%` false positives on clean sharp percussion/plucked attacks. Consequently, on high-amplitude pops (`0.22-0.72`) it achieves `F1 ~ 0.81` and `~+20 dB ΔSNR`, whereas on quiet vinyl/shellac crackle (`e6-clicks-low-level-crackle-44k`, amp `0.03-0.08`) recall drops to `0.187` (`ΔSNR = +3.90 dB`). Lowering the residual threshold would trade away clean-attack protection.
+2. **Role of `clean_bypass_dbfs = -70.0` in Spectral Hiss Reduction:** Zero drift (`0.00 dB`) and zero residual (`0 (no edit)`) on the ultra-clean `-82 dBFS` controls are achieved by the high-frequency clean-floor bypass gate, **not** by Wiener/MMSE-STSA selectivity alone. When bypass is disabled (`clean_bypass_dbfs = -120.0`) or when a clean recording carries realistic `-58 dBFS` room-tone (`e6-ctl-clean-roomtone-tail-48k`), active Wiener/MMSE-STSA modifies both percussive attacks (`clean_attack_residual_energy_db` ≈ `-48.4 dB`) and quiet reverb tails (`quiet_tail_drift_db` ≈ `2.36 dB`).
+3. **Partial Fragmentation on OOD Wide Scratches:** On `e6-ood-wide-scratch-44k` (20-34 sample scratches exceeding `max_click_samples = 20`), `ar_declick` does **not** achieve full abstention: the bidirectional AR residual fragments wide scratches into shorter sub-runs (`<= 20` samples) and partially interpolates `78/526` samples (`recall = 0.148`, `ΔSNR = +3.31 dB`), leaving residual scratch artifacts. Wide physical scratches require dedicated multi-scale/gap-inpainting detection rather than single-scale AR run-length gating.
+4. **Metric Semantics Across Arm Families:** `transient_fp_rate` counts masked samples inside `attack_mask & ~click_mask` for de-clickers (`ar_declick`, `median_impulse_declick`, and cascade stage 1), whereas for standalone broadband STFT hiss reducers (`wiener_hiss`, `mmse_stsa_hiss`) it counts attack samples with `|residual| > 1e-3`. Cross-family comparison on clean attacks should therefore use `clean_attack_residual_energy_db` alongside `transient_fp_rate`.
+5. **Non-Stationary Mains Hum & Learned Comparison:** Broadband spectral hiss reducers do not remove tonal 50/100/150 Hz mains hum (`e6-ood-nonstationary-hum-hiss-48k`), which requires a dedicated harmonic notch stage; and comparison against learned models (Historical U-Net / RESTORE) remains blocked until licensed weights and authorized Colab GPU execution are provisioned.

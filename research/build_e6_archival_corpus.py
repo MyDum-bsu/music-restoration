@@ -85,6 +85,7 @@ def _archival_clean_signal(
     quiet_tail: bool = False,
     narrowband: bool = False,
     ultrasonic: bool = False,
+    noise_floor_rms: float = 7.5e-5,
 ) -> tuple[np.ndarray, np.ndarray, list[int] | None]:
     """Generate deterministic stereo music with explicit attack_mask and tail_slice.
 
@@ -200,8 +201,8 @@ def _archival_clean_signal(
     if narrowband:
         out = _butter_filter(out, rate, (280.0, 7000.0), btype="bandpass", order=4)
 
-    # Very low clean noise floor (-82 dBFS) and peak normalization to -2 dBFS.
-    out += rng.normal(0.0, 7.5e-5, out.shape)
+    # Configurable clean noise floor (default -82 dBFS; room-tone control uses ~ -58 dBFS).
+    out += rng.normal(0.0, noise_floor_rms, out.shape)
     peak = float(np.abs(out).max())
     if peak > 0.0:
         out *= 0.78 / peak
@@ -447,9 +448,9 @@ def _case(cid: str, rate: int, seconds: float, seed: int, stratum: str, op: str,
 
 
 def e6_archival_cases() -> list[dict]:
-    """18 independent stereo archival-transfer dev cases across 5 strata."""
+    """20 independent stereo archival-transfer dev cases across 5 strata."""
     specs = [
-        # Stratum 1: Clicks & crackles only (4 cases)
+        # Stratum 1: Clicks & crackles only (5 cases, including low-level vinyl/shellac crackle)
         ("e6-clicks-sparse-tonal-44k", 44100, 3.0, 601, "clicks_only", "clicks_only", 16,
          {"n_clicks": 22, "width_range": [1, 5], "amp_range": [0.30, 0.72]}),
         ("e6-clicks-dense-crackle-48k", 48000, 3.0, 602, "clicks_only", "clicks_only", 24,
@@ -460,6 +461,8 @@ def e6_archival_cases() -> list[dict]:
         ("e6-clicks-single-ch-44k", 44100, 3.0, 604, "clicks_only", "clicks_only", 16,
          {"n_clicks": 36, "width_range": [1, 6], "amp_range": [0.28, 0.68],
           "channel_mode": "left_heavy"}),
+        ("e6-clicks-low-level-crackle-44k", 44100, 3.0, 605, "clicks_only", "clicks_only", 24,
+         {"n_clicks": 90, "width_range": [1, 4], "amp_range": [0.03, 0.08]}),
 
         # Stratum 2: Stationary & modulated hiss only (4 cases)
         ("e6-hiss-tape-white-20db-44k", 44100, 3.0, 611, "hiss_only", "hiss_only", 16,
@@ -484,7 +487,7 @@ def e6_archival_cases() -> list[dict]:
          {"target_snr_db": 12.0, "hiss_color": "shellac_broadband", "narrowband": True,
           "n_clicks": 70, "width_range": [1, 6], "amp_range": [0.24, 0.62]}),
 
-        # Stratum 4: Clean negative controls (4 cases, ZERO defects)
+        # Stratum 4: Clean negative controls (5 cases, ZERO defects; includes -58 dBFS room-tone control)
         ("e6-ctl-clean-percussion-48k", 48000, 3.0, 631, "clean_control", "clean_control", 24,
          {"percussive": True}),
         ("e6-ctl-clean-plucked-44k", 44100, 3.0, 632, "clean_control", "clean_control", 16,
@@ -493,6 +496,8 @@ def e6_archival_cases() -> list[dict]:
          {"quiet_tail": True}),
         ("e6-ctl-clean-tonal-44k", 44100, 3.0, 634, "clean_control", "clean_control", 16,
          {}),
+        ("e6-ctl-clean-roomtone-tail-48k", 48000, 3.0, 635, "clean_control", "clean_control", 24,
+         {"percussive": True, "quiet_tail": True, "noise_floor_rms": 1.25e-3}),
 
         # Stratum 5: OOD cases (3 cases)
         ("e6-ood-wide-scratch-44k", 44100, 3.0, 641, "ood", "ood_wide_scratch", 16,
@@ -523,6 +528,7 @@ def synthesize_e6_arrays(case: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray
         quiet_tail=bool(syn.get("quiet_tail", False)),
         narrowband=bool(syn.get("narrowband", False)),
         ultrasonic=bool(syn.get("ultrasonic", False)),
+        noise_floor_rms=float(syn.get("noise_floor_rms", 7.5e-5)),
     )
     degraded, click_mask, _meta = apply_archival_operator(
         clean,

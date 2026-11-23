@@ -15,10 +15,10 @@
     "seed": 20261123
   },
   "strata_counts": {
-    "clicks_only": 4,
+    "clicks_only": 5,
     "hiss_only": 4,
     "combined_archival": 3,
-    "clean_control": 4,
+    "clean_control": 5,
     "ood": 3
   },
   "files": [
@@ -99,6 +99,26 @@
     },
     {
       "path": "e6-clicks-single-ch-44k.attack_mask.json",
+      "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+      "bytes": 40
+    },
+    {
+      "path": "e6-clicks-low-level-crackle-44k.clean.wav",
+      "sha256": "87c1c60c7626f9eba847adc492018839acc28546ca8d3c6aa281f22b9f94ddcf",
+      "bytes": 793844
+    },
+    {
+      "path": "e6-clicks-low-level-crackle-44k.degraded.wav",
+      "sha256": "451ab2d84cdcbab712de0f73e8e657d09b2b80567c8657a76c8f19365530ed71",
+      "bytes": 793844
+    },
+    {
+      "path": "e6-clicks-low-level-crackle-44k.click_mask.json",
+      "sha256": "654e0701df288624d63ab6273f30c4e78c1879d179e0d88d252f78288004ea20",
+      "bytes": 2153
+    },
+    {
+      "path": "e6-clicks-low-level-crackle-44k.attack_mask.json",
       "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
       "bytes": 40
     },
@@ -321,6 +341,26 @@
       "path": "e6-ctl-clean-tonal-44k.attack_mask.json",
       "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
       "bytes": 40
+    },
+    {
+      "path": "e6-ctl-clean-roomtone-tail-48k.clean.wav",
+      "sha256": "1c848a5829ffac608a26be1a278431f831ede1ebecdfbb8d0f5ce641ad9bd0b9",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-ctl-clean-roomtone-tail-48k.degraded.wav",
+      "sha256": "1c848a5829ffac608a26be1a278431f831ede1ebecdfbb8d0f5ce641ad9bd0b9",
+      "bytes": 864044
+    },
+    {
+      "path": "e6-ctl-clean-roomtone-tail-48k.click_mask.json",
+      "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+      "bytes": 40
+    },
+    {
+      "path": "e6-ctl-clean-roomtone-tail-48k.attack_mask.json",
+      "sha256": "e13527d3f8c21537a1b0e1ea285c4305b689e1d42d72e496bcceb7eadfce9aa7",
+      "bytes": 240
     },
     {
       "path": "e6-ood-wide-scratch-44k.clean.wav",
@@ -636,6 +676,68 @@
       "tail_slice": null
     },
     {
+      "id": "e6-clicks-low-level-crackle-44k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "clicks_only",
+      "split": "eval",
+      "rate": 44100,
+      "channels": 2,
+      "bits": 24,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-05",
+        "fingerprint": "fp-e6-05",
+        "session": "ses-e6-05",
+        "artist": "e6-artist-05",
+        "album": "e6-album-05",
+        "stem_family": "fam-e6-05"
+      },
+      "clean": {
+        "path": "e6-clicks-low-level-crackle-44k.clean.wav",
+        "sha256": "87c1c60c7626f9eba847adc492018839acc28546ca8d3c6aa281f22b9f94ddcf",
+        "bytes": 793844
+      },
+      "degraded": {
+        "path": "e6-clicks-low-level-crackle-44k.degraded.wav",
+        "sha256": "451ab2d84cdcbab712de0f73e8e657d09b2b80567c8657a76c8f19365530ed71",
+        "bytes": 793844
+      },
+      "click_mask": {
+        "path": "e6-clicks-low-level-crackle-44k.click_mask.json",
+        "sha256": "654e0701df288624d63ab6273f30c4e78c1879d179e0d88d252f78288004ea20",
+        "bytes": 2153
+      },
+      "attack_mask": {
+        "path": "e6-clicks-low-level-crackle-44k.attack_mask.json",
+        "sha256": "504b4986ae11aa96d77eed3a472e780101e7164008333a5d2f563a1ecb83a303",
+        "bytes": 40
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 605,
+        "rate": 44100,
+        "seconds": 3.0,
+        "operator": "clicks_only",
+        "bits": 24,
+        "n_clicks": 90,
+        "width_range": [
+          1,
+          4
+        ],
+        "amp_range": [
+          0.03,
+          0.08
+        ]
+      },
+      "tail_slice": null
+    },
+    {
       "id": "e6-hiss-tape-white-20db-44k",
       "kind": "paired_synthetic_archival",
       "stratum": "hiss_only",
@@ -651,12 +753,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-05",
-        "fingerprint": "fp-e6-05",
-        "session": "ses-e6-05",
-        "artist": "e6-artist-05",
-        "album": "e6-album-05",
-        "stem_family": "fam-e6-05"
+        "take": "t-e6-06",
+        "fingerprint": "fp-e6-06",
+        "session": "ses-e6-06",
+        "artist": "e6-artist-06",
+        "album": "e6-album-06",
+        "stem_family": "fam-e6-06"
       },
       "clean": {
         "path": "e6-hiss-tape-white-20db-44k.clean.wav",
@@ -710,12 +812,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-06",
-        "fingerprint": "fp-e6-06",
-        "session": "ses-e6-06",
-        "artist": "e6-artist-06",
-        "album": "e6-album-06",
-        "stem_family": "fam-e6-06"
+        "take": "t-e6-07",
+        "fingerprint": "fp-e6-07",
+        "session": "ses-e6-07",
+        "artist": "e6-artist-07",
+        "album": "e6-album-07",
+        "stem_family": "fam-e6-07"
       },
       "clean": {
         "path": "e6-hiss-vinyl-pink-15db-48k.clean.wav",
@@ -769,12 +871,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-07",
-        "fingerprint": "fp-e6-07",
-        "session": "ses-e6-07",
-        "artist": "e6-artist-07",
-        "album": "e6-album-07",
-        "stem_family": "fam-e6-07"
+        "take": "t-e6-08",
+        "fingerprint": "fp-e6-08",
+        "session": "ses-e6-08",
+        "artist": "e6-artist-08",
+        "album": "e6-album-08",
+        "stem_family": "fam-e6-08"
       },
       "clean": {
         "path": "e6-hiss-modulated-wow-18db-44k.clean.wav",
@@ -829,12 +931,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-08",
-        "fingerprint": "fp-e6-08",
-        "session": "ses-e6-08",
-        "artist": "e6-artist-08",
-        "album": "e6-album-08",
-        "stem_family": "fam-e6-08"
+        "take": "t-e6-09",
+        "fingerprint": "fp-e6-09",
+        "session": "ses-e6-09",
+        "artist": "e6-artist-09",
+        "album": "e6-album-09",
+        "stem_family": "fam-e6-09"
       },
       "clean": {
         "path": "e6-hiss-high-snr-30db-48k.clean.wav",
@@ -888,12 +990,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-09",
-        "fingerprint": "fp-e6-09",
-        "session": "ses-e6-09",
-        "artist": "e6-artist-09",
-        "album": "e6-album-09",
-        "stem_family": "fam-e6-09"
+        "take": "t-e6-10",
+        "fingerprint": "fp-e6-10",
+        "session": "ses-e6-10",
+        "artist": "e6-artist-10",
+        "album": "e6-album-10",
+        "stem_family": "fam-e6-10"
       },
       "clean": {
         "path": "e6-archival-vinyl-44k.clean.wav",
@@ -956,12 +1058,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-10",
-        "fingerprint": "fp-e6-10",
-        "session": "ses-e6-10",
-        "artist": "e6-artist-10",
-        "album": "e6-album-10",
-        "stem_family": "fam-e6-10"
+        "take": "t-e6-11",
+        "fingerprint": "fp-e6-11",
+        "session": "ses-e6-11",
+        "artist": "e6-artist-11",
+        "album": "e6-album-11",
+        "stem_family": "fam-e6-11"
       },
       "clean": {
         "path": "e6-archival-tape-crackle-48k.clean.wav",
@@ -1027,12 +1129,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-11",
-        "fingerprint": "fp-e6-11",
-        "session": "ses-e6-11",
-        "artist": "e6-artist-11",
-        "album": "e6-album-11",
-        "stem_family": "fam-e6-11"
+        "take": "t-e6-12",
+        "fingerprint": "fp-e6-12",
+        "session": "ses-e6-12",
+        "artist": "e6-artist-12",
+        "album": "e6-album-12",
+        "stem_family": "fam-e6-12"
       },
       "clean": {
         "path": "e6-archival-78rpm-shellac-44k.clean.wav",
@@ -1092,12 +1194,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-12",
-        "fingerprint": "fp-e6-12",
-        "session": "ses-e6-12",
-        "artist": "e6-artist-12",
-        "album": "e6-album-12",
-        "stem_family": "fam-e6-12"
+        "take": "t-e6-13",
+        "fingerprint": "fp-e6-13",
+        "session": "ses-e6-13",
+        "artist": "e6-artist-13",
+        "album": "e6-album-13",
+        "stem_family": "fam-e6-13"
       },
       "clean": {
         "path": "e6-ctl-clean-percussion-48k.clean.wav",
@@ -1146,12 +1248,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-13",
-        "fingerprint": "fp-e6-13",
-        "session": "ses-e6-13",
-        "artist": "e6-artist-13",
-        "album": "e6-album-13",
-        "stem_family": "fam-e6-13"
+        "take": "t-e6-14",
+        "fingerprint": "fp-e6-14",
+        "session": "ses-e6-14",
+        "artist": "e6-artist-14",
+        "album": "e6-album-14",
+        "stem_family": "fam-e6-14"
       },
       "clean": {
         "path": "e6-ctl-clean-plucked-44k.clean.wav",
@@ -1200,12 +1302,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-14",
-        "fingerprint": "fp-e6-14",
-        "session": "ses-e6-14",
-        "artist": "e6-artist-14",
-        "album": "e6-album-14",
-        "stem_family": "fam-e6-14"
+        "take": "t-e6-15",
+        "fingerprint": "fp-e6-15",
+        "session": "ses-e6-15",
+        "artist": "e6-artist-15",
+        "album": "e6-album-15",
+        "stem_family": "fam-e6-15"
       },
       "clean": {
         "path": "e6-ctl-clean-reverb-tail-48k.clean.wav",
@@ -1257,12 +1359,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-15",
-        "fingerprint": "fp-e6-15",
-        "session": "ses-e6-15",
-        "artist": "e6-artist-15",
-        "album": "e6-album-15",
-        "stem_family": "fam-e6-15"
+        "take": "t-e6-16",
+        "fingerprint": "fp-e6-16",
+        "session": "ses-e6-16",
+        "artist": "e6-artist-16",
+        "album": "e6-album-16",
+        "stem_family": "fam-e6-16"
       },
       "clean": {
         "path": "e6-ctl-clean-tonal-44k.clean.wav",
@@ -1295,6 +1397,65 @@
       "tail_slice": null
     },
     {
+      "id": "e6-ctl-clean-roomtone-tail-48k",
+      "kind": "paired_synthetic_archival",
+      "stratum": "clean_control",
+      "split": "control",
+      "rate": 48000,
+      "channels": 2,
+      "bits": 24,
+      "rights": {
+        "local_inference": true,
+        "colab": true,
+        "training": true,
+        "listening": true,
+        "publication": false
+      },
+      "groups": {
+        "take": "t-e6-17",
+        "fingerprint": "fp-e6-17",
+        "session": "ses-e6-17",
+        "artist": "e6-artist-17",
+        "album": "e6-album-17",
+        "stem_family": "fam-e6-17"
+      },
+      "clean": {
+        "path": "e6-ctl-clean-roomtone-tail-48k.clean.wav",
+        "sha256": "1c848a5829ffac608a26be1a278431f831ede1ebecdfbb8d0f5ce641ad9bd0b9",
+        "bytes": 864044
+      },
+      "degraded": {
+        "path": "e6-ctl-clean-roomtone-tail-48k.degraded.wav",
+        "sha256": "1c848a5829ffac608a26be1a278431f831ede1ebecdfbb8d0f5ce641ad9bd0b9",
+        "bytes": 864044
+      },
+      "click_mask": {
+        "path": "e6-ctl-clean-roomtone-tail-48k.click_mask.json",
+        "sha256": "540ebeacffbd29e12ed4490c9a896ec38fb7589183d5b397b2c9b02ac0b9dff7",
+        "bytes": 40
+      },
+      "attack_mask": {
+        "path": "e6-ctl-clean-roomtone-tail-48k.attack_mask.json",
+        "sha256": "e13527d3f8c21537a1b0e1ea285c4305b689e1d42d72e496bcceb7eadfce9aa7",
+        "bytes": 240
+      },
+      "synthesis": {
+        "generator": "synth/e6-archival-v1",
+        "seed": 635,
+        "rate": 48000,
+        "seconds": 3.0,
+        "operator": "clean_control",
+        "bits": 24,
+        "percussive": true,
+        "quiet_tail": true,
+        "noise_floor_rms": 0.00125
+      },
+      "tail_slice": [
+        107520,
+        144000
+      ]
+    },
+    {
       "id": "e6-ood-wide-scratch-44k",
       "kind": "paired_synthetic_archival",
       "stratum": "ood",
@@ -1310,12 +1471,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-16",
-        "fingerprint": "fp-e6-16",
-        "session": "ses-e6-16",
-        "artist": "e6-artist-16",
-        "album": "e6-album-16",
-        "stem_family": "fam-e6-16"
+        "take": "t-e6-18",
+        "fingerprint": "fp-e6-18",
+        "session": "ses-e6-18",
+        "artist": "e6-artist-18",
+        "album": "e6-album-18",
+        "stem_family": "fam-e6-18"
       },
       "clean": {
         "path": "e6-ood-wide-scratch-44k.clean.wav",
@@ -1372,12 +1533,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-17",
-        "fingerprint": "fp-e6-17",
-        "session": "ses-e6-17",
-        "artist": "e6-artist-17",
-        "album": "e6-album-17",
-        "stem_family": "fam-e6-17"
+        "take": "t-e6-19",
+        "fingerprint": "fp-e6-19",
+        "session": "ses-e6-19",
+        "artist": "e6-artist-19",
+        "album": "e6-album-19",
+        "stem_family": "fam-e6-19"
       },
       "clean": {
         "path": "e6-ood-nonstationary-hum-hiss-48k.clean.wav",
@@ -1426,12 +1587,12 @@
         "publication": false
       },
       "groups": {
-        "take": "t-e6-18",
-        "fingerprint": "fp-e6-18",
-        "session": "ses-e6-18",
-        "artist": "e6-artist-18",
-        "album": "e6-album-18",
-        "stem_family": "fam-e6-18"
+        "take": "t-e6-20",
+        "fingerprint": "fp-e6-20",
+        "session": "ses-e6-20",
+        "artist": "e6-artist-20",
+        "album": "e6-album-20",
+        "stem_family": "fam-e6-20"
       },
       "clean": {
         "path": "e6-ood-ultrasonic-perc-96k.clean.wav",
