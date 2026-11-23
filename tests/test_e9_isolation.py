@@ -190,6 +190,157 @@ def test_ml_governance_bidirectional_boundary_audit():
     assert audit["bidirectional_isolation_passed"] is True
     assert audit["preserve_to_ml_violations"] == []
     assert audit["ml_to_preserve_violations"] == []
+    # Transitive traversal covers local helper modules beyond the core seed list.
+    assert len(audit["preserve_transitive_modules"]) > len(GOV.PRESERVE_CORE_MODULES)
+    assert "rnext/dsp/adaptive.py" in audit["preserve_transitive_modules"]
+    assert "rnext/phone/config.py" in audit["preserve_transitive_modules"]
+
+
+def test_ml_governance_dedup_catches_cross_split_leak_before_dropping_and_case_sha():
+    """Blocker #1: dropped duplicate cannot hide cross-split leak; SHA-256 is case-insensitive."""
+    # Case-insensitive SHA-256 collision across stages.
+    upper_sha = "ABCDEF" + "0" * 58
+    lower_sha = upper_sha.lower()
+    with pytest.raises(GOV.GovernanceError, match="content_sha256"):
+        GOV.validate_split_boundaries(
+            [
+                GOV.MLRecord("a1", "rec-1", "grp-1", "approved_labels", "approved", upper_sha),
+                GOV.MLRecord("b1", "rec-2", "grp-2", "sealed_test", "approved", lower_sha),
+            ]
+        )
+
+    # Dropped duplicate in approved_labels shares group_id with sealed_test.
+    records_group_leak = [
+        GOV.MLRecord("a1", "rec-dup", "grp-safe", "approved_labels", "approved", "1" * 64),
+        GOV.MLRecord("a2", "rec-dup", "grp-leaked", "approved_labels", "approved", "2" * 64),
+        GOV.MLRecord("s1", "rec-sealed", "grp-leaked", "sealed_test", "approved", "3" * 64),
+    ]
+    with pytest.raises(GOV.GovernanceError, match="group_id"):
+        GOV.deduplicate_by_recording(records_group_leak)
+
+    # Dropped duplicate in approved_labels shares case-variant content_sha256 with sealed_test.
+    records_sha_leak = [
+        GOV.MLRecord("a1", "rec-dup", "grp-1", "approved_labels", "approved", "1" * 64),
+        GOV.MLRecord("a2", "rec-dup", "grp-1", "approved_labels", "approved", upper_sha),
+        GOV.MLRecord("s1", "rec-sealed", "grp-2", "sealed_test", "approved", lower_sha),
+    ]
+    with pytest.raises(GOV.GovernanceError, match="content_sha256"):
+        GOV.deduplicate_by_recording(records_sha_leak)
+
+
+def test_ml_governance_versioning_fail_closed_rules():
+    """Blocker #2: forbid 0-record sealed_test, sealed_audio_opened in non-sealed, empty dataset_version."""
+    dev_only = [
+        GOV.MLRecord("r1", "rec-01", "grp-01", "approved_labels", "approved", "1" * 64),
+        GOV.MLRecord("r2", "rec-02", "grp-02", "dev_selection", "approved", "2" * 64),
+    ]
+    with pytest.raises(GOV.GovernanceError, match="0 records in stage 'sealed_test'"):
+        GOV.build_versioned_result(
+            stage="sealed_test",
+            records=dev_only,
+            metrics={"median_abs_err_db": 0.2},
+            model_id="m1",
+            model_sha256="a" * 64,
+        )
+
+    # Even with a recomputed valid results_sha256, verify_versioned_result rejects
+    # sealed_audio_opened=True for non-sealed stages and empty dataset_version.
+    valid = GOV.build_versioned_result(
+        stage="dev_selection",
+        records=_valid_four_stage_records(),
+        metrics={"median_abs_err_db": 0.3},
+        model_id="m1",
+        model_sha256="a" * 64,
+    )
+    bad_sealed = {k: v for k, v in valid.items() if k != "results_sha256"}
+    bad_sealed["sealed_audio_opened"] = True
+    bad_sealed["results_sha256"] = GOV.compute_sha256_json(bad_sealed)
+    with pytest.raises(GOV.GovernanceError, match="sealed_audio_opened=True"):
+        GOV.verify_versioned_result(bad_sealed)
+
+    bad_dv = {k: v for k, v in valid.items() if k != "results_sha256"}
+    bad_dv["dataset_version"] = "   "
+    bad_dv["results_sha256"] = GOV.compute_sha256_json(bad_dv)
+    with pytest.raises(GOV.GovernanceError, match="dataset_version"):
+        GOV.verify_versioned_result(bad_dv)
+
+
+def test_sealed_symlink_alias_and_resolve_oserror_fail_closed(tmp_path, monkeypatch):
+    """Blocker #3: symlink aliases to sealed manifests and resolve() OSError fail closed."""
+    sealed_real = REPO_ROOT / "corpus" / "sealed-v1.json"
+    alias = tmp_path / "harmless_dev_alias.json"
+    alias.symlink_to(sealed_real)
+
+    with pytest.raises(GOV.GovernanceError, match="Sealed corpus reference"):
+        GOV.assert_not_sealed_source(alias, stage="dev_selection")
+
+    with pytest.raises(ValueError, match="sealed corpus"):
+        AUDIT._assert_not_sealed_path(alias)
+
+    def _boom(self, *args, **kwargs):
+        raise OSError("simulated resolve failure")
+
+    monkeypatch.setattr(Path, "resolve", _boom)
+    with pytest.raises(ValueError, match="Fail-closed: unable to resolve path"):
+        AUDIT._assert_not_sealed_path(tmp_path / "any_out.json")
+
+
+def test_ast_import_audit_catches_from_rnext_import_ml_and_transitive_leak(tmp_path):
+    """Blocker #4: `from pkg import name` expands to `pkg.name` and walks transitive local modules."""
+    # Minimal synthetic repo with Preserve seed -> local helper -> `from rnext import ml`.
+    for rel in GOV.PRESERVE_CORE_MODULES:
+        p = tmp_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("# clean\n", encoding="utf-8")
+    for rel in GOV.ML_CONTOUR_MODULES:
+        p = tmp_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("# clean\n", encoding="utf-8")
+
+    (tmp_path / "rnext" / "__init__.py").write_text("", encoding="utf-8")
+    (tmp_path / "rnext" / "dsp" / "__init__.py").write_text("", encoding="utf-8")
+    (tmp_path / "rnext" / "helper_transitive.py").write_text(
+        "from rnext import ml\n", encoding="utf-8"
+    )
+    (tmp_path / "rnext" / "features.py").write_text(
+        "from rnext import helper_transitive\n", encoding="utf-8"
+    )
+
+    audit = GOV.audit_ml_preserve_boundary(tmp_path)
+    assert audit["bidirectional_isolation_passed"] is False
+    assert "rnext/helper_transitive.py" in audit["preserve_transitive_modules"]
+    assert any(
+        v["file"] == "rnext/helper_transitive.py" and v["import"] == "rnext.ml"
+        for v in audit["preserve_to_ml_violations"]
+    )
+
+
+def test_resume_sh_fails_closed_when_data_root_unresolved(tmp_path):
+    """Blocker #5: research/resume.sh exits non-zero when workspace.data_root() fails."""
+    import os
+    import subprocess
+
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_py = fake_bin / "python3"
+    fake_py.write_text("#!/usr/bin/env bash\nexit 1\n", encoding="utf-8")
+    fake_py.chmod(0o755)
+
+    env = os.environ.copy()
+    env.pop("MR_DATA_ROOT", None)
+    env["PATH"] = f"{fake_bin}:{env.get('PATH', '')}"
+
+    proc = subprocess.run(
+        ["bash", str(REPO_ROOT / "research" / "resume.sh")],
+        cwd=str(REPO_ROOT),
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    assert proc.returncode != 0
+    assert "failed to resolve data_root" in proc.stderr
 
 
 # ── 4. Security, Freeze, Portability & Report Integrity ──────────────────────

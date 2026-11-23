@@ -226,13 +226,16 @@ RUNBOOK_UPDATES: tuple[dict[str, str], ...] = (
 
 
 def _assert_not_sealed_path(path: Path) -> None:
-    """Fail closed if a target path points to a sealed corpus manifest."""
+    """Fail closed if a target path (or symlink alias) points to a sealed corpus manifest."""
     candidates = [str(path), path.name]
     try:
-        resolved = path.resolve()
-        candidates.extend([str(resolved), resolved.name])
-    except OSError:
-        pass
+        resolved = path.resolve(strict=False)
+        real = os.path.realpath(str(path))
+        candidates.extend([str(resolved), resolved.name, real, Path(real).name])
+    except OSError as exc:
+        raise ValueError(
+            f"Fail-closed: unable to resolve path '{path}' for sealed check: {exc}"
+        ) from exc
     for cand in candidates:
         for sealed in SEALED_FILES:
             if sealed in cand:
@@ -301,14 +304,17 @@ def _collect_ast_imports(py_path: Path) -> list[dict[str, Any]]:
                         "top_level": _is_top_level(node),
                     }
                 )
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            rows.append(
-                {
-                    "module": node.module,
-                    "lineno": node.lineno,
-                    "top_level": _is_top_level(node),
-                }
-            )
+        elif isinstance(node, ast.ImportFrom):
+            top = _is_top_level(node)
+            base = node.module or ""
+            if base:
+                rows.append({"module": base, "lineno": node.lineno, "top_level": top})
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
+                full = f"{base}.{alias.name}" if base else alias.name
+                if full:
+                    rows.append({"module": full, "lineno": node.lineno, "top_level": top})
     return rows
 
 

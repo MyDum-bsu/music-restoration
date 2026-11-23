@@ -6,11 +6,11 @@
 
 - **Sealed corpora (`corpus/sealed-v1.json`, `corpus/sealed-e5-v1.json`):** `sealed_corpora_opened = False` (strictly untouched).
 - **Frozen E4 Preserve files:** `18/18` SHA-256 pins verified untouched (`all_untouched = True`).
-- **Static AST import audit (Preserve ↔ ML bidirectional):** `static_audit_passed = True` (`preserve_modules_checked = 18`, `ml_modules_checked = 9`, `preserve_to_ml_violations = 0`, `ml_to_preserve_violations = 0`).
+- **Static AST import audit (Preserve ↔ ML bidirectional):** `static_audit_passed = True` (`preserve_modules_checked = 23`, `ml_modules_checked = 9`, `preserve_to_ml_violations = 0`, `ml_to_preserve_violations = 0`).
 - **Isolated Preserve E2E smoke (ML libs + network hard-blocked):** `e2e_smoke_passed = True` (`loaded_forbidden_modules = []`).
 - **ML-target governance schema:** `e9-ml-governance/v1` (`stages = approved_labels, dev_selection, promotion, sealed_test`, fail-closed deduplication and split isolation).
 - **Production dependencies & GPU policy:** Zero new production dependencies added; no training launched; GPU remains Google Colab-only under separate authorization.
-- **Results SHA-256:** `ba84f7d75570d4aba73d9e41e5727728857acf846c585aa3bce0f9d994dcf7f3`
+- **Results SHA-256:** `63a28a41d95e738bf63707263386aa2e73b7684dcf27c932722958b3dcd7c9d4`
 
 ## 2. Legacy Runners, Dependencies & Migration Inventory
 
@@ -34,7 +34,7 @@
 | `research/lab/server.py` | 4 | `docs/validation/e9-legacy-isolation-report.md`, `research/e9_isolation_audit.py`, `research/lab/README.md`, `research/lab/server.py` |
 | `rnext.ml` | 13 | `README.md`, `docs/validation/e9-legacy-isolation-report.md`, `research/dataset_eval.py`, `research/docs/ml.md`, `research/e9_isolation_audit.py`, `research/e9_ml_governance.py` (+7 more) |
 | `scripts/release_batch.py` | 6 | `README.md`, `docs/code-review-2026-11-02.md`, `docs/setup.md`, `docs/validation/e9-legacy-isolation-report.md`, `research/e9_isolation_audit.py`, `scripts/release_batch.py` |
-| `scripts/restore_one.py` | 10 | `README.md`, `docs/setup.md`, `docs/validation/e9-legacy-isolation-report.md`, `research/docs/ml.md`, `research/e9_isolation_audit.py`, `research/skills/restore-status/SKILL.md` (+4 more) |
+| `scripts/restore_one.py` | 11 | `README.md`, `docs/setup.md`, `docs/validation/e9-legacy-isolation-report.md`, `research/docs/ml.md`, `research/e9_isolation_audit.py`, `research/e9_ml_governance.py` (+5 more) |
 | `scripts/restore_per_track.py` | 12 | `README.md`, `docs/eval-vs-masters-run.md`, `docs/experiment/independent-method.md`, `docs/portability-report.md`, `docs/setup.md`, `docs/validation/e9-legacy-isolation-report.md` (+6 more) |
 | `torch` | 12 | `README.md`, `docs/validation/e6-declick-hiss-report.md`, `docs/validation/e7-bwe-report.md`, `docs/validation/e9-legacy-isolation-report.md`, `research/docs/ml.md`, `research/e6_declick_hiss.py` (+6 more) |
 
@@ -44,7 +44,7 @@
 
 | Check | Result | Evidence |
 |---|---|---|
-| Preserve static AST audit | `PASS` | 18 Preserve modules, 0 forbidden imports (`joblib`, `torch`, `sklearn`, `rnext.ml`, `research`, `lab`) |
+| Preserve static AST audit | `PASS` | 23 Preserve modules, 0 forbidden imports (`joblib`, `torch`, `sklearn`, `rnext.ml`, `research`, `lab`) |
 | ML -> Preserve reverse AST audit | `PASS` | 9 ML modules, 0 imports of Preserve declip/delivery entrypoints |
 | Isolated E2E clean control FLAC | `PASS` | `status=kept_original`, `byte_identical=True` |
 | Isolated E2E hard-clipped FLAC | `PASS` | `status=processed_candidate`, `tp_dbfs=-1.0`, `clip_samples=0` |

@@ -8,7 +8,18 @@
 set -u
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
-DATA_ROOT="${MR_DATA_ROOT:-$(python3 -c 'from rnext import workspace; print(workspace.data_root())')}"
+if [ -n "${MR_DATA_ROOT:-}" ]; then
+  DATA_ROOT="$MR_DATA_ROOT"
+else
+  if ! DATA_ROOT="$(python3 -c 'from rnext import workspace; print(workspace.data_root())')"; then
+    echo "ERROR: failed to resolve data_root via rnext.workspace (set config/workspace.json or MR_DATA_ROOT)." >&2
+    exit 1
+  fi
+fi
+if [ -z "$DATA_ROOT" ]; then
+  echo "ERROR: resolved DATA_ROOT is empty; refusing to continue." >&2
+  exit 1
+fi
 DATA="${MR_DATA_MOUNT:-$(dirname "$(dirname "$DATA_ROOT")")}"
 
 say() { printf '\n\033[1m%s\033[0m\n' "$*"; }

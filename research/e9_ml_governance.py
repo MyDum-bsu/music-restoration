@@ -20,6 +20,7 @@ import argparse
 import ast
 import hashlib
 import json
+import os
 import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -113,8 +114,13 @@ class MLRecord:
     target_name: str = "dcrest"
     metadata: dict[str, Any] = field(default_factory=dict)
 
+    def normalized_sha256(self) -> str:
+        return self.content_sha256.strip().lower()
+
     def to_canonical_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        d = asdict(self)
+        d["content_sha256"] = self.normalized_sha256()
+        return d
 
 
 def _canonical_json(obj: Any) -> str:
@@ -127,16 +133,25 @@ def compute_sha256_json(obj: Any) -> str:
 
 
 def assert_not_sealed_source(path_or_name: str | Path, stage: str) -> None:
-    """Fail closed if a sealed corpus path is referenced outside `sealed_test`."""
+    """Fail closed if a sealed corpus path (or symlink alias) is referenced outside `sealed_test`."""
+    if stage == "sealed_test":
+        return
     raw = str(path_or_name)
-    name = Path(raw).name
-    if (
-        stage != "sealed_test"
-        and any(sealed in raw or name == sealed for sealed in SEALED_CORPUS_NAMES)
-    ):
+    candidates = [raw, Path(raw).name]
+    try:
+        real = os.path.realpath(raw)
+        resolved = str(Path(raw).resolve(strict=False))
+        candidates.extend([real, Path(real).name, resolved, Path(resolved).name])
+    except OSError as exc:
         raise GovernanceError(
-            f"Sealed corpus reference '{raw}' is forbidden in stage '{stage}'"
-        )
+            f"Fail-closed: unable to resolve source_manifest '{raw}' in stage '{stage}': {exc}"
+        ) from exc
+
+    for cand in candidates:
+        if any(sealed in cand or Path(cand).name == sealed for sealed in SEALED_CORPUS_NAMES):
+            raise GovernanceError(
+                f"Sealed corpus reference '{raw}' (resolved '{cand}') is forbidden in stage '{stage}'"
+            )
 
 
 def validate_record(record: MLRecord) -> None:
@@ -182,23 +197,37 @@ def deduplicate_by_recording(
 ) -> tuple[list[MLRecord], list[dict[str, str]]]:
     """Deterministically deduplicate records by `recording_id` within each stage.
 
-    Cross-stage duplicates are NOT silently dropped — they raise GovernanceError
-    because a recording appearing in two stages is a split-boundary violation.
-    Within the same stage, the lexicographically smallest `record_id` is kept
-    and dropped duplicates are explicitly reported.
+    Fail-closed cross-stage leakage checks (`recording_id`, `group_id`, and
+    case-normalized `content_sha256`) run on the FULL input set BEFORE any
+    within-stage duplicate is dropped, so a dropped duplicate can never hide
+    a cross-stage leak. Within the same stage, the lexicographically smallest
+    `record_id` is kept and dropped duplicates are explicitly reported.
     """
     for rec in records:
         validate_record(rec)
 
-    stage_by_recording: dict[str, str] = {}
+    recording_stages: dict[str, set[str]] = {}
+    group_stages: dict[str, set[str]] = {}
+    hash_stages: dict[str, set[str]] = {}
     for rec in records:
-        prev_stage = stage_by_recording.get(rec.recording_id)
-        if prev_stage is not None and prev_stage != rec.stage:
-            raise GovernanceError(
-                f"Cross-stage recording_id leakage for '{rec.recording_id}': "
-                f"present in both '{prev_stage}' and '{rec.stage}'"
-            )
-        stage_by_recording[rec.recording_id] = rec.stage
+        recording_stages.setdefault(rec.recording_id, set()).add(rec.stage)
+        group_stages.setdefault(rec.group_id, set()).add(rec.stage)
+        hash_stages.setdefault(rec.normalized_sha256(), set()).add(rec.stage)
+
+    leaks: list[str] = []
+    for rec_id, stages in sorted(recording_stages.items()):
+        if len(stages) > 1:
+            leaks.append(f"recording_id '{rec_id}' leaks across stages {sorted(stages)}")
+    for grp_id, stages in sorted(group_stages.items()):
+        if len(stages) > 1:
+            leaks.append(f"group_id '{grp_id}' leaks across stages {sorted(stages)}")
+    for digest, stages in sorted(hash_stages.items()):
+        if len(stages) > 1:
+            leaks.append(f"content_sha256 '{digest}' leaks across stages {sorted(stages)}")
+    if leaks:
+        raise GovernanceError(
+            "Cross-stage leakage detected prior to deduplication: " + "; ".join(leaks)
+        )
 
     ordered = sorted(records, key=lambda r: (STAGE_ORDER[r.stage], r.recording_id, r.record_id))
     kept: list[MLRecord] = []
@@ -277,7 +306,7 @@ def validate_split_boundaries(
 
         recording_stages.setdefault(rec.recording_id, set()).add(rec.stage)
         group_stages.setdefault(rec.group_id, set()).add(rec.stage)
-        hash_stages.setdefault(rec.content_sha256, set()).add(rec.stage)
+        hash_stages.setdefault(rec.normalized_sha256(), set()).add(rec.stage)
         stage_counts[rec.stage] += 1
 
     violations: list[str] = []
@@ -340,13 +369,18 @@ def build_versioned_result(
         raise GovernanceError("model_id and model_sha256 must be non-empty")
 
     summary = validate_split_boundaries(records)
+    if summary["stage_counts"].get(stage, 0) <= 0:
+        raise GovernanceError(
+            f"Cannot build '{stage}' result with 0 records in stage '{stage}'"
+        )
+
     payload: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "stage": stage,
         "dataset_version": summary["dataset_version"],
         "stage_counts": summary["stage_counts"],
         "model_id": model_id,
-        "model_sha256": model_sha256,
+        "model_sha256": model_sha256.strip().lower(),
         "git_commit": git_commit,
         "preserve_isolated": True,
         "sealed_audio_opened": bool(sealed_audio_opened),
@@ -357,14 +391,16 @@ def build_versioned_result(
 
 
 def verify_versioned_result(payload: dict[str, Any]) -> bool:
-    """Verify schema_version, dataset_version, and results_sha256 integrity."""
+    """Verify schema_version, dataset_version, sealed flags, and results_sha256 integrity."""
     required = (
         "schema_version",
         "stage",
         "dataset_version",
+        "stage_counts",
         "model_id",
         "model_sha256",
         "preserve_isolated",
+        "sealed_audio_opened",
         "metrics",
         "results_sha256",
     )
@@ -377,8 +413,27 @@ def verify_versioned_result(payload: dict[str, Any]) -> bool:
             f"Unsupported schema_version '{payload['schema_version']}' "
             f"(expected '{SCHEMA_VERSION}')"
         )
-    if payload["stage"] not in STAGE_ORDER:
-        raise GovernanceError(f"Invalid stage '{payload['stage']}'")
+    stage = payload["stage"]
+    if stage not in STAGE_ORDER:
+        raise GovernanceError(f"Invalid stage '{stage}'")
+
+    dataset_version = payload["dataset_version"]
+    if not isinstance(dataset_version, str) or not dataset_version.strip():
+        raise GovernanceError("dataset_version must be a non-empty string")
+
+    if not isinstance(payload["sealed_audio_opened"], bool):
+        raise GovernanceError("sealed_audio_opened must be a boolean")
+    if stage != "sealed_test" and payload["sealed_audio_opened"] is True:
+        raise GovernanceError(
+            f"sealed_audio_opened=True is forbidden for non-sealed stage '{stage}'"
+        )
+
+    stage_counts = payload["stage_counts"]
+    if not isinstance(stage_counts, dict) or int(stage_counts.get(stage, 0)) <= 0:
+        raise GovernanceError(
+            f"stage_counts['{stage}'] must be > 0 for stage '{stage}'"
+        )
+
     if payload["preserve_isolated"] is not True:
         raise GovernanceError("preserve_isolated must be True for ML results")
 
@@ -392,17 +447,68 @@ def verify_versioned_result(payload: dict[str, Any]) -> bool:
     return True
 
 
-def _extract_imports(py_path: Path) -> list[dict[str, Any]]:
-    """Extract all import statements from a Python file via AST."""
+def _module_name_for_path(py_path: Path, repo_root: Path) -> str:
+    try:
+        rel = py_path.resolve().relative_to(repo_root.resolve())
+    except ValueError:
+        return py_path.stem
+    parts = list(rel.with_suffix("").parts)
+    if parts and parts[-1] == "__init__":
+        parts = parts[:-1]
+    return ".".join(parts)
+
+
+def _extract_imports(
+    py_path: Path, repo_root: Path = REPO_ROOT, *, top_level_only: bool = False
+) -> list[dict[str, Any]]:
+    """Extract all import statements from a Python file via AST.
+
+    Expands `from pkg import name` to emit both `pkg` and `pkg.name` (so
+    `from rnext import ml` is caught as `rnext.ml`), and resolves relative
+    imports against the file's package path.
+    """
     src = py_path.read_text(encoding="utf-8")
     tree = ast.parse(src, filename=str(py_path))
+
+    parent_map: dict[ast.AST, ast.AST] = {}
+    if top_level_only:
+        for parent in ast.walk(tree):
+            for child in ast.iter_child_nodes(parent):
+                parent_map[child] = parent
+
+    def _is_top_level(node: ast.AST) -> bool:
+        cur = parent_map.get(node)
+        while cur is not None:
+            if isinstance(cur, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                return False
+            cur = parent_map.get(cur)
+        return True
+
+    pkg_parts = _module_name_for_path(py_path, repo_root).split(".")
+    if py_path.name != "__init__.py" and pkg_parts:
+        pkg_parts = pkg_parts[:-1]
+
     imports: list[dict[str, Any]] = []
     for node in ast.walk(tree):
+        if top_level_only and not _is_top_level(node):
+            continue
         if isinstance(node, ast.Import):
             for alias in node.names:
                 imports.append({"module": alias.name, "lineno": node.lineno})
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            imports.append({"module": node.module, "lineno": node.lineno})
+        elif isinstance(node, ast.ImportFrom):
+            base = node.module or ""
+            if node.level > 0:
+                up = node.level - 1
+                anchor = pkg_parts[: len(pkg_parts) - up] if up <= len(pkg_parts) else []
+                base = ".".join([*anchor, base]) if base else ".".join(anchor)
+            if base:
+                imports.append({"module": base, "lineno": node.lineno})
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
+                full = f"{base}.{alias.name}" if base else alias.name
+                if full:
+                    imports.append({"module": full, "lineno": node.lineno})
     return imports
 
 
@@ -413,17 +519,49 @@ def _matches_prefix(module_name: str, forbidden: tuple[str, ...]) -> str | None:
     return None
 
 
+def _resolve_local_module_file(module_name: str, repo_root: Path) -> Path | None:
+    """Resolve a local repo module name (under rnext/ or scripts/) to its .py file."""
+    parts = module_name.split(".")
+    if not parts or parts[0] not in ("rnext", "scripts"):
+        return None
+    cand_file = repo_root.joinpath(*parts).with_suffix(".py")
+    if cand_file.is_file():
+        return cand_file
+    cand_pkg = repo_root.joinpath(*parts, "__init__.py")
+    if cand_pkg.is_file():
+        return cand_pkg
+    if len(parts) > 1:
+        parent_file = repo_root.joinpath(*parts[:-1]).with_suffix(".py")
+        if parent_file.is_file():
+            return parent_file
+    return None
+
+
 def audit_ml_preserve_boundary(repo_root: Path = REPO_ROOT) -> dict[str, Any]:
-    """Bidirectional AST audit ensuring Preserve and ML contours stay isolated."""
+    """Bidirectional AST audit ensuring Preserve (incl. transitive local closure) and ML stay isolated."""
     preserve_violations: list[dict[str, Any]] = []
     ml_violations: list[dict[str, Any]] = []
 
-    for rel in PRESERVE_CORE_MODULES:
+    visited_preserve: set[str] = set()
+    queue: list[str] = list(PRESERVE_CORE_MODULES)
+
+    while queue:
+        rel = queue.pop(0)
+        if rel in visited_preserve:
+            continue
+        visited_preserve.add(rel)
+
         p = repo_root / rel
         if not p.is_file():
             preserve_violations.append({"file": rel, "error": "missing_module"})
             continue
-        for imp in _extract_imports(p):
+
+        # scripts/restore_one.py is imported by scripts/restore_safe.py solely for
+        # `encode_flac`; check its top-level imports here (its lazy opt-in ML import
+        # inside process_track is audited separately). All other Preserve modules
+        # are checked at every scope (top-level and function-level).
+        top_only = rel == "scripts/restore_one.py"
+        for imp in _extract_imports(p, repo_root, top_level_only=top_only):
             hit = _matches_prefix(imp["module"], FORBIDDEN_IN_PRESERVE)
             if hit is not None:
                 preserve_violations.append(
@@ -434,13 +572,19 @@ def audit_ml_preserve_boundary(repo_root: Path = REPO_ROOT) -> dict[str, Any]:
                         "forbidden_prefix": hit,
                     }
                 )
+                continue
+            local_target = _resolve_local_module_file(imp["module"], repo_root)
+            if local_target is not None:
+                target_rel = str(local_target.relative_to(repo_root))
+                if target_rel not in visited_preserve:
+                    queue.append(target_rel)
 
     for rel in ML_CONTOUR_MODULES:
         p = repo_root / rel
         if not p.is_file():
             ml_violations.append({"file": rel, "error": "missing_module"})
             continue
-        for imp in _extract_imports(p):
+        for imp in _extract_imports(p, repo_root):
             hit = _matches_prefix(imp["module"], FORBIDDEN_IN_ML_CONTOUR)
             if hit is not None:
                 ml_violations.append(
@@ -454,7 +598,8 @@ def audit_ml_preserve_boundary(repo_root: Path = REPO_ROOT) -> dict[str, Any]:
 
     return {
         "schema_version": SCHEMA_VERSION,
-        "preserve_modules_checked": len(PRESERVE_CORE_MODULES),
+        "preserve_modules_checked": len(visited_preserve),
+        "preserve_transitive_modules": sorted(visited_preserve),
         "ml_modules_checked": len(ML_CONTOUR_MODULES),
         "preserve_to_ml_violations": preserve_violations,
         "ml_to_preserve_violations": ml_violations,
