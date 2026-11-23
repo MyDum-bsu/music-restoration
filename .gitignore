@@ -2,6 +2,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .venv/
+uv.lock
 node_modules/
 *.egg-info/
 .DS_Store

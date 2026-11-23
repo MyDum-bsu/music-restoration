@@ -3,8 +3,9 @@
   "spec": "music-restoration-spec-v1 (sections 3, 4, E4)",
   "board_card": 1127,
   "frozen_at": "2026-11-23",
-  "sealed_opened": false,
-  "sealed_manifest_status": "untouched_custodian_held_until_e5",
+  "sealed_audio_opened": false,
+  "sealed_manifest_metadata_leakage_checked_only": true,
+  "sealed_manifest_status": "metadata_only_leakage_checked_post_pilot_audio_custodian_held_until_e5",
   "cross_manifest_leakage_checked": [
     "corpus/smoke-v1.json",
     "corpus/dev-v1.json",
@@ -20,11 +21,11 @@
       "ffmpeg": "125907-ga7e72069f1-20260802",
       "libflac": "1.4.3"
     },
-    "git_base_commit": "28eda1712af6a64fc952e8550673d3c7255d7445",
+    "git_base_commit": "a77856cd0e10d5aa3c0f8bec0fbf00681c8d53cb",
     "implementation_sha256": {
       "rnext/dsp/clip_detector.py": "409914703fb154c745ff617cfe0cd1c4fa04c1a8d33fb051598537c1b130aab6",
       "rnext/dsp/declip_methods.py": "5b7b1a3b5ac890cd68eb83f06841309b2270f4528f2f7ef471013adf6503b6fd",
-      "rnext/dsp/stereo_safety.py": "38abc4dfc611999c7763fab0a68299b0437b09a11df491976fa9e7cb7c1a189e",
+      "rnext/dsp/stereo_safety.py": "017e5b26407480007b443a4bb6e9cc2f2b16079e43db7e1139bb1e9b96f919c8",
       "rnext/dsp/repair.py": "e30e0ca4c22eb7bd44692167f8cb97c1c820ffdf799652c5d8594ba65585bfe1",
       "rnext/dsp/selection.py": "35faee39dbcbdff18d9f1d42f1145d968e02688c250557dda15f4f1993a581ee",
       "rnext/dsp/contour.py": "4ecbe54ee8b9c5c2f91e8ba9f0315888ce89715fee8a9826c079b3522d07c315",
@@ -32,14 +33,14 @@
       "rnext/dsp/predictive.py": "9fd4b9e24f87040fa0b381cf019befcc99d4446412a19d18d83a692d99837b15",
       "rnext/dsp/declip.py": "be301f83a682d5d15017a0939ff1f8e28d00e08fe64fed8b344c3d0a0378d5d1",
       "rnext/features.py": "ce3e387c3283c526a835652fb2561fb958d2fc09ca80dba6e2495335d9929de2",
-      "scripts/restore_safe.py": "2daf5159da17ebbe7bd0166b19beb58b84fe854a086684bdc58f5482ca30a4f6",
+      "scripts/restore_safe.py": "745f65ac506f605b854cae80492949ea65d56ef464df7b76ac49aa8b9c290b1e",
       "scripts/evaluate_album.py": "9a3a0e5fd627b0f741d2e7cf9975ea107ade4107b508f8cedf170db0efdd4c82",
       "research/corpus_v1.py": "c83ff3233ea7ebc0b1863d4bcc721ee76367c1eede2e42e1d44024ace498bd51",
       "research/corpus_synth.py": "024cdd07aa5f0bfb1f150f29156153e74c1d9f03a7815cf8931dbd9f3d64fc4b",
       "research/declip_metrics.py": "84ed7b2e45c2ec7a8d6505be740bcd5e4579def1b820e216b560991d0c2055a9",
       "research/run_benchmark.py": "5b27d4ce0a635ebef4e624a32cd5c69372e6363c534afe548f62e7501b7c65a1",
       "research/e3_bakeoff.py": "f899643372bd6e69fd744961d92c9f6c2cd527c5be851fc04b8fd8dd0b660a77",
-      "research/e4_stereo_freeze.py": "201814568cd4f847877aea2e5a46a9a7b249bcee87b8fee74720a4d4041c9a9d"
+      "research/e4_stereo_freeze.py": "16760c52180b695b784f5ccae754daf11439809c492b163667528be529e743f3"
     },
     "reference_cpu": {
       "model": "x86_64",
@@ -299,7 +300,7 @@
             "band_shape_rms_vs_clean_db": 0.0,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.03547545202309266
+            "wall_s": 0.047618848038837314
           },
           {
             "id": "smoke-clip-dense-sub-48k",
@@ -330,7 +331,7 @@
             "band_shape_rms_vs_clean_db": 0.30511805977359013,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 7.907476911030244
+            "wall_s": 9.0411439120071
           },
           {
             "id": "smoke-clip-dither-96k",
@@ -361,7 +362,7 @@
             "band_shape_rms_vs_clean_db": 0.17219930778025783,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 1.113781129999552
+            "wall_s": 1.1835816709790379
           },
           {
             "id": "smoke-clip-late-90s-44k",
@@ -396,7 +397,7 @@
               "band_shape_rms_db=4.0069>1.5",
               "mono_sum_cancellation=-2.473dB<-0.5"
             ],
-            "wall_s": 7.9478888509911485
+            "wall_s": 7.730083166970871
           },
           {
             "id": "smoke-clip-quiet-tail-44k",
@@ -427,7 +428,7 @@
             "band_shape_rms_vs_clean_db": 0.12945669946757246,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.39537733799079433
+            "wall_s": 0.48064567003166303
           },
           {
             "id": "smoke-clip-rare-asym-44k",
@@ -458,7 +459,7 @@
             "band_shape_rms_vs_clean_db": 0.08035015823876288,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.6241379409912042
+            "wall_s": 0.7422996090026572
           },
           {
             "id": "smoke-intentional-sat-44k",
@@ -489,7 +490,7 @@
             "band_shape_rms_vs_clean_db": 6.165742621210028,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.03364404902094975
+            "wall_s": 0.024087779980618507
           },
           {
             "id": "smoke-soft-limiter-48k",
@@ -520,7 +521,7 @@
             "band_shape_rms_vs_clean_db": 0.020586830742005454,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.019842107023578137
+            "wall_s": 0.025304433016572148
           }
         ]
       },
@@ -575,7 +576,7 @@
             "band_shape_rms_vs_clean_db": 0.0,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.046282768016681075
+            "wall_s": 0.0352769399760291
           },
           {
             "id": "dev-clip-eval-a-44k",
@@ -606,7 +607,7 @@
             "band_shape_rms_vs_clean_db": 0.04300804933605213,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.302649418998044
+            "wall_s": 0.37335018505109474
           },
           {
             "id": "dev-clip-eval-b-96k",
@@ -637,7 +638,7 @@
             "band_shape_rms_vs_clean_db": 0.007607785485934056,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.20734278502641246
+            "wall_s": 0.24378659395733848
           },
           {
             "id": "dev-clip-eval-c-late90-44k",
@@ -671,7 +672,7 @@
               "band_shape_rms_db=3.5412>1.5",
               "mono_sum_cancellation=-2.434dB<-0.5"
             ],
-            "wall_s": 8.191996382025536
+            "wall_s": 9.29591102397535
           },
           {
             "id": "dev-clip-train-a-44k",
@@ -702,7 +703,7 @@
             "band_shape_rms_vs_clean_db": 0.029470876206498464,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.7708867220208049
+            "wall_s": 0.9001352899940684
           },
           {
             "id": "dev-clip-train-b-48k",
@@ -733,7 +734,7 @@
             "band_shape_rms_vs_clean_db": 0.06792134547841083,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.7264151720446534
+            "wall_s": 0.7352884039864875
           },
           {
             "id": "dev-intentional-control-44k",
@@ -764,7 +765,7 @@
             "band_shape_rms_vs_clean_db": 6.1713482569995675,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.042873280006460845
+            "wall_s": 0.023618719016667455
           },
           {
             "id": "dev-soft-limiter-ctl-48k",
@@ -795,7 +796,7 @@
             "band_shape_rms_vs_clean_db": 0.07116204734441185,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.04699529800564051
+            "wall_s": 0.026894253969658166
           }
         ]
       },
@@ -850,7 +851,7 @@
             "band_shape_rms_vs_clean_db": 0.11913679695580659,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 6.249311460996978
+            "wall_s": 7.215509102039505
           },
           {
             "id": "e3-asym-pos-48k-16b",
@@ -881,7 +882,7 @@
             "band_shape_rms_vs_clean_db": 0.27503452266551015,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 5.45289865398081
+            "wall_s": 5.95332445303211
           },
           {
             "id": "e3-ctl-clean-perc-48k-16b",
@@ -912,7 +913,7 @@
             "band_shape_rms_vs_clean_db": 0.0,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.01925117103382945
+            "wall_s": 0.029819738992955536
           },
           {
             "id": "e3-ctl-clean-tail-96k-24b",
@@ -943,7 +944,7 @@
             "band_shape_rms_vs_clean_db": 0.0,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.05427488300483674
+            "wall_s": 0.041548080975189805
           },
           {
             "id": "e3-ctl-clean-tonal-44k-24b",
@@ -974,7 +975,7 @@
             "band_shape_rms_vs_clean_db": 0.0,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.027259979979135096
+            "wall_s": 0.02924884797539562
           },
           {
             "id": "e3-ctl-intent-sat-44k-16b",
@@ -1005,7 +1006,7 @@
             "band_shape_rms_vs_clean_db": 1.9139662961992738,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.03174245299305767
+            "wall_s": 0.031060417997650802
           },
           {
             "id": "e3-ctl-intent-sat-48k-24b",
@@ -1036,7 +1037,7 @@
             "band_shape_rms_vs_clean_db": 5.132387187562486,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.03384924400597811
+            "wall_s": 0.022468415030743927
           },
           {
             "id": "e3-ctl-soft-lim-48k-24b",
@@ -1067,7 +1068,7 @@
             "band_shape_rms_vs_clean_db": 0.011982626312012799,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.019277221988886595
+            "wall_s": 0.018963168025948107
           },
           {
             "id": "e3-dense-heavy-48k-24b",
@@ -1098,7 +1099,7 @@
             "band_shape_rms_vs_clean_db": 0.10778180118492403,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 6.073261807963718
+            "wall_s": 6.6224048040458
           },
           {
             "id": "e3-dense-sym-44k-16b",
@@ -1129,7 +1130,7 @@
             "band_shape_rms_vs_clean_db": 0.15937107293636718,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 3.7419836039771326
+            "wall_s": 3.913365618966054
           },
           {
             "id": "e3-dither-44k-16b",
@@ -1160,7 +1161,7 @@
             "band_shape_rms_vs_clean_db": 0.34384964512109895,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 3.712756025022827
+            "wall_s": 4.085215648985468
           },
           {
             "id": "e3-dither-96k-16b",
@@ -1191,7 +1192,7 @@
             "band_shape_rms_vs_clean_db": 0.08445978674232804,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 10.289188355964143
+            "wall_s": 8.04351107304683
           },
           {
             "id": "e3-late-defect-44k-16b",
@@ -1222,7 +1223,7 @@
             "band_shape_rms_vs_clean_db": 0.3742813391465477,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 7.307206265046261
+            "wall_s": 4.88615536299767
           },
           {
             "id": "e3-mild-subfs-44k-24b",
@@ -1253,7 +1254,7 @@
             "band_shape_rms_vs_clean_db": 0.07073360626714584,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.9995567869627848
+            "wall_s": 0.8893414739868604
           },
           {
             "id": "e3-quiet-tail-96k-24b",
@@ -1284,7 +1285,7 @@
             "band_shape_rms_vs_clean_db": 0.35094695097221396,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 1.3924663789803162
+            "wall_s": 1.4256862300098874
           },
           {
             "id": "e3-rare-trans-48k-24b",
@@ -1315,7 +1316,7 @@
             "band_shape_rms_vs_clean_db": 0.008506431390424582,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.092528726963792
+            "wall_s": 0.09066476300358772
           },
           {
             "id": "e3-single-ch-L-48k-24b",
@@ -1346,7 +1347,7 @@
             "band_shape_rms_vs_clean_db": 0.08178745319423943,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.8933982800226659
+            "wall_s": 0.8985890159965493
           },
           {
             "id": "e3-single-ch-R-44k-16b",
@@ -1377,7 +1378,7 @@
             "band_shape_rms_vs_clean_db": 0.05821471241035864,
             "safety_passed": true,
             "safety_violations": [],
-            "wall_s": 0.8416382769937627
+            "wall_s": 0.731601050007157
           }
         ]
       }
@@ -1729,6 +1730,7 @@
             "from_track": "01 - Gapless Part I.flac",
             "to_track": "02 - Gapless Part II.flac",
             "seam_window_samples": 1102,
+            "seam_boundary_masked": false,
             "seam_step_ref": 0.0059816837310791016,
             "seam_step_cand_aligned": 0.005981683726128187,
             "seam_step_excess_ratio": 0.0,
@@ -1743,6 +1745,7 @@
             "from_track": "02 - Gapless Part II.flac",
             "to_track": "03 - Left Clip.flac",
             "seam_window_samples": 1102,
+            "seam_boundary_masked": false,
             "seam_step_ref": 0.09675157070159912,
             "seam_step_cand_aligned": 0.09675157049821606,
             "seam_step_excess_ratio": 0.0,
@@ -1757,19 +1760,21 @@
             "from_track": "03 - Left Clip.flac",
             "to_track": "04 - Heavy Clip.flac",
             "seam_window_samples": 1102,
+            "seam_boundary_masked": false,
             "seam_step_ref": 0.07615101337432861,
-            "seam_step_cand_aligned": 0.07460988011973298,
+            "seam_step_cand_aligned": 0.07615101313257193,
             "seam_step_excess_ratio": 0.0,
             "seam_slope_ref": 0.013268828392028809,
-            "seam_slope_cand_aligned": 0.013000178954959377,
+            "seam_slope_cand_aligned": 0.013268709140615093,
             "seam_level_jump_db": 9.064839412431525e-08,
-            "seam_peak_growth_db": 2.3379189294068996,
+            "seam_peak_growth_db": -2.7575100170912173e-08,
             "passed": true,
             "violations": []
           }
         ],
         "gapless_part1_part2_vs_clean": {
           "seam_window_samples": 1102,
+          "seam_boundary_masked": false,
           "seam_step_ref": 0.0059816374065972955,
           "seam_step_cand_aligned": 0.00598168378695095,
           "seam_step_excess_ratio": 2.247789155991704e-06,
@@ -1825,6 +1830,7 @@
             "from_track": "01 - Clipped Track.flac",
             "to_track": "02 - Clean Continuation.flac",
             "seam_window_samples": 1102,
+            "seam_boundary_masked": false,
             "seam_step_ref": 0.09186053276062012,
             "seam_step_cand_aligned": 0.018446700637594543,
             "seam_step_excess_ratio": 0.0,
@@ -1841,6 +1847,7 @@
             "from_track": "02 - Clean Continuation.flac",
             "to_track": "03 - Intentional Saturation.flac",
             "seam_window_samples": 1102,
+            "seam_boundary_masked": false,
             "seam_step_ref": 0.8132059574127197,
             "seam_step_cand_aligned": 0.8132059574127197,
             "seam_step_excess_ratio": 0.0,
@@ -2107,20 +2114,21 @@
       "album_benchmark": {
         "n_tracks": 4,
         "total_audio_seconds": 600.0,
-        "wall_seconds": 91.4234634169843,
-        "rtf": 0.1523724390283072,
-        "wall_s_per_audio_min": 9.142346341698431,
+        "wall_seconds": 118.29828373697819,
+        "rtf": 0.197163806228297,
+        "wall_s_per_audio_min": 11.829828373697818,
         "all_processed": true,
         "album_policy": "unified_album_gain",
         "album_gain_db": -0.19614249447191512,
         "all_boundaries_passed": true
-      }
+      },
+      "tracks_reused_from_sha256": "6ebc11f22a6b8ff71d62c6abe02f205ee393fdbb2395f5fee93586bd99dbc7b5"
     }
   },
   "freeze_verdict": {
     "status": "frozen_for_e5",
     "ready_for_e5_custodian_release": true,
-    "sealed_opened": false
+    "sealed_audio_opened": false
   },
-  "freeze_sha256": "6ebc11f22a6b8ff71d62c6abe02f205ee393fdbb2395f5fee93586bd99dbc7b5"
+  "freeze_sha256": "61dca03e31303c201a1ad42ed1629ad0c5df222d9f8e8c265aac7704a799ae9f"
 }

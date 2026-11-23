@@ -110,9 +110,11 @@ def stereo_local_ild_drift(
     if r.shape != y.shape or sr <= 0:
         raise ValueError("matching stereo shapes and positive sr required")
     n = r.shape[0]
-    win = max(64, min(n, round(window_s * sr)))
-    hop = max(32, min(win, round(hop_s * sr)))
-    peak = max(float(np.max(np.abs(r))), 1e-12)
+    win = min(n, max(64, round(window_s * sr)))
+    hop = max(1, min(win, round(hop_s * sr)))
+    peak = float(np.max(np.abs(r)))
+    if peak < 1e-10:
+        return {"active_windows": 0, "p50_db": None, "p95_db": None, "max_db": None}
     floor = peak * (10.0 ** (active_floor_db / 20.0))
 
     drifts = []
@@ -131,7 +133,7 @@ def stereo_local_ild_drift(
         ild_y = 20.0 * math.log10(rl_y / rr_y)
         drifts.append(abs(ild_y - ild_r))
     if not drifts:
-        return {"active_windows": 0, "p50_db": 0.0, "p95_db": 0.0, "max_db": 0.0}
+        return {"active_windows": 0, "p50_db": None, "p95_db": None, "max_db": None}
     arr = np.asarray(drifts, dtype=np.float64)
     return {
         "active_windows": int(arr.size),
@@ -200,6 +202,24 @@ def stereo_cross_spectral_metrics(
     if r.shape != y.shape or sr <= 0:
         raise ValueError("matching stereo shapes and positive sr required")
     n = r.shape[0]
+    if n < 64:
+        return {
+            "phase_coherence_clean": None,
+            "phase_coherence_candidate": None,
+            "phase_coherence_drift_vs_clean": None,
+            "ipd_error_mean_deg": None,
+            "ipd_error_p95_deg": None,
+            "masked_frames_evaluated": 0,
+            "masked_ipd_error_mean_deg": None,
+            "masked_ipd_error_p95_deg": None,
+            "itd_ref_ncc_peak": None,
+            "itd_cand_ncc_peak": None,
+            "itd_defined": False,
+            "itd_clean_us": None,
+            "itd_candidate_us": None,
+            "itd_drift_us": None,
+            "itd_drift_samples": None,
+        }
     frame = max(256, min(8192, int(2 ** round(math.log2(max(1.0, frame_44k * sr / 44100.0))))))
     if n < frame:
         frame = max(64, 1 << math.floor(math.log2(n)))
@@ -298,8 +318,8 @@ def stereo_cross_spectral_metrics(
         ipd_mean = float(np.sum(errs * wts) / max(float(np.sum(wts)), EPS))
         ipd_p95 = float(np.percentile(errs, 95))
     else:
-        ipd_mean = 0.0
-        ipd_p95 = 0.0
+        ipd_mean = None
+        ipd_p95 = None
 
     if masked_ipd_errs:
         m_errs = np.asarray(masked_ipd_errs, dtype=np.float64)
@@ -362,7 +382,7 @@ def stereo_ms_and_mono_metrics(
     ms_cand = (float(20.0 * math.log10(rms_my / rms_sy))
                if rms_my > 1e-8 and rms_sy > 1e-8 else None)
     ms_drift = (abs(ms_cand - ms_clean)
-                if ms_clean is not None and ms_cand is not None else 0.0)
+                if ms_clean is not None and ms_cand is not None else None)
 
     mono_sig = float(np.sum(m_c ** 2))
     mono_sdr_deg = _sdr_db(mono_sig, float(np.sum((m_c - m_d) ** 2)), eps=eps)
@@ -370,7 +390,7 @@ def stereo_ms_and_mono_metrics(
     mono_delta = (float(mono_sdr_cand - mono_sdr_deg)
                   if mono_sdr_cand is not None and mono_sdr_deg is not None else None)
     mono_level_drift = (float(20.0 * math.log10(rms_my / rms_mc))
-                        if rms_mc > 1e-8 and rms_my > 1e-8 else 0.0)
+                        if rms_mc > 1e-8 and rms_my > 1e-8 else None)
 
     return {
         "ms_ratio_clean_db": ms_clean,
@@ -502,23 +522,24 @@ def unchanged_bands_and_tail_metrics(
     bands_c = np.asarray(F.band_rms_db(c.astype(np.float32), sr), dtype=np.float64)
     bands_d = np.asarray(F.band_rms_db(d_al.astype(np.float32), sr), dtype=np.float64)
     bands_y = np.asarray(F.band_rms_db(y.astype(np.float32), sr), dtype=np.float64)
-    active = bands_c >= float(np.max(bands_c)) - 50.0
+    max_band_c = float(np.max(bands_c)) if bands_c.size else -240.0
+    active = (bands_c >= max_band_c - 50.0) if max_band_c > -120.0 else np.zeros_like(bands_c, dtype=bool)
     if active.any():
         diff = (bands_y - bands_c)[active]
         centered = diff - np.mean(diff)
         band_shape_rms = float(np.sqrt(np.mean(centered ** 2)))
         # Truly unchanged active musical bands (within 30 dB of peak, < 0.15 dB clip shift),
         # excluding empty -40..-50 dB subsonic/noise-floor bins.
-        musical = bands_c >= float(np.max(bands_c)) - 30.0
+        musical = bands_c >= max_band_c - 30.0
         unchanged = musical & (np.abs(bands_d - bands_c) <= 0.15)
         if unchanged.any():
             u_diff = (bands_y - bands_c)[unchanged]
             band_max_drift = float(np.max(np.abs(u_diff)))
         else:
-            band_max_drift = 0.0
+            band_max_drift = None
     else:
-        band_shape_rms = 0.0
-        band_max_drift = 0.0
+        band_shape_rms = None
+        band_max_drift = None
 
     # Quiet tail detection: check final 20% slice if its RMS is >= 25 dB below whole-track peak
     # and contains no masked samples.
@@ -561,21 +582,34 @@ def check_stereo_safety_gates(
     *,
     is_defect: bool,
     rubric: dict | None = None,
+    require_pre_gain: bool = True,
 ) -> dict:
     """Evaluate preregistered hard stereo safety gates against measured metrics."""
     r = {**DEFAULT_STEREO_SAFETY_RUBRIC, **(rubric or {})}
     violations = []
 
-    if metrics.get("polarity_violations") is not None and metrics["polarity_violations"] > r["max_polarity_violations"]:
-        violations.append(f"polarity_violations={metrics['polarity_violations']}")
-    if metrics.get("max_reliable_diff_pre_gain") is not None and metrics["max_reliable_diff_pre_gain"] > r["max_reliable_diff_pre_gain"]:
-        violations.append(f"reliable_samples_modified={metrics['max_reliable_diff_pre_gain']:.3e}")
+    pol = metrics.get("polarity_violations")
+    rel_diff = metrics.get("max_reliable_diff_pre_gain")
+    raw_vs_deg = metrics.get("max_abs_diff_vs_degraded_pre_gain")
+    if require_pre_gain and (pol is None or rel_diff is None or raw_vs_deg is None):
+        violations.append("missing_pre_gain_candidate")
+    if pol is not None and pol > r["max_polarity_violations"]:
+        violations.append(f"polarity_violations={pol}")
+    if rel_diff is not None and rel_diff > r["max_reliable_diff_pre_gain"]:
+        violations.append(f"reliable_samples_modified={rel_diff:.3e}")
 
     if not is_defect:
-        # Strict zero-modification rule on clean/intentional negative controls.
-        if metrics.get("max_abs_diff_vs_degraded_pre_gain", 0.0) and metrics["max_abs_diff_vs_degraded_pre_gain"] > 0.0:
+        # Strict zero-modification rule on clean/intentional negative controls:
+        # both pre-gain and delivered candidate must equal degraded exactly.
+        if raw_vs_deg is not None and raw_vs_deg > 0.0:
             violations.append("negative_control_modified")
+        deliv_vs_deg = metrics.get("max_abs_diff_vs_degraded_delivered")
+        if deliv_vs_deg is not None and deliv_vs_deg > 0.0:
+            violations.append("negative_control_delivered_modified")
         return {"passed": not violations, "violations": violations}
+
+    if not metrics.get("local_ild_active_windows"):
+        violations.append("no_active_stereo_windows")
 
     def _hi(key: str, limit_key: str, label: str):
         val = metrics.get(key)
@@ -703,6 +737,7 @@ def evaluate_stereo_safety(
         "max_reliable_diff_pre_gain": reliable_diff,
         "outside_true_mask_max_diff_pre_gain": outside_true_mask_diff,
         "max_abs_diff_vs_degraded_pre_gain": raw_vs_deg,
+        "max_abs_diff_vs_degraded_delivered": float(np.max(np.abs(y - d))),
     }
     gates = check_stereo_safety_gates(metrics, is_defect=is_defect, rubric=rubric)
     return {"metrics": metrics, "gates": gates}
@@ -722,76 +757,122 @@ def evaluate_gapless_boundary(
     mask_b: np.ndarray | None = None,
     rubric: dict | None = None,
 ) -> dict:
-    """Jointly check gapless track boundary continuity between track A and track B."""
+    """Jointly check gapless track boundary continuity between track A and track B.
+
+    When `mask_a` / `mask_b` are provided (e.g. comparing restored output against
+    a clipped source), masked samples are excluded from level-jump, peak-growth,
+    step, and slope discontinuity checks so legitimately reconstructed peaks at
+    track edges do not trigger false click or peak-growth alarms.
+    """
     ar = _validate_stereo(a_ref, "a_ref")
     br = _validate_stereo(b_ref, "b_ref")
     ac = _validate_stereo(a_cand, "a_cand")
     bc = _validate_stereo(b_cand, "b_cand")
     if ar.shape != ac.shape or br.shape != bc.shape or sr <= 0:
         raise ValueError("matching stereo shapes and positive sr required")
+    if mask_a is not None and np.asarray(mask_a).shape != ar.shape:
+        raise ValueError("mask_a shape must match a_ref")
+    if mask_b is not None and np.asarray(mask_b).shape != br.shape:
+        raise ValueError("mask_b shape must match b_ref")
     r = {**DEFAULT_STEREO_SAFETY_RUBRIC, **(rubric or {})}
 
-    w = max(8, min(ar.shape[0], br.shape[0], round(seam_window_ms * sr / 1000.0)))
-    # Align whole pair by one shared gain (if tracks had different gains, seam jump shows up!).
-    ref_join = np.concatenate((ar[-w:], br[:w]), axis=0)
-    cand_join = np.concatenate((ac[-w:], bc[:w]), axis=0)
-    g = shared_stereo_gain(ref_join, cand_join)
-    ac_al = g * ac[-w:]
-    bc_al = g * bc[:w]
-
-    step_ref = float(np.max(np.abs(br[0] - ar[-1])))
-    step_cand = float(np.max(np.abs(bc_al[0] - ac_al[-1])))
-    # Also measure second-difference (slope discontinuity) across the boundary.
-    if w >= 2:
-        slope_ref = float(np.max(np.abs((br[1] - br[0]) - (ar[-1] - ar[-2]))))
-        slope_cand = float(np.max(np.abs((bc_al[1] - bc_al[0]) - (ac_al[-1] - ac_al[-2]))))
-    else:
-        slope_ref = slope_cand = 0.0
-
-    # Level continuity across boundary on reliable (unmasked) seam samples so
-    # genuine per-track gain jumps are caught without falsely penalizing restored
-    # clipped peaks right at sample 0 of the next track.
+    w = min(ar.shape[0], br.shape[0], max(8, round(seam_window_ms * sr / 1000.0)))
     unm_a = (np.ones((w, 2), dtype=bool) if mask_a is None
              else ~np.asarray(mask_a[-w:], dtype=bool))
     unm_b = (np.ones((w, 2), dtype=bool) if mask_b is None
              else ~np.asarray(mask_b[:w], dtype=bool))
+    unm_join = np.concatenate((unm_a, unm_b), axis=0)
+
+    ref_join = np.concatenate((ar[-w:], br[:w]), axis=0)
+    cand_join = np.concatenate((ac[-w:], bc[:w]), axis=0)
+
+    # Align whole pair by one shared gain computed on reliable unmasked seam samples
+    # (if tracks had different gains, seam level jump shows up!).
+    if unm_join.any():
+        denom = float(np.sum(cand_join[unm_join] ** 2))
+        g = (float(np.sum(ref_join[unm_join] * cand_join[unm_join]) / denom)
+             if denom >= EPS else 1.0)
+        g = g if g > 0.0 else 1.0
+    else:
+        g = shared_stereo_gain(ref_join, cand_join)
+    ac_al = g * ac[-w:]
+    bc_al = g * bc[:w]
+    cand_al_join = np.concatenate((ac_al, bc_al), axis=0)
+
+    # Local reference derivative scale (95th percentile step on unmasked adjacent pairs).
+    if ref_join.shape[0] >= 2:
+        adj_unm = unm_join[1:] & unm_join[:-1]
+        diffs = np.abs(np.diff(ref_join, axis=0))
+        local_steps = diffs[adj_unm] if adj_unm.any() else diffs.reshape(-1)
+        step_scale = max(float(np.percentile(local_steps, 95)), 1e-3)
+    else:
+        step_scale = 1e-3
+
+    # Step continuity across the exact boundary sample (only on channels unmasked on both sides).
+    seam_unm_ch = unm_a[-1] & unm_b[0]
+    seam_boundary_masked = not bool(seam_unm_ch.all())
+    if seam_unm_ch.any():
+        step_ref = float(np.max(np.abs(br[0, seam_unm_ch] - ar[-1, seam_unm_ch])))
+        step_cand = float(np.max(np.abs(bc_al[0, seam_unm_ch] - ac_al[-1, seam_unm_ch])))
+        seam_step_excess = float(max(0.0, step_cand - step_ref) / step_scale)
+    else:
+        step_ref = None
+        step_cand = None
+        seam_step_excess = None
+
+    # Second-difference (slope discontinuity) across boundary when >= 2 unmasked samples on each side.
+    if w >= 2:
+        slope_unm_ch = unm_a[-2] & unm_a[-1] & unm_b[0] & unm_b[1]
+        if slope_unm_ch.any():
+            slope_ref = float(np.max(np.abs(
+                (br[1, slope_unm_ch] - br[0, slope_unm_ch])
+                - (ar[-1, slope_unm_ch] - ar[-2, slope_unm_ch])
+            )))
+            slope_cand = float(np.max(np.abs(
+                (bc_al[1, slope_unm_ch] - bc_al[0, slope_unm_ch])
+                - (ac_al[-1, slope_unm_ch] - ac_al[-2, slope_unm_ch])
+            )))
+        else:
+            slope_ref = slope_cand = None
+    else:
+        slope_ref = slope_cand = None
+
+    # Level continuity across boundary on reliable (unmasked) seam samples.
     if unm_a.any() and unm_b.any():
         rms_a_ref = math.sqrt(float(np.mean(ar[-w:][unm_a] ** 2)))
         rms_b_ref = math.sqrt(float(np.mean(br[:w][unm_b] ** 2)))
         rms_a_cand = math.sqrt(float(np.mean(ac[-w:][unm_a] ** 2)))
         rms_b_cand = math.sqrt(float(np.mean(bc[:w][unm_b] ** 2)))
+        if min(rms_a_ref, rms_b_ref, rms_a_cand, rms_b_cand) > 1e-7:
+            ratio_ref_db = 20.0 * math.log10(rms_b_ref / rms_a_ref)
+            ratio_cand_db = 20.0 * math.log10(rms_b_cand / rms_a_cand)
+            level_jump_db = float(abs(ratio_cand_db - ratio_ref_db))
+        else:
+            level_jump_db = None
     else:
-        rms_a_ref = math.sqrt(float(np.mean(ar[-w:] ** 2)))
-        rms_b_ref = math.sqrt(float(np.mean(br[:w] ** 2)))
-        rms_a_cand = math.sqrt(float(np.mean(ac[-w:] ** 2)))
-        rms_b_cand = math.sqrt(float(np.mean(bc[:w] ** 2)))
-    if min(rms_a_ref, rms_b_ref, rms_a_cand, rms_b_cand) > 1e-7:
-        ratio_ref_db = 20.0 * math.log10(rms_b_ref / rms_a_ref)
-        ratio_cand_db = 20.0 * math.log10(rms_b_cand / rms_a_cand)
-        level_jump_db = float(abs(ratio_cand_db - ratio_ref_db))
+        level_jump_db = None
+
+    # Peak growth across the stitched seam on unmasked samples at matched gain.
+    if unm_join.any():
+        peak_ref = max(float(np.max(np.abs(ref_join[unm_join]))), 1e-6)
+        peak_cand = max(float(np.max(np.abs(cand_al_join[unm_join]))), 1e-6)
+        peak_growth_db = float(20.0 * math.log10(peak_cand / peak_ref))
     else:
-        level_jump_db = 0.0
-
-    # Peak growth across the stitched seam at matched RMS.
-    peak_ref = max(float(np.max(np.abs(ref_join))), 1e-6)
-    peak_cand = max(float(np.max(np.abs(np.concatenate((ac_al, bc_al), axis=0)))), 1e-6)
-    peak_growth_db = float(20.0 * math.log10(peak_cand / peak_ref))
-
-    # Local reference derivative scale (95th percentile step in seam window) for click check.
-    local_steps = np.abs(np.diff(ref_join, axis=0))
-    step_scale = max(float(np.percentile(local_steps, 95)), 1e-3)
-    seam_step_excess = float(max(0.0, step_cand - step_ref) / step_scale)
+        peak_growth_db = None
 
     violations = []
-    if level_jump_db > r["max_gapless_level_jump_db"]:
+    if level_jump_db is not None and level_jump_db > r["max_gapless_level_jump_db"]:
         violations.append(f"gapless_level_jump_db={level_jump_db:.3f}>{r['max_gapless_level_jump_db']}")
-    if peak_growth_db > r["max_gapless_seam_peak_growth_db"]:
+    if peak_growth_db is not None and peak_growth_db > r["max_gapless_seam_peak_growth_db"]:
         violations.append(f"gapless_seam_peak_growth_db={peak_growth_db:.3f}>{r['max_gapless_seam_peak_growth_db']}")
-    if step_cand > max(0.05, 4.0 * max(step_ref, step_scale)) and seam_step_excess > 3.0:
+    if (step_cand is not None and step_ref is not None and seam_step_excess is not None
+            and step_cand > max(0.05, 4.0 * max(step_ref, step_scale))
+            and seam_step_excess > 3.0):
         violations.append(f"gapless_seam_click_step={step_cand:.4f}")
 
     return {
         "seam_window_samples": int(w),
+        "seam_boundary_masked": seam_boundary_masked,
         "seam_step_ref": step_ref,
         "seam_step_cand_aligned": step_cand,
         "seam_step_excess_ratio": seam_step_excess,

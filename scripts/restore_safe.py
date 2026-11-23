@@ -280,6 +280,10 @@ def _process_album_declip(files, out, *, clip_threshold=None,
     Pass 2 delivers each track via the identical atomic FLAC + QC contract and
     verifies adjacent gapless track boundaries jointly.
     """
+    if loudness_target is not None:
+        raise ValueError(
+            "album headroom coordination cannot be combined with per-track loudness_target"
+        )
     staged_items = []
     proposals = []
     for source in files:
@@ -403,14 +407,24 @@ def main():
     files = [src] if src.is_file() else sorted(src.glob("*.flac"))
     if not files or any(p.suffix.lower() != ".flac" for p in files):
         ap.error("provide a FLAC file or a directory containing FLAC tracks")
+    if args.album_headroom:
+        if args.mode != "declip":
+            ap.error("--album-headroom requires --mode declip")
+        if len(files) < 2:
+            ap.error("--album-headroom requires a directory with at least 2 FLAC tracks")
+        if args.loudness_target is not None:
+            ap.error(
+                "--album-headroom cannot be combined with --loudness-target "
+                "(per-track loudness pass overrides unified album headroom)"
+            )
     out.mkdir(parents=True, exist_ok=True)
     if any(out.iterdir()):
         ap.error("output must be an empty directory")
 
-    if args.album_headroom and args.mode == "declip" and len(files) > 1:
+    if args.album_headroom:
         rows = _process_album_declip(
             files, out, clip_threshold=args.clip_threshold,
-            loudness_target=args.loudness_target,
+            loudness_target=None,
             declip_engine=args.declip_engine)
         return 1 if any(r["status"] == "error" for r in rows) else 0
 

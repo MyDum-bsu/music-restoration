@@ -7,9 +7,10 @@
 
 Implements spec v1 sections 3, 4 and card E4 (Board #1127):
   - Suite A: Stereo safety & invariant audit across committed non-sealed corpora
-    (`smoke-v1.json`, `dev-v1.json`, `dev-e3-v1.json`), plus cross-manifest
-    group-leakage verification against `sealed-v1.json` (NEVER opening or
-    executing `sealed-v1.json`).
+    (`smoke-v1.json`, `dev-v1.json`, `dev-e3-v1.json`). Cross-manifest group-
+    leakage audit against `sealed-v1.json` metadata runs strictly AFTER pilot
+    registration is computed; sealed audio is NEVER opened, accessed, or
+    executed.
   - Suite B: Dedicated synthetic stereo & album safety stress tests (L/R
     correlation, ILD/ITD, stereo image drift, phase coherence/IPD, M/S &
     mono-sum, single-channel L/R clipping, asymmetric dithered clip, transient
@@ -171,7 +172,7 @@ FROZEN_COMPARATORS = [
 def _safe_e4_argv() -> list[str]:
     """Redact all path-bearing CLI flag values from logged argv."""
     path_flags = {"--manifest", "--out", "--freeze-manifest", "--freeze-report",
-                  "--profile-worker-in", "--profile-worker-out"}
+                  "--reuse-suite-c", "--profile-worker-in", "--profile-worker-out"}
     out, redact_next = [], False
     for tok in sys.argv:
         if redact_next:
@@ -769,12 +770,78 @@ def _spawn_isolated_profile(flac_path: Path, out_flac: Path) -> dict:
     return json.loads(proc.stdout)
 
 
+def _run_suite_c_album_benchmark(prof_dir: Path, *, quick: bool = False) -> dict:
+    """Run multi-track stereo FLAC album benchmark via real CLI."""
+    dur_alb_track = 3.0 if quick else 150.0
+    alb_src = prof_dir / "album_cpu_src"
+    alb_out = prof_dir / "album_cpu_out"
+    alb_src.mkdir(parents=True, exist_ok=True)
+    alb_total_s = 0.0
+    for idx, thr in enumerate((-4.0, -4.5, -4.5, -4.0), start=1):
+        clean = corpus_synth._clean_music_signal(seed=9200 + idx, rate=44100, seconds=dur_alb_track)
+        deg, _, _ = corpus_synth.apply_operator(
+            clean, 44100, {"operator": "hard_clip", "threshold_dbfs": thr, "bits": 24}, seed=9200 + idx)
+        _write_flac(alb_src / f"{idx:02d} - Track {idx}.flac", deg, 44100, bits=24, seed=9300 + idx)
+        del clean, deg
+        alb_total_s += dur_alb_track
+
+    env = {**os.environ, "OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1",
+           "MKL_NUM_THREADS": "1", "NUMEXPR_NUM_THREADS": "1"}
+    t0 = time.monotonic()
+    proc = subprocess.run(
+        [sys.executable, str(REPO / "scripts" / "restore_safe.py"),
+         "--src", str(alb_src), "--out", str(alb_out),
+         "--mode", "declip", "--declip-engine", "aspade_v2", "--album-headroom"],
+        capture_output=True, text=True, check=False, env=env,
+    )
+    alb_wall_s = time.monotonic() - t0
+    if proc.returncode != 0:
+        raise RuntimeError(f"CPU album CLI failed: {_clean_error(proc.stderr)}")
+    alb_report = json.loads((alb_out / "report.json").read_text())
+    alb_safety = json.loads((alb_out / "album_safety.json").read_text())
+    return {
+        "n_tracks": len(alb_report),
+        "total_audio_seconds": alb_total_s,
+        "wall_seconds": float(alb_wall_s),
+        "rtf": float(alb_wall_s / max(alb_total_s, 1e-9)),
+        "wall_s_per_audio_min": float(alb_wall_s * 60.0 / max(alb_total_s, 1e-9)),
+        "all_processed": all(r["status"] == "processed_candidate" for r in alb_report),
+        "album_policy": alb_safety["headroom_plan"]["policy"],
+        "album_gain_db": alb_safety["headroom_plan"]["album_gain_db"],
+        "all_boundaries_passed": alb_safety["all_boundaries_passed"],
+    }
+
+
+def _reuse_suite_c_tracks(prior_manifest: Path, work_dir: Path, *, quick: bool = False) -> dict:
+    """Reuse verified 5-min single-track CPU profiles when core DSP hashes match,
+    while freshly re-running the multi-track album CLI benchmark."""
+    prior = json.loads(prior_manifest.read_text())
+    prior_hashes = prior["toolchain"]["implementation_sha256"]
+    cur_hashes = _implementation_hashes()
+    dsp_core = (
+        "rnext/dsp/clip_detector.py",
+        "rnext/dsp/declip_methods.py",
+        "rnext/dsp/contour.py",
+        "rnext/features.py",
+    )
+    for rel in dsp_core:
+        if prior_hashes.get(rel) != cur_hashes.get(rel):
+            raise ValueError(f"cannot reuse Suite C tracks: {rel} hash changed")
+    prof_dir = work_dir / "suite_c"
+    prof_dir.mkdir(parents=True, exist_ok=True)
+    prior_c = prior["e4_verification"]["suite_c_cpu_profile"]
+    return {
+        **prior_c,
+        "tracks_reused_from_sha256": prior["freeze_sha256"],
+        "album_benchmark": _run_suite_c_album_benchmark(prof_dir, quick=quick),
+    }
+
+
 def run_suite_c_cpu_profile(work_dir: Path, *, quick: bool = False) -> dict:
     """Run cold/warm isolated subprocess CPU/RSS benchmarks on 5-min tracks & album."""
     prof_dir = work_dir / "suite_c"
     prof_dir.mkdir(parents=True, exist_ok=True)
     dur_5m = 5.0 if quick else 300.0
-    dur_alb_track = 3.0 if quick else 150.0
 
     # Build deterministic 5-minute stereo FLAC tracks covering 44.1/48/96 kHz, 16/24-bit,
     # realistic moderate/heavier clipping, and a clean negative control.
@@ -811,33 +878,7 @@ def run_suite_c_cpu_profile(work_dir: Path, *, quick: bool = False) -> dict:
             "warm": warm,
         })
 
-    # Full multi-track stereo album run (4 tracks x 3 min = 12 min album in full mode) via real CLI.
-    alb_src = prof_dir / "album_cpu_src"
-    alb_out = prof_dir / "album_cpu_out"
-    alb_src.mkdir(parents=True, exist_ok=True)
-    alb_total_s = 0.0
-    for idx, thr in enumerate((-4.0, -4.5, -4.5, -4.0), start=1):
-        clean = corpus_synth._clean_music_signal(seed=9200 + idx, rate=44100, seconds=dur_alb_track)
-        deg, _, _ = corpus_synth.apply_operator(
-            clean, 44100, {"operator": "hard_clip", "threshold_dbfs": thr, "bits": 24}, seed=9200 + idx)
-        _write_flac(alb_src / f"{idx:02d} - Track {idx}.flac", deg, 44100, bits=24, seed=9300 + idx)
-        del clean, deg
-        alb_total_s += dur_alb_track
-
-    env = {**os.environ, "OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1",
-           "MKL_NUM_THREADS": "1", "NUMEXPR_NUM_THREADS": "1"}
-    t0 = time.monotonic()
-    proc = subprocess.run(
-        [sys.executable, str(REPO / "scripts" / "restore_safe.py"),
-         "--src", str(alb_src), "--out", str(alb_out),
-         "--mode", "declip", "--declip-engine", "aspade_v2", "--album-headroom"],
-        capture_output=True, text=True, check=False, env=env,
-    )
-    alb_wall_s = time.monotonic() - t0
-    if proc.returncode != 0:
-        raise RuntimeError(f"CPU album CLI failed: {_clean_error(proc.stderr)}")
-    alb_report = json.loads((alb_out / "report.json").read_text())
-    alb_safety = json.loads((alb_out / "album_safety.json").read_text())
+    album_bench = _run_suite_c_album_benchmark(prof_dir, quick=quick)
 
     # Aggregate cold/warm RTF, s/min, and peak RSS across all 5-min tracks.
     cold_s_per_min = [r["cold"]["wall_s_per_audio_min"] for r in track_runs]
@@ -871,17 +912,7 @@ def run_suite_c_cpu_profile(work_dir: Path, *, quick: bool = False) -> dict:
             "defect_abstentions": abstentions,
             "control_fp": clean_fp,
         },
-        "album_benchmark": {
-            "n_tracks": len(alb_report),
-            "total_audio_seconds": alb_total_s,
-            "wall_seconds": float(alb_wall_s),
-            "rtf": float(alb_wall_s / max(alb_total_s, 1e-9)),
-            "wall_s_per_audio_min": float(alb_wall_s * 60.0 / max(alb_total_s, 1e-9)),
-            "all_processed": all(r["status"] == "processed_candidate" for r in alb_report),
-            "album_policy": alb_safety["headroom_plan"]["policy"],
-            "album_gain_db": alb_safety["headroom_plan"]["album_gain_db"],
-            "all_boundaries_passed": alb_safety["all_boundaries_passed"],
-        },
+        "album_benchmark": album_bench,
     }
 
 
@@ -952,8 +983,9 @@ def build_freeze_manifest(suite_a: dict, suite_b: dict, suite_c: dict,
         "spec": "music-restoration-spec-v1 (sections 3, 4, E4)",
         "board_card": 1127,
         "frozen_at": registered_at,
-        "sealed_opened": False,
-        "sealed_manifest_status": "untouched_custodian_held_until_e5",
+        "sealed_audio_opened": False,
+        "sealed_manifest_metadata_leakage_checked_only": True,
+        "sealed_manifest_status": "metadata_only_leakage_checked_post_pilot_audio_custodian_held_until_e5",
         "cross_manifest_leakage_checked": [
             "corpus/smoke-v1.json",
             "corpus/dev-v1.json",
@@ -1056,7 +1088,7 @@ def build_freeze_manifest(suite_a: dict, suite_b: dict, suite_c: dict,
     doc["freeze_verdict"] = {
         "status": "frozen_for_e5" if all_ok else "blocked_safety_or_budget_failure",
         "ready_for_e5_custodian_release": bool(all_ok),
-        "sealed_opened": False,
+        "sealed_audio_opened": False,
     }
     # Deterministic content hash over the entire freeze specification (excluding the hash field itself).
     doc["freeze_sha256"] = hashlib.sha256(
@@ -1083,7 +1115,8 @@ def render_freeze_report(freeze: dict) -> str:
         "# E4 · Stereo/Album Safety Verification & CPU Candidate Freeze",
         "",
         (f"**Card:** Board #1127 · **Spec:** E0 charter + spec v1 (sections 3, 4, E4) · "
-         f"**Freeze status:** `{verdict['status']}` · **Sealed opened:** `false` (untouched, custodian-held)."),
+         f"**Freeze status:** `{verdict['status']}` · **Sealed audio opened:** `false` "
+         "(custodian-held; `corpus/sealed-v1.json` metadata inspected post-pilot for group-leakage audit only, audio never accessed or executed)."),
         "",
         (f"- **Frozen Candidate:** `{freeze['frozen_candidate']['name']}` (`detect_hard_clip_v2` + `declip_aspade` + unified `-1.0 dBTP` headroom)"),
         f"- **Freeze SHA-256:** `{freeze['freeze_sha256']}`",
@@ -1190,7 +1223,7 @@ def render_freeze_report(freeze: dict) -> str:
         "",
         "## 4. Frozen E5 Preregistration & Pilot Registration Block",
         "",
-        "Locked **before** opening `corpus/sealed-v1.json` (which remains untouched and custodian-held). Any edit after freeze requires a new sealed corpus version.",
+        "Locked **before** opening sealed audio (`corpus/sealed-v1.json` audio remains custodian-held and unexecuted; manifest group metadata is inspected post-pilot strictly for cross-manifest leakage audit). Any edit after freeze requires a new sealed corpus version.",
         "",
         "| Pilot Field (`corpus_v1.PILOT_FIELDS`) | Frozen Value | Basis |",
         "|---|---:|---|",
@@ -1226,6 +1259,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="override Suite A manifests (defaults to smoke-v1, dev-v1, dev-e3-v1)")
     ap.add_argument("--freeze-manifest", help="optional path to write e4-freeze-manifest.json")
     ap.add_argument("--freeze-report", help="optional path to write e4-stereo-freeze-report.md")
+    ap.add_argument("--reuse-suite-c", help="reuse verified 5-min Suite C single-track profiles from prior freeze manifest when core DSP hashes match")
     ap.add_argument("--profile-worker-in", help=argparse.SUPPRESS)
     ap.add_argument("--profile-worker-out", help=argparse.SUPPRESS)
     args = ap.parse_args(argv)
@@ -1251,7 +1285,26 @@ def main(argv: list[str] | None = None) -> int:
             print("manifest error: E4 refuses sealed tier", file=sys.stderr)
             return 2
 
-    # Verify cross-manifest leakage (metadata only; sealed audio is never touched).
+    quick = args.mode == "quick"
+    registered_at = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    with tempfile.TemporaryDirectory(prefix="mr_e4_") as tmp:
+        work = Path(tmp)
+        suite_a = run_suite_a_corpora(manifests, work)
+        suite_b = run_suite_b_stereo_and_album(work, quick=quick)
+        if args.reuse_suite_c:
+            suite_c = _reuse_suite_c_tracks(Path(args.reuse_suite_c), work, quick=quick)
+        else:
+            suite_c = run_suite_c_cpu_profile(work, quick=quick)
+
+    # Compute pilot registration strictly BEFORE reading sealed-v1.json metadata.
+    pilot = compute_pilot_registration(
+        REPO / "docs" / "validation" / "e3-manifests.json",
+        suite_c,
+        registered_at,
+    )
+
+    # Post-pilot metadata-only cross-manifest group-leakage audit (sealed audio is never accessed).
     leak_docs = [
         corpus_v1.load(REPO / "corpus" / name)
         for name in ("smoke-v1.json", "dev-v1.json", "dev-e3-v1.json", "sealed-v1.json")
@@ -1262,20 +1315,6 @@ def main(argv: list[str] | None = None) -> int:
             print(f"leakage error: {e}", file=sys.stderr)
         return 2
 
-    quick = args.mode == "quick"
-    registered_at = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-    with tempfile.TemporaryDirectory(prefix="mr_e4_") as tmp:
-        work = Path(tmp)
-        suite_a = run_suite_a_corpora(manifests, work)
-        suite_b = run_suite_b_stereo_and_album(work, quick=quick)
-        suite_c = run_suite_c_cpu_profile(work, quick=quick)
-
-    pilot = compute_pilot_registration(
-        REPO / "docs" / "validation" / "e3-manifests.json",
-        suite_c,
-        registered_at,
-    )
     freeze = build_freeze_manifest(suite_a, suite_b, suite_c, pilot, cross_leak_errors, registered_at)
     report_md = render_freeze_report(freeze)
 
@@ -1288,7 +1327,8 @@ def main(argv: list[str] | None = None) -> int:
             "schema": "e4-run-protocol/v1",
             "mode": args.mode,
             "argv": _safe_e4_argv(),
-            "sealed_opened": False,
+            "sealed_audio_opened": False,
+            "sealed_manifest_metadata_leakage_checked_only": True,
             "freeze_sha256": freeze["freeze_sha256"],
         }, indent=2, allow_nan=False) + "\n")
         (out_dir / "e4-freeze-manifest.json").write_text(

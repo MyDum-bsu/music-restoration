@@ -1,9 +1,9 @@
 # E4 · Stereo/Album Safety Verification & CPU Candidate Freeze
 
-**Card:** Board #1127 · **Spec:** E0 charter + spec v1 (sections 3, 4, E4) · **Freeze status:** `frozen_for_e5` · **Sealed opened:** `false` (untouched, custodian-held).
+**Card:** Board #1127 · **Spec:** E0 charter + spec v1 (sections 3, 4, E4) · **Freeze status:** `frozen_for_e5` · **Sealed audio opened:** `false` (custodian-held; `corpus/sealed-v1.json` metadata inspected post-pilot for group-leakage audit only, audio never accessed or executed).
 
 - **Frozen Candidate:** `aspade_mit__v2_windowed` (`detect_hard_clip_v2` + `declip_aspade` + unified `-1.0 dBTP` headroom)
-- **Freeze SHA-256:** `6ebc11f22a6b8ff71d62c6abe02f205ee393fdbb2395f5fee93586bd99dbc7b5`
+- **Freeze SHA-256:** `61dca03e31303c201a1ad42ed1629ad0c5df222d9f8e8c265aac7704a799ae9f`
 - **Reference CPU:** `x86_64` (8 logical cores, single-threaded BLAS/OpenMP `= 1`)
 - **Toolchain Pins:** Python `3.12.3`, NumPy `2.5.2`, SciPy `1.17.1`, FFmpeg `125907-ga7e72069f1-20260802`, libflac `1.4.3`
 - **Cross-manifest group leakage (`smoke/dev/dev-e3/sealed`):** `0` errors
@@ -73,13 +73,13 @@ All timings and peak RSS values were measured in **isolated fresh subprocesses**
 | `track-5m-96k-24b-mod` | 96k / 24b | 300 | 0.007% | warm | 0.76 | 11.29 | 49.21 | 3.61 | 6.74 | 71.64 | 0.239x | 14.33 | 2450.9 |
 
 - **5-min aggregate:** RTF p50 `0.079x`, p95 `0.253x`; `wall_s_per_audio_min` p50 `4.74`, p95 `15.21` (cold p95 `14.49`, warm p95 `13.10`); isolated Peak RSS p50 `1218.4 MiB`, p95 `2449.6 MiB`, max `2450.9 MiB`; failures `0`, defect abstentions `0`, control FP `0`.
-- **Multi-track album benchmark (4 tracks, 10.0 min stereo FLAC):** wall `91.42 s` (RTF `0.152x`, `9.14 s/audio min`), policy `unified_album_gain` (`-0.20 dB`), all processed `True`, all boundaries passed `True`.
+- **Multi-track album benchmark (4 tracks, 10.0 min stereo FLAC):** wall `118.30 s` (RTF `0.197x`, `11.83 s/audio min`), policy `unified_album_gain` (`-0.20 dB`), all processed `True`, all boundaries passed `True`.
 
 ---
 
 ## 4. Frozen E5 Preregistration & Pilot Registration Block
 
-Locked **before** opening `corpus/sealed-v1.json` (which remains untouched and custodian-held). Any edit after freeze requires a new sealed corpus version.
+Locked **before** opening sealed audio (`corpus/sealed-v1.json` audio remains custodian-held and unexecuted; manifest group metadata is inspected post-pilot strictly for cross-manifest leakage audit). Any edit after freeze requires a new sealed corpus version.
 
 | Pilot Field (`corpus_v1.PILOT_FIELDS`) | Frozen Value | Basis |
 |---|---:|---|

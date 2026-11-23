@@ -180,6 +180,136 @@ def test_gapless_boundary_passes_continuous_and_catches_gain_jump():
     assert any("gapless_level_jump_db" in v for v in bad["violations"])
 
 
+def test_gapless_boundary_respects_clip_masks_at_track_edge():
+    """Reconstructed clip in the final 3 samples of track A must not trigger false
+    click or peak-growth alarms when mask_a marks those samples, while an unmasked
+    seam click or gain jump still fails."""
+    sr = 44100
+    cont = corpus_synth._clean_music_signal(seed=731, rate=sr, seconds=2.0)
+    mid = cont.shape[0] // 2
+    a_clean, b_clean = cont[:mid].copy(), cont[mid:].copy()
+    # Clip the last 3 samples of track A to a low plateau while candidate restores a higher peak.
+    a_ref = a_clean.copy()
+    a_cand = a_clean.copy()
+    a_ref[-3:, :] = np.sign(a_ref[-3:, :] + 1e-9) * 0.45
+    a_cand[-3:, :] = np.sign(a_ref[-3:, :]) * 1.15
+    mask_a = np.zeros(a_ref.shape, dtype=bool)
+    mask_a[-3:, :] = True
+    mask_b = np.zeros(b_clean.shape, dtype=bool)
+
+    g = 10.0 ** (-2.0 / 20.0)
+    ok = evaluate_gapless_boundary(
+        a_ref, b_clean, a_cand * g, b_clean * g, sr,
+        mask_a=mask_a, mask_b=mask_b,
+    )
+    assert ok["passed"], ok["violations"]
+    assert ok["seam_boundary_masked"] is True
+    assert ok["seam_step_cand_aligned"] is None
+    assert ok["seam_level_jump_db"] < 1e-6
+    assert ok["seam_peak_growth_db"] == pytest.approx(0.0, abs=1e-6)
+
+    # Without masks, the exact same peak difference at the edge fails click/peak gates.
+    unmasked = evaluate_gapless_boundary(a_ref, b_clean, a_cand * g, b_clean * g, sr)
+    assert not unmasked["passed"]
+
+    # Even WITH mask_a on the last 3 samples, an uncoordinated gain jump STILL fails!
+    bad_gain = evaluate_gapless_boundary(
+        a_ref, b_clean, a_cand * g, b_clean, sr,
+        mask_a=mask_a, mask_b=mask_b,
+    )
+    assert not bad_gain["passed"]
+    assert any("gapless_level_jump_db" in v for v in bad_gain["violations"])
+
+
+def test_stereo_safety_returns_none_on_silence_and_rejects_missing_pre_gain():
+    """Unmeasurable metrics on silence must return None (never fake 0.0) and fail
+    defect gates; omitting raw_candidate or modifying a negative control must fail."""
+    sr = 44100
+    silence = np.zeros((4800, 2), dtype=np.float64)
+    m_sil = np.zeros(silence.shape, dtype=bool)
+    m_sil[10:20, 0] = True
+    r_sil = evaluate_stereo_safety(silence, silence, silence, sr, mask=m_sil, raw_candidate=silence)
+    sm = r_sil["metrics"]
+    assert sm["local_ild_active_windows"] == 0
+    assert sm["local_ild_drift_p95_db"] is None
+    assert sm["ms_ratio_drift_vs_clean_db"] is None
+    assert sm["mono_sum_level_drift_vs_clean_db"] is None
+    assert sm["band_shape_rms_vs_clean_db"] is None
+    assert sm["unchanged_band_max_drift_db"] is None
+    assert sm["ipd_error_mean_deg"] is None
+    assert not r_sil["gates"]["passed"]
+    assert "no_active_stereo_windows" in r_sil["gates"]["violations"]
+
+    # Half-amplitude candidate without raw_candidate must fail on BOTH negative-control and defect paths.
+    clean = corpus_synth._clean_music_signal(seed=732, rate=sr, seconds=1.0)
+    half = clean * 0.5
+    r_ctrl_no_raw = evaluate_stereo_safety(clean, clean, half, sr, is_defect=False)
+    assert not r_ctrl_no_raw["gates"]["passed"]
+    assert "missing_pre_gain_candidate" in r_ctrl_no_raw["gates"]["violations"]
+    assert "negative_control_delivered_modified" in r_ctrl_no_raw["gates"]["violations"]
+
+    m_def = np.zeros(clean.shape, dtype=bool)
+    m_def[100:120, 0] = True
+    r_def_no_raw = evaluate_stereo_safety(clean, clean, half, sr, mask=m_def, is_defect=True)
+    assert not r_def_no_raw["gates"]["passed"]
+    assert "missing_pre_gain_candidate" in r_def_no_raw["gates"]["violations"]
+
+
+@pytest.mark.parametrize("n_samples", [1, 2, 17, 63])
+def test_stereo_safety_and_gapless_handle_short_tracks_under_64_samples(n_samples):
+    """Short tracks (< 64 samples, including n=1) must not crash with shape/index errors."""
+    sr = 44100
+    rng = np.random.default_rng(733 + n_samples)
+    x = rng.normal(0.0, 0.2, size=(n_samples, 2))
+    res = evaluate_stereo_safety(x, x, x, sr, raw_candidate=x, is_defect=False)
+    assert res["metrics"]["ipd_error_mean_deg"] is None
+    assert res["metrics"]["itd_defined"] is False
+    assert res["gates"]["passed"] is True
+    json.dumps(res, allow_nan=False)
+
+    gb = evaluate_gapless_boundary(x, x, x, x, sr)
+    assert gb["passed"] is True
+    if n_samples < 2:
+        assert gb["seam_slope_ref"] is None
+    json.dumps(gb, allow_nan=False)
+
+
+def test_restore_safe_album_headroom_rejects_invalid_combinations(tmp_path):
+    """--album-headroom must fail loudly (exit 2) for wrong mode, single file, or --loudness-target."""
+    sr = 44100
+    x = corpus_synth._clean_music_signal(seed=735, rate=sr, seconds=0.5)
+    src = tmp_path / "alb"
+    src.mkdir()
+    f1 = src / "01 - One.flac"
+    f2 = src / "02 - Two.flac"
+    _write_flac24(f1, x, sr, seed=1)
+    _write_flac24(f2, x, sr, seed=2)
+
+    # 1. Wrong mode (--mode auto)
+    p1 = subprocess.run(
+        [sys.executable, str(RESTORE_CLI), "--src", str(src), "--out", str(tmp_path / "o1"),
+         "--mode", "auto", "--album-headroom"],
+        capture_output=True, text=True, check=False,
+    )
+    assert p1.returncode == 2 and "--mode declip" in p1.stderr
+
+    # 2. Single file
+    p2 = subprocess.run(
+        [sys.executable, str(RESTORE_CLI), "--src", str(f1), "--out", str(tmp_path / "o2"),
+         "--mode", "declip", "--album-headroom"],
+        capture_output=True, text=True, check=False,
+    )
+    assert p2.returncode == 2 and "at least 2 FLAC" in p2.stderr
+
+    # 3. Incompatible --loudness-target
+    p3 = subprocess.run(
+        [sys.executable, str(RESTORE_CLI), "--src", str(src), "--out", str(tmp_path / "o3"),
+         "--mode", "declip", "--album-headroom", "--loudness-target", "-14"],
+        capture_output=True, text=True, check=False,
+    )
+    assert p3.returncode == 2 and "--loudness-target" in p3.stderr
+
+
 def test_plan_album_headroom_all_four_regimes():
     # 1. All kept original
     p1 = plan_album_headroom([
@@ -359,7 +489,8 @@ def test_e4_cli_refuses_sealed_and_runs_quick_without_host_paths(tmp_path):
         assert "/media/" not in blob
     freeze = json.loads(manifest_text)
     assert freeze["schema"] == "e4-freeze/v1"
-    assert freeze["sealed_opened"] is False
+    assert freeze["sealed_audio_opened"] is False
+    assert freeze["sealed_manifest_metadata_leakage_checked_only"] is True
     assert freeze["freeze_verdict"]["ready_for_e5_custodian_release"] is True
     assert freeze["e4_verification"]["suite_b_stereo_and_album"]["all_passed"] is True
     assert freeze["e4_verification"]["suite_c_cpu_profile"]["summary"]["failures"] == 0
@@ -379,7 +510,8 @@ def test_committed_e4_freeze_manifest_is_valid_and_pinned():
 
     doc = json.loads(text)
     assert doc["schema"] == "e4-freeze/v1"
-    assert doc["sealed_opened"] is False
+    assert doc["sealed_audio_opened"] is False
+    assert doc["sealed_manifest_metadata_leakage_checked_only"] is True
     assert doc["freeze_verdict"]["ready_for_e5_custodian_release"] is True
     assert doc["cross_manifest_leakage_errors"] == []
 
