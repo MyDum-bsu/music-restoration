@@ -39,6 +39,8 @@ _BLOCKED_FILENAMES = {
     "_netrc",
     "pgpass",
     "_pgpass",
+    "sessions.json",
+    "_colab_sessions.json",
     "id_rsa",
     "id_ed25519",
     "id_ecdsa",

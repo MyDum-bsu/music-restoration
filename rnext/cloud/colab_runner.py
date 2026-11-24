@@ -27,6 +27,7 @@ import secrets
 import shlex
 import shutil
 import subprocess
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -101,6 +102,7 @@ class ColabJobPlan:
     output_filename: str
     out_dir: str
     worker_script_path: str
+    session_state_path: str
     steps: list[ColabPlanStep]
     post_check_cmd: list[str]
     drive_subpath: str | None = None
@@ -206,21 +208,28 @@ def build_colab_job_plan(config: ColabJobConfig) -> ColabJobPlan:
 
     out_dir = Path(config.out_dir).expanduser().resolve()
     ts = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d%H%M%S")
+    run_nonce = secrets.token_hex(4)
     session = _sanitize_session_name(
-        config.session or f"mr-{config.task[:6]}-{ts}-{secrets.token_hex(3)}"
+        config.session or f"mr-{config.task[:6]}-{ts}-{run_nonce[:6]}"
     )
     output_filename = f"{input_path.stem}_{config.task}.wav"
     worker_script_path = out_dir / f"_mr_colab_worker_{config.task}.py"
-    session_state_path = out_dir / "_colab_sessions.json"
+    # Store Colab CLI session state (which contains VM access tokens) OUTSIDE
+    # out_dir in a per-run private directory so Drive sync never touches it and
+    # parallel runs with identical --out-dir/--session never share state.
+    if config.dry_run:
+        session_state_path = Path(tempfile.gettempdir()) / f"mr-colab-state-{run_nonce}" / "sessions.json"
+    else:
+        state_dir = Path(tempfile.mkdtemp(prefix=f"mr-colab-state-{run_nonce}-"))
+        session_state_path = state_dir / "sessions.json"
     features_path = _features_module_path()
 
     colab_bin = find_colab_bin(config.colab_bin)
     if not config.dry_run and not colab_bin:
+        shutil.rmtree(session_state_path.parent, ignore_errors=True)
         raise ColabError(
             "colab CLI not found (checked --colab-bin, MR_COLAB_BIN, PATH, ~/.local/bin/colab)"
         )
-    # Isolate per-run CLI session state via --config so concurrent jobs (even with
-    # identical --session names) never overwrite each other's session -> endpoint mapping.
     base = [colab_bin or "colab", "--config", str(session_state_path), "--auth", config.auth]
 
     new_cmd = [*base, "new", "--session", session, "--gpu", config.gpu]
@@ -293,6 +302,7 @@ def build_colab_job_plan(config: ColabJobConfig) -> ColabJobPlan:
         output_filename=output_filename,
         out_dir=str(out_dir),
         worker_script_path=str(worker_script_path),
+        session_state_path=str(session_state_path),
         steps=steps,
         post_check_cmd=post_check_cmd,
         drive_subpath=config.drive_subpath,
@@ -450,35 +460,45 @@ def run_colab_job(
     out_dir = Path(plan.out_dir)
     input_path = Path(plan.input_path)
     worker_script_path = Path(plan.worker_script_path)
-    session_state_path = out_dir / "_colab_sessions.json"
+    session_state_path = Path(plan.session_state_path)
     output_audio_path = out_dir / plan.output_filename
     worker_report_path = out_dir / "worker_report.json"
     manifest_path = out_dir / "manifest.json"
 
-    # Refuse to overwrite any prior run artifact instead of deleting or clobbering it.
-    for existing in (
-        output_audio_path,
-        worker_report_path,
-        manifest_path,
-        worker_script_path,
-        session_state_path,
-    ):
-        if existing.exists():
+    try:
+        # Refuse to overwrite any prior run artifact instead of deleting or clobbering it.
+        for existing in (
+            output_audio_path,
+            worker_report_path,
+            manifest_path,
+            worker_script_path,
+        ):
+            if existing.exists():
+                raise ColabError(
+                    f"refusing to overwrite existing output artifact: {existing} (use a fresh --out-dir per run)"
+                )
+
+        out_dir.mkdir(parents=True, exist_ok=True)
+        metrics_before = measure_audio_file(input_path)
+        input_digest = metrics_before["sha256"]
+
+        worker_source = render_worker_script(
+            task=plan.task,
+            input_filename=input_path.name,
+            output_filename=plan.output_filename,
+            extra_options=config.extra_options,
+        )
+        # Atomic exclusive creation reserves worker_script_path against concurrent runs in the same out_dir.
+        try:
+            with worker_script_path.open("x", encoding="utf-8") as fh:
+                fh.write(worker_source)
+        except FileExistsError as exc:
             raise ColabError(
-                f"refusing to overwrite existing output artifact: {existing} (use a fresh --out-dir per run)"
-            )
-
-    out_dir.mkdir(parents=True, exist_ok=True)
-    metrics_before = measure_audio_file(input_path)
-    input_digest = metrics_before["sha256"]
-
-    worker_source = render_worker_script(
-        task=plan.task,
-        input_filename=input_path.name,
-        output_filename=plan.output_filename,
-        extra_options=config.extra_options,
-    )
-    worker_script_path.write_text(worker_source, encoding="utf-8")
+                f"refusing to overwrite existing output artifact: {worker_script_path} (use a fresh --out-dir per run)"
+            ) from exc
+    except Exception:
+        shutil.rmtree(session_state_path.parent, ignore_errors=True)
+        raise
 
     normal_steps = [s for s in plan.steps if not s.always]
     always_steps = [s for s in plan.steps if s.always]
@@ -517,6 +537,8 @@ def run_colab_job(
                 runner=runner,
             )
             sessions_clean = stop_step_ok and verified_stopped
+        if (not plan.keep_session and sessions_clean is True) or not session_created:
+            shutil.rmtree(session_state_path.parent, ignore_errors=True)
 
     if not plan.keep_session and sessions_clean is not True:
         raise ColabError(

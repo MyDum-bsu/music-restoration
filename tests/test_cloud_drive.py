@@ -77,7 +77,7 @@ def test_upload_execute_runs_copy_and_one_way_check_without_deleting_local(tmp_p
 
 
 def test_upload_blocks_dotfiles_netrc_secrets_and_sensitive_parent_dirs(tmp_path: Path) -> None:
-    for name in ("rutracker_cookies.txt", ".netrc", "_netrc", ".env", "id_rsa"):
+    for name in ("rutracker_cookies.txt", ".netrc", "_netrc", ".env", "id_rsa", "sessions.json", "_colab_sessions.json"):
         f = tmp_path / name
         f.write_text("sensitive", encoding="utf-8")
         with pytest.raises(DriveError, match="sensitive"):

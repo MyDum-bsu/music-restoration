@@ -95,16 +95,18 @@ def test_build_colab_job_plan_validates_inputs_and_uploads_features(tmp_path: Pa
     assert p_a.session != p_b.session
 
 
-def test_run_colab_job_isolates_cli_state_and_reads_endpoint_from_state_file(tmp_path: Path) -> None:
+def test_run_colab_job_isolates_cli_state_outside_out_dir_and_reads_endpoint(tmp_path: Path) -> None:
     wav = _make_wav(tmp_path / "synth.wav", dur_s=4.0)
     out_dir = tmp_path / "out_iso"
-    state_file = out_dir / "_colab_sessions.json"
     input_sha = sha256_file(wav)
+    seen_state_paths: list[Path] = []
 
-    # Simulate realistic `colab new` (writes endpoint into --config state file, stdout only says READY)
-    # AND another parallel job's unlabelled `[?] m-s-other999` VM still running on the account.
     def isolated_runner(cmd, **kwargs):
-        assert "--config" in cmd and str(state_file) in cmd
+        idx = cmd.index("--config")
+        state_file = Path(cmd[idx + 1])
+        seen_state_paths.append(state_file)
+        # Session state (with VM token) MUST live outside out_dir!
+        assert not state_file.is_relative_to(out_dir)
         if "new" in cmd:
             state_file.write_text(
                 json.dumps({"shared-name": {"endpoint": "m-s-mine123"}}),
@@ -131,7 +133,6 @@ def test_run_colab_job_isolates_cli_state_and_reads_endpoint_from_state_file(tmp
             )
             return SimpleNamespace(returncode=0, stdout="ok", stderr="")
         if "sessions" in cmd:
-            # Our endpoint `m-s-mine123` is gone; only another job's VM is visible as `[?]`.
             return SimpleNamespace(returncode=0, stdout="[?] m-s-other999 | Hardware: T4", stderr="")
         return SimpleNamespace(returncode=0, stdout="ok", stderr="")
 
@@ -148,14 +149,19 @@ def test_run_colab_job_isolates_cli_state_and_reads_endpoint_from_state_file(tmp
         runner=isolated_runner,
     )
     assert res.sessions_clean_after is True
+    # Private state dir is cleaned up after confirmed VM teardown.
+    assert not seen_state_paths[0].parent.exists()
 
     # Conversely, if our own allocated endpoint `m-s-mine123` is STILL running, stop fails!
     out_dir2 = tmp_path / "out_leaked"
-    state_file2 = out_dir2 / "_colab_sessions.json"
+    leaked_state_dirs: list[Path] = []
 
     def leaked_endpoint_runner(cmd, **kwargs):
+        idx = cmd.index("--config")
+        state_file = Path(cmd[idx + 1])
+        leaked_state_dirs.append(state_file.parent)
         if "new" in cmd:
-            state_file2.write_text(
+            state_file.write_text(
                 json.dumps({"shared-name": {"endpoint": "m-s-mine123"}}),
                 encoding="utf-8",
             )
@@ -183,6 +189,9 @@ def test_run_colab_job_isolates_cli_state_and_reads_endpoint_from_state_file(tmp
             ),
             runner=leaked_endpoint_runner,
         )
+    # Clean up test temp dir kept for failed teardown inspection.
+    import shutil
+    shutil.rmtree(leaked_state_dirs[0], ignore_errors=True)
 
 
 def test_run_colab_job_dry_run_never_invokes_subprocess(tmp_path: Path) -> None:
