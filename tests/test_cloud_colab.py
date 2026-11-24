@@ -194,6 +194,63 @@ def test_run_colab_job_isolates_cli_state_outside_out_dir_and_reads_endpoint(tmp
     shutil.rmtree(leaked_state_dirs[0], ignore_errors=True)
 
 
+def test_preserves_state_when_new_and_sessions_fail_and_locks_out_dir_across_tasks(tmp_path: Path) -> None:
+    import shutil
+
+    wav = _make_wav(tmp_path / "synth.wav", dur_s=4.0)
+
+    # 1. Task-independent lock blocks a second task (neural_declip) when out_dir is locked.
+    locked_dir = tmp_path / "locked_out"
+    locked_dir.mkdir()
+    (locked_dir / ".mr_colab_run.lock").write_text("other-session\n", encoding="utf-8")
+    with pytest.raises(ColabError, match="already locked"):
+        run_colab_job(
+            ColabJobConfig(
+                input_path=wav,
+                out_dir=locked_dir,
+                task="neural_declip",
+                gpu="T4",
+                dry_run=False,
+                colab_bin="/bin/true",
+            )
+        )
+
+    # 2. If `colab new` fails AND `colab sessions` also fails, private state file MUST be preserved.
+    fail_out = tmp_path / "new_fail_out"
+    seen_state: list[Path] = []
+
+    def new_and_sessions_fail_runner(cmd, **kwargs):
+        idx = cmd.index("--config")
+        state_file = Path(cmd[idx + 1])
+        seen_state.append(state_file)
+        if "new" in cmd:
+            state_file.write_text(json.dumps({"mr-s": {"endpoint": "m-s-partial"}}), encoding="utf-8")
+            return SimpleNamespace(returncode=1, stdout="", stderr="history write failed")
+        if "stop" in cmd:
+            return SimpleNamespace(returncode=1, stdout="", stderr="stop failed")
+        if "sessions" in cmd:
+            return SimpleNamespace(returncode=1, stdout="", stderr="network error")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    with pytest.raises(ColabError, match="state --config"):
+        run_colab_job(
+            ColabJobConfig(
+                input_path=wav,
+                out_dir=fail_out,
+                task="gpu_smoke",
+                gpu="T4",
+                session="mr-s",
+                dry_run=False,
+                colab_bin="/bin/true",
+            ),
+            runner=new_and_sessions_fail_runner,
+        )
+
+    assert seen_state and seen_state[0].is_file()
+    assert not (fail_out / ".mr_colab_run.lock").exists()
+    shutil.rmtree(seen_state[0].parent, ignore_errors=True)
+
+
 def test_run_colab_job_dry_run_never_invokes_subprocess(tmp_path: Path) -> None:
     wav = _make_wav(tmp_path / "synth.wav", dur_s=0.5)
 

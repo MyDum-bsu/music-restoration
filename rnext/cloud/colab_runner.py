@@ -464,6 +464,8 @@ def run_colab_job(
     output_audio_path = out_dir / plan.output_filename
     worker_report_path = out_dir / "worker_report.json"
     manifest_path = out_dir / "manifest.json"
+    out_lock_path = out_dir / ".mr_colab_run.lock"
+    lock_acquired = False
 
     try:
         # Refuse to overwrite any prior run artifact instead of deleting or clobbering it.
@@ -479,6 +481,17 @@ def run_colab_job(
                 )
 
         out_dir.mkdir(parents=True, exist_ok=True)
+        # Task-independent atomic O_CREAT|O_EXCL lock prevents two concurrent jobs
+        # (even different tasks like gpu_smoke + neural_declip) from sharing out_dir.
+        try:
+            with out_lock_path.open("x", encoding="utf-8") as fh:
+                fh.write(f"{plan.session}\n")
+            lock_acquired = True
+        except FileExistsError as exc:
+            raise ColabError(
+                f"out_dir is already locked by another active run: {out_dir} (use a fresh --out-dir per run)"
+            ) from exc
+
         metrics_before = measure_audio_file(input_path)
         input_digest = metrics_before["sha256"]
 
@@ -488,15 +501,11 @@ def run_colab_job(
             output_filename=plan.output_filename,
             extra_options=config.extra_options,
         )
-        # Atomic exclusive creation reserves worker_script_path against concurrent runs in the same out_dir.
-        try:
-            with worker_script_path.open("x", encoding="utf-8") as fh:
-                fh.write(worker_source)
-        except FileExistsError as exc:
-            raise ColabError(
-                f"refusing to overwrite existing output artifact: {worker_script_path} (use a fresh --out-dir per run)"
-            ) from exc
+        with worker_script_path.open("x", encoding="utf-8") as fh:
+            fh.write(worker_source)
     except Exception:
+        if lock_acquired and out_lock_path.exists():
+            out_lock_path.unlink()
         shutil.rmtree(session_state_path.parent, ignore_errors=True)
         raise
 
@@ -508,42 +517,51 @@ def run_colab_job(
     sessions_clean: bool | None = None
 
     try:
-        for step in normal_steps:
-            proc = runner(step.cmd, capture_output=True, text=True)
-            rc = int(proc.returncode)
-            if step.stage == "create_session" and rc == 0:
-                session_created = True
-                allocated_endpoint = _read_allocated_endpoint(session_state_path, plan.session)
-            if rc != 0:
-                stderr_s = (getattr(proc, "stderr", "") or "").strip()
-                stdout_s = (getattr(proc, "stdout", "") or "").strip()
-                detail = f"stderr={stderr_s[-800:]!r} stdout={stdout_s[-400:]!r}"
-                raise ColabError(
-                    f"Colab stage '{step.stage}' failed (exit {rc}) for session {plan.session}: {detail}"
+        try:
+            for step in normal_steps:
+                proc = runner(step.cmd, capture_output=True, text=True)
+                rc = int(proc.returncode)
+                if step.stage == "create_session":
+                    # colab new may persist session state before failing later in setup;
+                    # always inspect the isolated state file regardless of exit code.
+                    allocated_endpoint = _read_allocated_endpoint(session_state_path, plan.session)
+                    if rc == 0 or allocated_endpoint is not None or session_state_path.is_file():
+                        session_created = True
+                if rc != 0:
+                    stderr_s = (getattr(proc, "stderr", "") or "").strip()
+                    stdout_s = (getattr(proc, "stdout", "") or "").strip()
+                    detail = f"stderr={stderr_s[-800:]!r} stdout={stdout_s[-400:]!r}"
+                    raise ColabError(
+                        f"Colab stage '{step.stage}' failed (exit {rc}) for session {plan.session} "
+                        f"(state --config {session_state_path}): {detail}"
+                    )
+        finally:
+            if session_created:
+                for step in always_steps:
+                    stop_proc = runner(step.cmd, capture_output=True, text=True)
+                    if int(stop_proc.returncode) != 0:
+                        stop_step_ok = False
+            if not plan.keep_session:
+                verified_stopped = ensure_session_stopped(
+                    plan.session,
+                    endpoint_id=allocated_endpoint,
+                    session_config=session_state_path,
+                    auth=plan.auth,
+                    colab_bin=config.colab_bin,
+                    runner=runner,
                 )
+                sessions_clean = stop_step_ok and verified_stopped
+            # Only delete the private session state dir once VM teardown is positively confirmed.
+            if not plan.keep_session and sessions_clean is True:
+                shutil.rmtree(session_state_path.parent, ignore_errors=True)
     finally:
-        if session_created:
-            for step in always_steps:
-                stop_proc = runner(step.cmd, capture_output=True, text=True)
-                if int(stop_proc.returncode) != 0:
-                    stop_step_ok = False
-        if not plan.keep_session:
-            verified_stopped = ensure_session_stopped(
-                plan.session,
-                endpoint_id=allocated_endpoint,
-                session_config=session_state_path,
-                auth=plan.auth,
-                colab_bin=config.colab_bin,
-                runner=runner,
-            )
-            sessions_clean = stop_step_ok and verified_stopped
-        if (not plan.keep_session and sessions_clean is True) or not session_created:
-            shutil.rmtree(session_state_path.parent, ignore_errors=True)
+        if lock_acquired and out_lock_path.exists():
+            out_lock_path.unlink()
 
     if not plan.keep_session and sessions_clean is not True:
         raise ColabError(
             f"could not confirm Colab session {plan.session!r} stopped; "
-            f"verify immediately with `colab --auth {plan.auth} sessions`"
+            f"verify immediately with `colab --config {session_state_path} --auth {plan.auth} sessions`"
         )
 
     if not output_audio_path.is_file():
