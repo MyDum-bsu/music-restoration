@@ -113,23 +113,24 @@ def test_run_colab_job_dry_run_never_invokes_subprocess(tmp_path: Path) -> None:
 
 def test_run_colab_job_refuses_to_overwrite_existing_artifacts(tmp_path: Path) -> None:
     wav = _make_wav(tmp_path / "synth.wav", dur_s=0.5)
-    out_dir = tmp_path / "out"
-    out_dir.mkdir()
-    prior = out_dir / "synth_gpu_smoke.wav"
-    prior.write_bytes(b"precious-prior-output")
+    for filename in ("synth_gpu_smoke.wav", "worker_report.json", "manifest.json", "_mr_colab_worker_gpu_smoke.py"):
+        out_dir = tmp_path / f"out_{filename}"
+        out_dir.mkdir()
+        prior = out_dir / filename
+        prior.write_bytes(b"precious-prior-output")
 
-    with pytest.raises(ColabError, match="refusing to overwrite existing output artifact"):
-        run_colab_job(
-            ColabJobConfig(
-                input_path=wav,
-                out_dir=out_dir,
-                task="gpu_smoke",
-                gpu="T4",
-                dry_run=False,
-                colab_bin="/bin/true",
+        with pytest.raises(ColabError, match="refusing to overwrite existing output artifact"):
+            run_colab_job(
+                ColabJobConfig(
+                    input_path=wav,
+                    out_dir=out_dir,
+                    task="gpu_smoke",
+                    gpu="T4",
+                    dry_run=False,
+                    colab_bin="/bin/true",
+                )
             )
-        )
-    assert prior.read_bytes() == b"precious-prior-output"
+        assert prior.read_bytes() == b"precious-prior-output"
 
 
 def test_run_colab_job_end_to_end_mocked_uploads_only_run_artifacts(tmp_path: Path) -> None:
@@ -206,19 +207,21 @@ def test_session_check_nonzero_or_unlabelled_vm_fails_stop_confirmation(tmp_path
 
     assert ensure_session_stopped("mr-s1", colab_bin="/bin/true", runner=auth_err_runner) is False
 
-    # Unlabelled active VM shown as `?` must NOT be treated as confirmed stopped!
+    # Unlabelled active VM shown as `[?] endpoint ...` or `?` must NOT be treated as confirmed stopped!
     def unlabelled_vm_runner(cmd, **kwargs):
         if "sessions" in cmd:
-            return SimpleNamespace(returncode=0, stdout="  ?   T4   RUNNING", stderr="")
+            return SimpleNamespace(returncode=0, stdout="[?] endpoint m-s-abc123  T4  RUNNING", stderr="")
         return SimpleNamespace(returncode=0, stdout="ok", stderr="")
 
     assert ensure_session_stopped("mr-s1", colab_bin="/bin/true", runner=unlabelled_vm_runner) is False
 
-    # Non-zero exit from `stop` must also fail confirmation even if sessions list is empty.
+    # Non-zero exit from `stop` must STILL call `ensure_session_stopped` and fail confirmation.
     wav = _make_wav(tmp_path / "synth.wav", dur_s=4.0)
     out_dir = tmp_path / "out"
+    stop_fail_calls: list[list[str]] = []
 
     def stop_fail_runner(cmd, **kwargs):
+        stop_fail_calls.append(list(cmd))
         if "download" in cmd and cmd[-1].endswith("synth_gpu_smoke.wav"):
             _make_wav(Path(cmd[-1]), dur_s=4.0)
             return SimpleNamespace(returncode=0, stdout="ok", stderr="")
@@ -244,6 +247,7 @@ def test_session_check_nonzero_or_unlabelled_vm_fails_stop_confirmation(tmp_path
             ),
             runner=stop_fail_runner,
         )
+    assert any("sessions" in c for c in stop_fail_calls)
 
 
 def test_run_colab_job_rejects_mismatched_worker_report_hash(tmp_path: Path) -> None:

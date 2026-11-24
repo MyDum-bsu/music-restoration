@@ -36,7 +36,9 @@ _RCLONE_RETRY_FLAGS = ("--retries", "1", "--low-level-retries", "3")
 _BLOCKED_ANCESTOR_DIRS = {".git", ".secrets", ".ssh", ".gnupg", ".aws", ".kube", ".docker"}
 _BLOCKED_FILENAMES = {
     "netrc",
+    "_netrc",
     "pgpass",
+    "_pgpass",
     "id_rsa",
     "id_ed25519",
     "id_ecdsa",
@@ -207,10 +209,10 @@ def _build_check_cmd(bin_path: str, target: Path, remote_uri: str) -> list[str]:
             "check",
             "--one-way",
             *_RCLONE_RETRY_FLAGS,
-            "--include",
-            f"/{escaped}",
-            "--exclude",
-            "*",
+            "--filter",
+            f"+ /{escaped}",
+            "--filter",
+            "- *",
             str(target.parent),
             remote_parent,
         ]

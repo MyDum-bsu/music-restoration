@@ -77,7 +77,7 @@ def test_upload_execute_runs_copy_and_one_way_check_without_deleting_local(tmp_p
 
 
 def test_upload_blocks_dotfiles_netrc_secrets_and_sensitive_parent_dirs(tmp_path: Path) -> None:
-    for name in ("rutracker_cookies.txt", ".netrc", ".env", "id_rsa"):
+    for name in ("rutracker_cookies.txt", ".netrc", "_netrc", ".env", "id_rsa"):
         f = tmp_path / name
         f.write_text("sensitive", encoding="utf-8")
         with pytest.raises(DriveError, match="sensitive"):
@@ -123,8 +123,8 @@ def test_single_file_upload_and_verify_agree_on_remote_dir_and_escape_globs(tmp_
     res_dir = verify_one_way(wav, "smoke/run1", rclone_bin="/bin/true", runner=fake_runner)
     assert res_dir.ok is True
     assert seen[-1][-1].endswith("/smoke/run1")
-    assert r"/track\[1\].wav" in seen[-1]
-    assert "--exclude" in seen[-1]
+    assert r"+ /track\[1\].wav" in seen[-1]
+    assert "- *" in seen[-1]
 
     res_exact = verify_one_way(wav, "smoke/run1/track[1].wav", rclone_bin="/bin/true", runner=fake_runner)
     assert res_exact.ok is True

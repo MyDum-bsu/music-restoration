@@ -44,7 +44,7 @@ VALID_AUTHS = ("adc", "oauth2")
 DEFAULT_GPU = "L4"
 DEFAULT_AUTH = "adc"
 SUPPORTED_AUDIO_EXT = {".wav", ".flac", ".aiff", ".mp3", ".m4a", ".ogg", ".opus"}
-_UNLABELLED_SESSION_RE = re.compile(r"(?:^|\s|\|)\?(?:\s|\||$)", re.MULTILINE)
+_UNLABELLED_SESSION_RE = re.compile(r"(?:^|\s|\|)\[?\?\]?(?:\s|\||$)", re.MULTILINE)
 
 
 class ColabError(RuntimeError):
@@ -398,9 +398,10 @@ def run_colab_job(
     worker_script_path = Path(plan.worker_script_path)
     output_audio_path = out_dir / plan.output_filename
     worker_report_path = out_dir / "worker_report.json"
+    manifest_path = out_dir / "manifest.json"
 
-    # Refuse to overwrite prior run artifacts instead of deleting them prematurely.
-    for existing in (output_audio_path, worker_report_path):
+    # Refuse to overwrite any prior run artifact instead of deleting or clobbering it.
+    for existing in (output_audio_path, worker_report_path, manifest_path, worker_script_path):
         if existing.exists():
             raise ColabError(
                 f"refusing to overwrite existing output artifact: {existing} (use a fresh --out-dir per run)"
@@ -444,12 +445,13 @@ def run_colab_job(
                 if int(stop_proc.returncode) != 0:
                     stop_step_ok = False
         if not plan.keep_session:
-            sessions_clean = stop_step_ok and ensure_session_stopped(
+            verified_stopped = ensure_session_stopped(
                 plan.session,
                 auth=plan.auth,
                 colab_bin=config.colab_bin,
                 runner=runner,
             )
+            sessions_clean = stop_step_ok and verified_stopped
 
     if not plan.keep_session and sessions_clean is not True:
         raise ColabError(
