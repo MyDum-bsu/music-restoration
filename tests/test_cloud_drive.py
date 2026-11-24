@@ -1,0 +1,138 @@
+"""Offline unit tests for rnext.cloud.drive (safe rclone adapter, dry-run default, check --one-way)."""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
+
+from rnext.cloud.drive import (
+    DEFAULT_REMOTE_BASE,
+    DriveError,
+    build_remote_uri,
+    download_path,
+    list_remote,
+    upload_path,
+    validate_remote_subpath,
+    verify_one_way,
+)
+
+
+def test_validate_remote_subpath_rejects_traversal_and_colons() -> None:
+    assert validate_remote_subpath("/smoke/run1/") == "smoke/run1"
+    for bad in ("", "   ", "../escape", "a/../b", "gdrive:other", "a\\b"):
+        with pytest.raises(DriveError):
+            validate_remote_subpath(bad)
+
+
+def test_build_remote_uri_uses_default_base() -> None:
+    uri = build_remote_uri("smoke/test1")
+    assert uri == f"{DEFAULT_REMOTE_BASE}/smoke/test1"
+
+
+def test_upload_defaults_to_dry_run_and_never_runs_subprocess(tmp_path: Path) -> None:
+    wav = tmp_path / "sample.wav"
+    wav.write_bytes(b"audio-data")
+    called = []
+
+    def fail_if_called(*args, **kwargs):
+        called.append(args)
+        raise AssertionError("dry_run=True must not invoke rclone")
+
+    res = upload_path(wav, "smoke/run1", rclone_bin="/bin/true", runner=fail_if_called)
+    assert res.dry_run is True
+    assert res.executed is False
+    assert called == []
+    assert res.commands[0][1] == "copy"
+    assert res.commands[1][1:3] == ["check", "--one-way"]
+    assert wav.is_file()  # local original untouched
+
+
+def test_upload_execute_runs_copy_and_one_way_check_without_deleting_local(tmp_path: Path) -> None:
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    wav = out_dir / "restored.wav"
+    wav.write_bytes(b"restored-audio")
+    calls: list[list[str]] = []
+
+    def fake_runner(cmd, **kwargs):
+        calls.append(list(cmd))
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    res = upload_path(
+        out_dir,
+        "smoke/run1",
+        dry_run=False,
+        verify=True,
+        rclone_bin="/bin/true",
+        runner=fake_runner,
+    )
+    assert res.executed is True
+    assert res.dry_run is False
+    assert res.verified is True
+    assert len(calls) == 2
+    assert calls[0][1] == "copy"
+    assert "move" not in calls[0] and "sync" not in calls[0] and "delete" not in calls[0]
+    assert calls[1][1:3] == ["check", "--one-way"]
+    assert wav.is_file() and wav.read_bytes() == b"restored-audio"
+
+
+def test_upload_blocks_secrets_and_cookies(tmp_path: Path) -> None:
+    secret_file = tmp_path / "rutracker_cookies.txt"
+    secret_file.write_text("session=123", encoding="utf-8")
+    with pytest.raises(DriveError, match="sensitive"):
+        upload_path(secret_file, "smoke/leak", dry_run=True)
+
+    d = tmp_path / "bundle"
+    (d / ".secrets").mkdir(parents=True)
+    (d / ".secrets" / "api.key").write_text("secret", encoding="utf-8")
+    with pytest.raises(DriveError, match="sensitive"):
+        upload_path(d, "smoke/bundle", dry_run=True)
+
+
+def test_upload_raises_when_one_way_check_fails(tmp_path: Path) -> None:
+    wav = tmp_path / "sample.wav"
+    wav.write_bytes(b"audio")
+
+    def fake_runner(cmd, **kwargs):
+        if cmd[1] == "copy":
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+        return SimpleNamespace(returncode=1, stdout="", stderr="1 differences found")
+
+    with pytest.raises(DriveError, match="check --one-way failed"):
+        upload_path(wav, "smoke/run1", dry_run=False, verify=True, rclone_bin="/bin/true", runner=fake_runner)
+
+
+def test_download_defaults_to_dry_run_and_ignore_existing(tmp_path: Path) -> None:
+    dest = tmp_path / "dl"
+    res = download_path("smoke/run1", dest, rclone_bin="/bin/true")
+    assert res.dry_run is True
+    assert res.executed is False
+    assert "--ignore-existing" in res.commands[0]
+    assert res.commands[0][1] == "copy"
+
+
+def test_verify_one_way_file_uses_include_filter(tmp_path: Path) -> None:
+    wav = tmp_path / "track.wav"
+    wav.write_bytes(b"wav")
+    seen = []
+
+    def fake_runner(cmd, **kwargs):
+        seen.append(list(cmd))
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    res = verify_one_way(wav, "smoke/track.wav", rclone_bin="/bin/true", runner=fake_runner)
+    assert res.ok is True
+    assert seen[0][1:5] == ["check", "--one-way", "--include", "track.wav"]
+
+
+def test_list_remote_parses_lsjson() -> None:
+    payload = [{"Name": "smoke", "Path": "smoke", "Size": -1, "IsDir": True}]
+
+    def fake_runner(cmd, **kwargs):
+        assert cmd[1] == "lsjson"
+        return SimpleNamespace(returncode=0, stdout=json.dumps(payload), stderr="")
+
+    entries = list_remote("", rclone_bin="/bin/true", runner=fake_runner)
+    assert entries == payload
