@@ -329,6 +329,8 @@ def test_run_colab_job_end_to_end_mocked_uploads_only_run_artifacts(tmp_path: Pa
         if "sessions" in cmd:
             return SimpleNamespace(returncode=0, stdout="[colab] No active sessions found on server.", stderr="")
         if "check" in cmd:
+            # Lock must STILL be held during post-run Drive upload & check!
+            assert (out_dir / ".mr_colab_run.lock").is_file()
             return SimpleNamespace(returncode=0, stdout="", stderr="1 matching files")
         return SimpleNamespace(returncode=0, stdout="ok", stderr="")
 
@@ -346,6 +348,7 @@ def test_run_colab_job_end_to_end_mocked_uploads_only_run_artifacts(tmp_path: Pa
         ),
         runner=fake_runner,
     )
+    assert not (out_dir / ".mr_colab_run.lock").exists()
     assert res.executed is True
     assert res.sessions_clean_after is True
     assert len(res.drive_transfers) == 3

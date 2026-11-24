@@ -468,55 +468,54 @@ def run_colab_job(
     lock_acquired = False
 
     try:
-        # Refuse to overwrite any prior run artifact instead of deleting or clobbering it.
-        for existing in (
-            output_audio_path,
-            worker_report_path,
-            manifest_path,
-            worker_script_path,
-        ):
-            if existing.exists():
-                raise ColabError(
-                    f"refusing to overwrite existing output artifact: {existing} (use a fresh --out-dir per run)"
-                )
-
         out_dir.mkdir(parents=True, exist_ok=True)
-        # Task-independent atomic O_CREAT|O_EXCL lock prevents two concurrent jobs
-        # (even different tasks like gpu_smoke + neural_declip) from sharing out_dir.
+        # Acquire task-independent atomic lock BEFORE checking existing artifacts and
+        # hold it through manifest write & Drive upload so concurrent jobs cannot race.
         try:
             with out_lock_path.open("x", encoding="utf-8") as fh:
                 fh.write(f"{plan.session}\n")
             lock_acquired = True
         except FileExistsError as exc:
+            shutil.rmtree(session_state_path.parent, ignore_errors=True)
             raise ColabError(
                 f"out_dir is already locked by another active run: {out_dir} (use a fresh --out-dir per run)"
             ) from exc
 
-        metrics_before = measure_audio_file(input_path)
-        input_digest = metrics_before["sha256"]
+        try:
+            # Refuse to overwrite any prior run artifact instead of deleting or clobbering it.
+            for existing in (
+                output_audio_path,
+                worker_report_path,
+                manifest_path,
+                worker_script_path,
+            ):
+                if existing.exists():
+                    raise ColabError(
+                        f"refusing to overwrite existing output artifact: {existing} (use a fresh --out-dir per run)"
+                    )
 
-        worker_source = render_worker_script(
-            task=plan.task,
-            input_filename=input_path.name,
-            output_filename=plan.output_filename,
-            extra_options=config.extra_options,
-        )
-        with worker_script_path.open("x", encoding="utf-8") as fh:
-            fh.write(worker_source)
-    except Exception:
-        if lock_acquired and out_lock_path.exists():
-            out_lock_path.unlink()
-        shutil.rmtree(session_state_path.parent, ignore_errors=True)
-        raise
+            metrics_before = measure_audio_file(input_path)
+            input_digest = metrics_before["sha256"]
 
-    normal_steps = [s for s in plan.steps if not s.always]
-    always_steps = [s for s in plan.steps if s.always]
-    session_created = False
-    allocated_endpoint: str | None = None
-    stop_step_ok = True
-    sessions_clean: bool | None = None
+            worker_source = render_worker_script(
+                task=plan.task,
+                input_filename=input_path.name,
+                output_filename=plan.output_filename,
+                extra_options=config.extra_options,
+            )
+            with worker_script_path.open("x", encoding="utf-8") as fh:
+                fh.write(worker_source)
+        except Exception:
+            shutil.rmtree(session_state_path.parent, ignore_errors=True)
+            raise
 
-    try:
+        normal_steps = [s for s in plan.steps if not s.always]
+        always_steps = [s for s in plan.steps if s.always]
+        session_created = False
+        allocated_endpoint: str | None = None
+        stop_step_ok = True
+        sessions_clean: bool | None = None
+
         try:
             for step in normal_steps:
                 proc = runner(step.cmd, capture_output=True, text=True)
@@ -554,81 +553,80 @@ def run_colab_job(
             # Only delete the private session state dir once VM teardown is positively confirmed.
             if not plan.keep_session and sessions_clean is True:
                 shutil.rmtree(session_state_path.parent, ignore_errors=True)
+
+        if not plan.keep_session and sessions_clean is not True:
+            raise ColabError(
+                f"could not confirm Colab session {plan.session!r} stopped; "
+                f"verify immediately with `colab --config {session_state_path} --auth {plan.auth} sessions`"
+            )
+
+        if not output_audio_path.is_file():
+            raise ColabError(f"Colab job finished without expected output artifact: {output_audio_path}")
+        if not worker_report_path.is_file():
+            raise ColabError(f"Colab job finished without required worker_report.json: {worker_report_path}")
+
+        try:
+            colab_meta = json.loads(worker_report_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ColabError(f"worker_report.json is not valid JSON: {worker_report_path}") from exc
+
+        output_digest = sha256_file(output_audio_path)
+        _validate_worker_report(
+            colab_meta,
+            expected_task=plan.task,
+            input_sha256=input_digest,
+            output_sha256=output_digest,
+        )
+
+        metrics_after = measure_audio_file(output_audio_path)
+
+        drive_uri: str | None = (
+            build_remote_uri(config.drive_subpath, remote_base=config.drive_remote_base)
+            if config.drive_subpath
+            else None
+        )
+
+        manifest = build_manifest(
+            task=plan.task,
+            gpu=plan.gpu,
+            session=plan.session,
+            input_path=input_path,
+            output_paths=[output_audio_path, worker_report_path],
+            metrics_before=metrics_before,
+            metrics_after=metrics_after,
+            colab_metadata=colab_meta,
+            drive_uri=drive_uri,
+        )
+        write_manifest(manifest_path, manifest)
+
+        drive_transfers: list[DriveTransferResult] = []
+        if config.drive_subpath:
+            # Upload ONLY the explicit artifacts of this run (never arbitrary files in out_dir).
+            base_sub = config.drive_subpath.rstrip("/")
+            for artifact in (output_audio_path, worker_report_path, manifest_path):
+                drive_transfers.append(
+                    upload_path(
+                        artifact,
+                        f"{base_sub}/{artifact.name}",
+                        remote_base=config.drive_remote_base,
+                        dry_run=False,
+                        verify=True,
+                        rclone_bin=config.rclone_bin,
+                        runner=runner,
+                    )
+                )
+
+        return ColabJobResult(
+            executed=True,
+            dry_run=False,
+            plan=plan,
+            returncode=0,
+            output_audio_path=str(output_audio_path),
+            manifest_path=str(manifest_path),
+            manifest=manifest,
+            sessions_clean_after=sessions_clean,
+            drive_transfers=drive_transfers,
+        )
     finally:
         if lock_acquired and out_lock_path.exists():
             out_lock_path.unlink()
-
-    if not plan.keep_session and sessions_clean is not True:
-        raise ColabError(
-            f"could not confirm Colab session {plan.session!r} stopped; "
-            f"verify immediately with `colab --config {session_state_path} --auth {plan.auth} sessions`"
-        )
-
-    if not output_audio_path.is_file():
-        raise ColabError(f"Colab job finished without expected output artifact: {output_audio_path}")
-    if not worker_report_path.is_file():
-        raise ColabError(f"Colab job finished without required worker_report.json: {worker_report_path}")
-
-    try:
-        colab_meta = json.loads(worker_report_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise ColabError(f"worker_report.json is not valid JSON: {worker_report_path}") from exc
-
-    output_digest = sha256_file(output_audio_path)
-    _validate_worker_report(
-        colab_meta,
-        expected_task=plan.task,
-        input_sha256=input_digest,
-        output_sha256=output_digest,
-    )
-
-    metrics_after = measure_audio_file(output_audio_path)
-
-    drive_uri: str | None = (
-        build_remote_uri(config.drive_subpath, remote_base=config.drive_remote_base)
-        if config.drive_subpath
-        else None
-    )
-
-    manifest_path = out_dir / "manifest.json"
-    manifest = build_manifest(
-        task=plan.task,
-        gpu=plan.gpu,
-        session=plan.session,
-        input_path=input_path,
-        output_paths=[output_audio_path, worker_report_path],
-        metrics_before=metrics_before,
-        metrics_after=metrics_after,
-        colab_metadata=colab_meta,
-        drive_uri=drive_uri,
-    )
-    write_manifest(manifest_path, manifest)
-
-    drive_transfers: list[DriveTransferResult] = []
-    if config.drive_subpath:
-        # Upload ONLY the explicit artifacts of this run (never arbitrary files in out_dir).
-        base_sub = config.drive_subpath.rstrip("/")
-        for artifact in (output_audio_path, worker_report_path, manifest_path):
-            drive_transfers.append(
-                upload_path(
-                    artifact,
-                    f"{base_sub}/{artifact.name}",
-                    remote_base=config.drive_remote_base,
-                    dry_run=False,
-                    verify=True,
-                    rclone_bin=config.rclone_bin,
-                    runner=runner,
-                )
-            )
-
-    return ColabJobResult(
-        executed=True,
-        dry_run=False,
-        plan=plan,
-        returncode=0,
-        output_audio_path=str(output_audio_path),
-        manifest_path=str(manifest_path),
-        manifest=manifest,
-        sessions_clean_after=sessions_clean,
-        drive_transfers=drive_transfers,
-    )
