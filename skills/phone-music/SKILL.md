@@ -37,6 +37,25 @@ With `--root /path` the same scripts audit and enrich any local library.
    re-index), or move the album to a NEW folder path. Never re-tag again.
 8. MIXED discnumber presence across an album's files splits it into
    "Disk 0"/"Disk 1" in players — always set discnumber=1+disctotal on every file.
+9. **`adb push` does not trigger Android's media scanner** — the file lands on
+   the card invisible to players until a full rescan. After every adb write
+   call `rnext.phone.adb.rescan(<remote path>)` (already invoked inside
+   `adb.push`; standalone CLI: `python3 -m rnext.phone.adb rescan <path>`).
+   It calls MediaStore `scan_file` (Android 10+), falling back to the
+   MEDIA_SCANNER_SCAN_FILE broadcast. **The file must have real tags before
+   push**: a tagless file indexes as `<filename>` / `<unknown>` artist, and
+   the stale row survives rescans — fix by writing tags, `content delete`
+   the MediaStore row, `rm` + re-`push`. Verify after scan with
+   `content query --uri content://media/external/audio/media --projection
+   artist --where "_data LIKE '%<name>%'"`.
+10. **Delivery channel is WiFi-adb, not USB** (`rnext/phone/adb.py`,
+   `transfer.py`: `adb push` + device-side `md5sum` verify — no fuse
+   write-cache lies). adb binary: `~/opt/platform-tools/adb`. The wireless
+   debug port ROTATES every session — a saved endpoint
+   (`~/.config/music-restoration/phone_adb.json`) goes stale. ALWAYS run
+   `adb devices` first: a live `host:port device` line is the endpoint —
+   save it and use it; only `adb connect` when nothing is online. Never
+   declare "phone not connected" before `adb devices` has been checked.
 
 ## Workflow 1 — Audit
 

@@ -235,8 +235,12 @@ VOID_TAGS = {"br", "img", "meta", "input", "hr", "link", "source", "wbr", "area"
 
 
 class LyricsExtractor(HTMLParser):
-    """Collect text inside <div data-lyrics-container="true">; <br>/</p> become newlines.
+    """Collect text inside lyrics container divs; <br>/</p> become newlines.
 
+    - Containers are recognized two ways: the React attribute
+      <div data-lyrics-container="true"> and the class-based variant
+      <div class="... Lyrics__Container ..."> — Genius serves both depending
+      on the page/rollout.
     - Tracks a stack of open <div>s, so nested divs inside a lyrics container
       cannot end the capture early.
     - Suppresses the page header ("N Contributors", "{Title} Lyrics", the bio
@@ -262,7 +266,8 @@ class LyricsExtractor(HTMLParser):
         if tag not in VOID_TAGS:
             self.supp_stack.append("LyricsHeader" in (d.get("class") or ""))
         if tag == "div":
-            is_container = d.get("data-lyrics-container") == "true"
+            is_container = (d.get("data-lyrics-container") == "true"
+                            or "Lyrics__Container" in (d.get("class") or ""))
             self.div_stack.append(is_container)
             if is_container:
                 self.containers += 1

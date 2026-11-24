@@ -27,3 +27,12 @@ battle-tested scripts and a list of learned-the-hard-way rules.
 **release-restore** cycle: source (a local file OR finding and downloading the
 best quality via tracker) → verification → per-track restoration → QC → tags/
 cover/lyrics → collection → phone on request → a report with numbers.
+
+**Standing rule (owner, 2026-11-19):** after audio-measure, if the master is
+crushed — **DR < 8 or true peak > 0 dBFS** — restoration is not optional:
+run release-restore (declip + dynamics) BEFORE delivery. The phone holds only
+the BEST version: if restoration passed QC (DR/TP/LUFS improved), it replaces
+the original on the phone — the original stays in the local library. If the
+restoration failed QC, the original goes to the phone and the failure is
+reported. Report DR/LUFS/TP before and after. A "real lossless" rip of a
+crushed master is not the finish line.
