@@ -130,12 +130,28 @@ def push(local: str, remote: str) -> tuple[bool, str]:
         return False, (mk.stdout + mk.stderr).strip()
     r = _run(["push", local, remote], timeout=1800)
     ok = r.returncode == 0
+    if ok:
+        rescan(remote)
     return ok, (r.stdout + r.stderr).strip()
 
 
 def pull(remote: str, local: str) -> tuple[bool, str]:
     r = _run(["pull", remote, local], timeout=1800)
     return r.returncode == 0, (r.stdout + r.stderr).strip()
+
+
+def rescan(remote: str) -> None:
+    """Notify Android MediaStore about a pushed file.
+
+    adb push does NOT trigger the media scanner: without this the file sits on
+    the SD card invisible to music players until the next full device rescan.
+    Tries the MediaProvider call (Android 10+), then the legacy broadcast.
+    """
+    q = shlex.quote(remote)
+    r = _shell(f"content call --uri content://media --method scan_file --arg {q}", timeout=30)
+    if "scan_file" in (r.stderr + r.stdout) and r.returncode != 0:
+        _shell(f"am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE "
+               f"-d file://{remote}", timeout=30)
 
 
 def list_flacs(remote_dir: str) -> list[str]:
@@ -174,7 +190,10 @@ def _main(argv: list[str]) -> int:
     if cmd == "md5":
         print(md5(argv[1]))
         return 0
-    print("commands: pair | connect | status | ls [dir] | md5 <file>")
+    if cmd == "rescan":
+        rescan(argv[1] if len(argv) > 1 else music_root())
+        return 0
+    print("commands: pair | connect | status | ls [dir] | md5 <file> | rescan [path]")
     return 2
 
 

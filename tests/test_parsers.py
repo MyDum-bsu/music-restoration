@@ -10,7 +10,7 @@ import pytest
 from bs4 import BeautifulSoup
 
 from rnext.rttopic import parse_dr_table, parse_topic_page
-from scripts.tracker_hunt import parse_music, parse_video
+from scripts.tracker_hunt import guess_kind, parse_music, parse_video
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
@@ -46,12 +46,35 @@ def test_parse_music_reads_a_24bit_topic():
 
 
 def test_parse_music_flags_a_lossy_topic():
-    facts = parse_music("MP3 320 kbps, no log", "Accept - Album (1994) [MP3]")
+    # bitrate is declared in the title / the "Битрейт аудио" label, not raw text
+    facts = parse_music("Битрейт аудио: 320 kbps, no log", "Accept - Album (1994) [MP3]")
 
     assert facts["lossless"] is False
     assert facts["format"] == "MP3"
     assert facts["kbps"] == 320
     assert "bits" not in facts
+
+
+def test_parse_music_ignores_the_eac_log_bitrate():
+    # "Selected bitrate: 128 kBit/s" in the body is the extractor's internal
+    # setting, not the audio's bitrate — only the title / declared label count.
+    text = ("Битрейт аудио: lossless\n"
+            "Selected bitrate             : 128 kBit/s\n"
+            "Quality                      : High")
+    facts = parse_music(text, "Yngwie - Album (1986) [CD] FLAC (image+.cue)")
+
+    assert facts["lossless"] is True
+    assert "kbps" not in facts
+
+
+def test_guess_kind_keeps_music_topics_with_duration():
+    # Music topics carry "Продолжительность: 00:39:37"; it used to be a video
+    # marker and whole albums were misrouted to the video parser.
+    kind = guess_kind("Зарубежный Metal",
+                      "(Hard Rock, Heavy Metal) [CD] Album (1986)\n"
+                      "Продолжительность: 00:39:37")
+
+    assert kind == "music"
 
 
 def test_parse_video_reads_a_bdremux_topic():

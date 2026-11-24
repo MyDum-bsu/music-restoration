@@ -60,7 +60,11 @@ def parse_music(text: str, title: str) -> dict:
     else:
         d["lossless"] = bool(re.search(r"lossless|без потерь", low))
         d["format"] = "?"
-    m = re.search(r"(\d{2,3})\s*(?:кбит|kbps|kbit)", low)
+    # Bitrate from the title or the declared "Битрейт аудио" label only — EAC
+    # logs in the body carry "Selected bitrate: 128 kBit/s" (the extractor's
+    # internal setting, not the audio's bitrate).
+    m = (re.search(r"(\d{2,3})\s*(?:кбит|kbps|kbit)", title.lower())
+         or re.search(r"битрейт аудио\s*[:\-]?\s*(\d{2,3})\s*(?:кбит|kbps|kbit)", low))
     if m:
         d["kbps"] = int(m.group(1))
     m = re.search(r"(\d{2})\s*[- ]?bit", low)
@@ -146,10 +150,12 @@ def guess_kind(forum: str, title: str) -> str:
     # Video first: movie titles carry resolution/source, while the forum may be
     # called "Music" because of the word Score — otherwise a film lands in music.
     # Movie markers: resolution/source in the title OR cinema fields in the topic
-    # body (translation/subtitles/duration) — rutracker titles are often truncated.
+    # body (translation/subtitles) — rutracker titles are often truncated. Note:
+    # "Продолжительность" is NOT a marker — music topics carry it too
+    # ("Продолжительность: 00:39:37"), which misrouted whole albums to video.
     if re.search(r"\b(2160p|1080p|720p|480p|4k|uhd)\b|bdremux|bdrip|brrip|web-?dl|"
                  r"web-?rip|hdtv|dvdrip|blu-?ray|фильм|кино|сериал|документал|аниме|мульт|"
-                 r"перевод|субтитры|продолжительность", low):
+                 r"перевод|субтитры|дубляж", low):
         return "video"
     if re.search(r"книг|литератур|book|учебник|аудиокниг|журнал", low):
         return "book"
