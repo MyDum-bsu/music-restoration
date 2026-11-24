@@ -31,22 +31,20 @@ def test_build_remote_uri_uses_default_base() -> None:
     assert uri == f"{DEFAULT_REMOTE_BASE}/smoke/test1"
 
 
-def test_upload_defaults_to_dry_run_and_never_runs_subprocess(tmp_path: Path) -> None:
+def test_upload_defaults_to_dry_run_and_explicit_no_retries(tmp_path: Path) -> None:
     wav = tmp_path / "sample.wav"
     wav.write_bytes(b"audio-data")
-    called = []
 
     def fail_if_called(*args, **kwargs):
-        called.append(args)
         raise AssertionError("dry_run=True must not invoke rclone")
 
     res = upload_path(wav, "smoke/run1", rclone_bin="/bin/true", runner=fail_if_called)
     assert res.dry_run is True
     assert res.executed is False
-    assert called == []
     assert res.commands[0][1] == "copy"
+    assert "--retries" in res.commands[0] and "--low-level-retries" in res.commands[0]
     assert res.commands[1][1:3] == ["check", "--one-way"]
-    assert wav.is_file()  # local original untouched
+    assert wav.is_file()
 
 
 def test_upload_execute_runs_copy_and_one_way_check_without_deleting_local(tmp_path: Path) -> None:
@@ -58,7 +56,7 @@ def test_upload_execute_runs_copy_and_one_way_check_without_deleting_local(tmp_p
 
     def fake_runner(cmd, **kwargs):
         calls.append(list(cmd))
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
+        return SimpleNamespace(returncode=0, stdout="", stderr="1 matching files")
 
     res = upload_path(
         out_dir,
@@ -78,11 +76,19 @@ def test_upload_execute_runs_copy_and_one_way_check_without_deleting_local(tmp_p
     assert wav.is_file() and wav.read_bytes() == b"restored-audio"
 
 
-def test_upload_blocks_secrets_and_cookies(tmp_path: Path) -> None:
+def test_upload_blocks_secrets_cookies_and_sensitive_parent_dirs(tmp_path: Path) -> None:
     secret_file = tmp_path / "rutracker_cookies.txt"
     secret_file.write_text("session=123", encoding="utf-8")
     with pytest.raises(DriveError, match="sensitive"):
         upload_path(secret_file, "smoke/leak", dry_run=True)
+
+    # Single file inside a sensitive parent directory must also be blocked!
+    secrets_dir = tmp_path / ".secrets"
+    secrets_dir.mkdir()
+    innocent_name = secrets_dir / "config.json"
+    innocent_name.write_text("{}", encoding="utf-8")
+    with pytest.raises(DriveError, match="sensitive"):
+        upload_path(innocent_name, "smoke/leak", dry_run=True)
 
     d = tmp_path / "bundle"
     (d / ".secrets").mkdir(parents=True)
@@ -91,17 +97,39 @@ def test_upload_blocks_secrets_and_cookies(tmp_path: Path) -> None:
         upload_path(d, "smoke/bundle", dry_run=True)
 
 
-def test_upload_raises_when_one_way_check_fails(tmp_path: Path) -> None:
+def test_upload_raises_when_one_way_check_fails_or_matches_zero_files(tmp_path: Path) -> None:
     wav = tmp_path / "sample.wav"
     wav.write_bytes(b"audio")
 
-    def fake_runner(cmd, **kwargs):
+    def zero_match_runner(cmd, **kwargs):
         if cmd[1] == "copy":
             return SimpleNamespace(returncode=0, stdout="", stderr="")
-        return SimpleNamespace(returncode=1, stdout="", stderr="1 differences found")
+        return SimpleNamespace(returncode=0, stdout="", stderr="0 differences found\n0 matching files")
 
     with pytest.raises(DriveError, match="check --one-way failed"):
-        upload_path(wav, "smoke/run1", dry_run=False, verify=True, rclone_bin="/bin/true", runner=fake_runner)
+        upload_path(wav, "smoke/run1", dry_run=False, verify=True, rclone_bin="/bin/true", runner=zero_match_runner)
+
+
+def test_single_file_upload_and_verify_agree_on_remote_dir_and_escape_globs(tmp_path: Path) -> None:
+    wav = tmp_path / "track[1].wav"
+    wav.write_bytes(b"wav")
+    seen: list[list[str]] = []
+
+    def fake_runner(cmd, **kwargs):
+        seen.append(list(cmd))
+        return SimpleNamespace(returncode=0, stdout="", stderr="1 matching files")
+
+    # Directory subpath: both upload and verify target smoke/run1 (not smoke!)
+    res_dir = verify_one_way(wav, "smoke/run1", rclone_bin="/bin/true", runner=fake_runner)
+    assert res_dir.ok is True
+    assert seen[-1][-1].endswith("/smoke/run1")
+    assert r"/track\[1\].wav" in seen[-1]
+    assert "--exclude" in seen[-1]
+
+    # Exact file subpath: verify targets parent smoke/run1
+    res_exact = verify_one_way(wav, "smoke/run1/track[1].wav", rclone_bin="/bin/true", runner=fake_runner)
+    assert res_exact.ok is True
+    assert seen[-1][-1].endswith("/smoke/run1")
 
 
 def test_download_defaults_to_dry_run_and_ignore_existing(tmp_path: Path) -> None:
@@ -110,21 +138,8 @@ def test_download_defaults_to_dry_run_and_ignore_existing(tmp_path: Path) -> Non
     assert res.dry_run is True
     assert res.executed is False
     assert "--ignore-existing" in res.commands[0]
+    assert "--retries" in res.commands[0]
     assert res.commands[0][1] == "copy"
-
-
-def test_verify_one_way_file_uses_include_filter(tmp_path: Path) -> None:
-    wav = tmp_path / "track.wav"
-    wav.write_bytes(b"wav")
-    seen = []
-
-    def fake_runner(cmd, **kwargs):
-        seen.append(list(cmd))
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
-
-    res = verify_one_way(wav, "smoke/track.wav", rclone_bin="/bin/true", runner=fake_runner)
-    assert res.ok is True
-    assert seen[0][1:5] == ["check", "--one-way", "--include", "track.wav"]
 
 
 def test_list_remote_parses_lsjson() -> None:
@@ -132,6 +147,7 @@ def test_list_remote_parses_lsjson() -> None:
 
     def fake_runner(cmd, **kwargs):
         assert cmd[1] == "lsjson"
+        assert "--retries" in cmd
         return SimpleNamespace(returncode=0, stdout=json.dumps(payload), stderr="")
 
     entries = list_remote("", rclone_bin="/bin/true", runner=fake_runner)

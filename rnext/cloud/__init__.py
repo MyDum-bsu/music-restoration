@@ -12,7 +12,6 @@ from rnext.cloud.colab_runner import (
     check_active_sessions,
     ensure_session_stopped,
     find_colab_bin,
-    find_ultra_colab_bin,
     run_colab_job,
 )
 from rnext.cloud.drive import (
@@ -56,7 +55,6 @@ __all__ = [
     "ensure_session_stopped",
     "find_colab_bin",
     "find_rclone_bin",
-    "find_ultra_colab_bin",
     "list_remote",
     "measure_audio_file",
     "run_colab_job",

@@ -137,7 +137,11 @@ def spectral_profile(x: np.ndarray, sr: int, drop_db: float = 55.0) -> dict[str,
 
 
 def artifact_check(x: np.ndarray, tp_dbfs: float | None = None) -> dict[str, Any]:
-    """Detect clipping, isolated click-spikes, DC offset, and non-finite samples."""
+    """Detect clipping, isolated click-spikes, DC offset, and non-finite samples.
+
+    True Peak verification is required for ``passed=True``; when ``tp_dbfs`` is
+    omitted, ``tp_checked`` is ``False`` and ``passed`` is ``False``.
+    """
     arr = np.asarray(x, dtype=np.float64)
     if arr.ndim == 1:
         arr = arr[:, np.newaxis]
@@ -160,7 +164,8 @@ def artifact_check(x: np.ndarray, tp_dbfs: float | None = None) -> dict[str, Any
         thresh = max(0.35, med + 12.0 * max(mad, 1e-4))
         spike_count = int(np.sum(d2 > thresh))
 
-    tp_ok = True if tp_dbfs is None else (tp_dbfs <= -0.1)
+    tp_checked = tp_dbfs is not None
+    tp_ok = tp_checked and (float(tp_dbfs) <= -0.1)
     passed = (nan_or_inf == 0) and (clipped_pct <= 0.05) and tp_ok
 
     return {
@@ -169,12 +174,17 @@ def artifact_check(x: np.ndarray, tp_dbfs: float | None = None) -> dict[str, Any
         "spike_count": spike_count,
         "dc_offset": dc_offset,
         "nan_or_inf_samples": nan_or_inf,
+        "tp_checked": tp_checked,
         "passed": bool(passed),
     }
 
 
-def measure_lufs_tp(path: Path, *, runner: Any = subprocess.run) -> tuple[float | None, float | None]:
-    """Measure integrated LUFS and True Peak (dBFS) using ffmpeg ebur128."""
+def measure_lufs_tp(path: Path, *, runner: Any = subprocess.run) -> tuple[float, float]:
+    """Measure integrated LUFS and True Peak (dBFS) using ffmpeg ebur128.
+
+    Raises ``MetricsError`` if ffmpeg is missing, fails, times out, or omits
+    either integrated loudness or true peak.
+    """
     try:
         proc = runner(
             [
@@ -193,12 +203,16 @@ def measure_lufs_tp(path: Path, *, runner: Any = subprocess.run) -> tuple[float 
             text=True,
             timeout=300,
         )
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        return None, None
+    except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        raise MetricsError(f"ffmpeg ebur128 failed for {path}: {exc}") from exc
+
+    if int(getattr(proc, "returncode", 1)) != 0:
+        err = (getattr(proc, "stderr", "") or "").strip()[-400:]
+        raise MetricsError(f"ffmpeg ebur128 exited {proc.returncode} for {path}: {err}")
 
     out = getattr(proc, "stderr", "") or ""
-    lufs = None
-    tp = None
+    lufs: float | None = None
+    tp: float | None = None
     i = out.rfind("Integrated loudness")
     if i >= 0:
         for line in out[i:].splitlines()[:4]:
@@ -215,6 +229,8 @@ def measure_lufs_tp(path: Path, *, runner: Any = subprocess.run) -> tuple[float 
                     tp = round(float(line.split("Peak:")[1].split("dBFS")[0].strip()), 2)
                 except ValueError:
                     pass
+    if lufs is None or tp is None:
+        raise MetricsError(f"ffmpeg ebur128 did not report LUFS and True Peak for {path}")
     return lufs, tp
 
 
@@ -254,12 +270,12 @@ def measure_audio_arrays(
 
 
 def measure_audio_file(path: Path, *, include_lufs: bool = True) -> dict[str, Any]:
-    """Decode an audio file via ``rnext.features`` and return full objective metrics."""
+    """Decode an audio file preserving native channels and return objective metrics."""
     target = Path(path)
     if not target.is_file():
         raise MetricsError(f"audio file not found: {target}")
     try:
-        x, sr = F.decode_f32(str(target))
+        x, sr = F.decode_f32(str(target), channels=None)
     except Exception as exc:
         raise MetricsError(f"failed to decode audio file {target}: {exc}") from exc
 

@@ -1,18 +1,16 @@
-"""Cloud GPU orchestration over ``colab`` CLI (and ``ultra-colab-run`` conventions).
+"""Cloud GPU orchestration over ``colab`` CLI.
 
 Design guarantees:
   - Strict ``dry_run`` mode: validates inputs and prints exact planned steps
     without starting a Colab VM or spending Compute Units.
-  - Double auto-stop guarantee: ``run_colab_job`` always executes
-    ``colab --auth <auth> stop -s <session>`` inside a ``finally`` block and
-    verifies via ``colab --auth <auth> sessions`` that no dangling session
-    remains active.
-  - Uses ``colab exec -s <session> -f <worker_script> --timeout <timeout>``
-    (compatible with ``google-colab-cli``).
-  - Reproducible before/after objective audio metrics and deterministic SHA-256
-    manifest (``manifest.json``) with zero local machine paths.
-  - Optional post-run non-destructive upload + ``rclone check --one-way`` to
-    Google Drive via ``rnext.cloud.drive``.
+  - Hard auto-stop guarantee: ``run_colab_job`` always stops the VM in a
+    ``finally`` block, verifies via ``colab --auth <auth> sessions`` (requiring
+    exit code 0!), and raises ``ColabError`` if teardown cannot be confirmed.
+  - Requires a fresh ``worker_report.json`` with ``status == "ok"``,
+    ``cuda_available is True``, and matching input/output SHA-256 hashes.
+  - Uploads ONLY the explicit artifacts produced by the current run (restored
+    audio, ``worker_report.json``, ``manifest.json``) — never arbitrary files
+    sitting in ``out_dir``.
 """
 from __future__ import annotations
 
@@ -29,7 +27,12 @@ from typing import Any
 
 from rnext.cloud.colab_worker import VALID_TASKS, render_worker_script
 from rnext.cloud.drive import DriveTransferResult, build_remote_uri, upload_path
-from rnext.cloud.metrics import build_manifest, measure_audio_file, write_manifest
+from rnext.cloud.metrics import (
+    build_manifest,
+    measure_audio_file,
+    sha256_file,
+    write_manifest,
+)
 
 VALID_GPUS = ("T4", "L4", "G4", "A100", "H100")
 VALID_AUTHS = ("adc", "oauth2")
@@ -39,7 +42,7 @@ SUPPORTED_AUDIO_EXT = {".wav", ".flac", ".aiff", ".mp3", ".m4a", ".ogg", ".opus"
 
 
 class ColabError(RuntimeError):
-    """Raised when Colab configuration, execution, or teardown fails."""
+    """Raised when Colab configuration, execution, verification, or teardown fails."""
 
 
 @dataclass(frozen=True)
@@ -58,7 +61,6 @@ class ColabJobConfig:
     dry_run: bool = False
     drive_subpath: str | None = None
     drive_remote_base: str | None = None
-    ultra_colab_bin: str | None = None
     colab_bin: str | None = None
     rclone_bin: str | None = None
     extra_options: dict[str, Any] = field(default_factory=dict)
@@ -125,7 +127,7 @@ class ColabJobResult:
     manifest_path: str | None = None
     manifest: dict[str, Any] | None = None
     sessions_clean_after: bool | None = None
-    drive_transfer: DriveTransferResult | None = None
+    drive_transfers: list[DriveTransferResult] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -136,31 +138,9 @@ class ColabJobResult:
             "output_audio_name": Path(self.output_audio_path).name if self.output_audio_path else None,
             "manifest_path": self.manifest_path,
             "sessions_clean_after": self.sessions_clean_after,
-            "drive_transfer": self.drive_transfer.to_dict() if self.drive_transfer else None,
+            "drive_transfers": [t.to_dict() for t in self.drive_transfers],
             "manifest": self.manifest,
         }
-
-
-def find_ultra_colab_bin(explicit: str | None = None) -> str | None:
-    """Locate ``ultra-colab-run`` without hardcoded machine paths."""
-    if explicit:
-        p = Path(explicit).expanduser()
-        return str(p) if p.is_file() else None
-    env_bin = os.environ.get("MR_ULTRA_COLAB_RUN", "").strip()
-    if env_bin:
-        p = Path(env_bin).expanduser()
-        return str(p) if p.is_file() else None
-    found = shutil.which("ultra-colab-run")
-    if found:
-        return found
-    candidates = [
-        Path.home() / ".local" / "bin" / "ultra-colab-run",
-        Path.home() / "Desktop" / "darkfactory-hub" / "ultra-tools" / "ultra-colab-run",
-    ]
-    for cand in candidates:
-        if cand.is_file():
-            return str(cand)
-    return None
 
 
 def find_colab_bin(explicit: str | None = None) -> str | None:
@@ -208,7 +188,6 @@ def build_colab_job_plan(config: ColabJobConfig) -> ColabJobPlan:
         )
 
     if config.drive_subpath:
-        # Validate remote subpath early so --dry-run catches bad paths before VM launch.
         build_remote_uri(config.drive_subpath, remote_base=config.drive_remote_base)
 
     out_dir = Path(config.out_dir).expanduser().resolve()
@@ -303,12 +282,17 @@ def check_active_sessions(
     colab_bin: str | None = None,
     runner: Any = subprocess.run,
 ) -> tuple[bool, str]:
-    """Query ``colab --auth <auth> sessions`` and return ``(no_active_sessions, output)``."""
+    """Query ``colab --auth <auth> sessions`` and return ``(no_active_sessions, output)``.
+
+    Raises ``ColabError`` if ``colab sessions`` returns a non-zero exit code.
+    """
     bin_path = find_colab_bin(colab_bin)
     if not bin_path:
         raise ColabError("colab CLI not found")
     proc = runner([bin_path, "--auth", auth, "sessions"], capture_output=True, text=True)
     combined = ((getattr(proc, "stdout", "") or "") + "\n" + (getattr(proc, "stderr", "") or "")).strip()
+    if int(proc.returncode) != 0:
+        raise ColabError(f"colab sessions failed (exit {proc.returncode}): {combined[-400:]}")
     no_active = "no active sessions" in combined.lower()
     return no_active, combined
 
@@ -320,16 +304,49 @@ def ensure_session_stopped(
     colab_bin: str | None = None,
     runner: Any = subprocess.run,
 ) -> bool:
-    """Verify ``session`` is not active; forcibly stop it if it still appears in ``colab sessions``."""
+    """Confirm ``session`` is stopped; return ``False`` on any CLI error or active session."""
     bin_path = find_colab_bin(colab_bin)
     if not bin_path:
         return False
-    no_active, text = check_active_sessions(auth=auth, colab_bin=bin_path, runner=runner)
+    try:
+        no_active, text = check_active_sessions(auth=auth, colab_bin=bin_path, runner=runner)
+    except ColabError:
+        return False
     if no_active or session not in text:
         return True
-    runner([bin_path, "--auth", auth, "stop", "-s", session], capture_output=True, text=True)
-    no_active_after, text_after = check_active_sessions(auth=auth, colab_bin=bin_path, runner=runner)
+    stop_proc = runner([bin_path, "--auth", auth, "stop", "-s", session], capture_output=True, text=True)
+    if int(stop_proc.returncode) != 0:
+        return False
+    try:
+        no_active_after, text_after = check_active_sessions(auth=auth, colab_bin=bin_path, runner=runner)
+    except ColabError:
+        return False
     return no_active_after or (session not in text_after)
+
+
+def _validate_worker_report(
+    report: dict[str, Any],
+    *,
+    expected_task: str,
+    input_sha256: str,
+    output_sha256: str,
+) -> None:
+    if report.get("status") != "ok":
+        raise ColabError(f"worker_report.json did not report status='ok': {report.get('status')!r}")
+    if report.get("task") != expected_task:
+        raise ColabError(
+            f"worker_report.json task mismatch: expected {expected_task!r}, got {report.get('task')!r}"
+        )
+    if report.get("cuda_available") is not True:
+        raise ColabError("worker_report.json reported cuda_available != True on a GPU job")
+    if report.get("input_sha256") != input_sha256:
+        raise ColabError(
+            f"worker_report.json input_sha256 mismatch: expected {input_sha256}, got {report.get('input_sha256')}"
+        )
+    if report.get("output_sha256") != output_sha256:
+        raise ColabError(
+            f"worker_report.json output_sha256 mismatch: expected {output_sha256}, got {report.get('output_sha256')}"
+        )
 
 
 def run_colab_job(
@@ -337,7 +354,7 @@ def run_colab_job(
     *,
     runner: Any = subprocess.run,
 ) -> ColabJobResult:
-    """Execute (or dry-run) a Colab GPU restoration job with guaranteed VM auto-stop."""
+    """Execute (or dry-run) a Colab GPU restoration job with hard VM auto-stop confirmation."""
     plan = build_colab_job_plan(config)
     if config.dry_run:
         return ColabJobResult(
@@ -351,8 +368,16 @@ def run_colab_job(
     out_dir.mkdir(parents=True, exist_ok=True)
     input_path = Path(plan.input_path)
     worker_script_path = Path(plan.worker_script_path)
+    output_audio_path = out_dir / plan.output_filename
+    worker_report_path = out_dir / "worker_report.json"
+
+    # Remove stale artifacts from any prior run in out_dir so we only accept fresh outputs.
+    for stale in (output_audio_path, worker_report_path):
+        if stale.exists():
+            stale.unlink()
 
     metrics_before = measure_audio_file(input_path)
+    input_digest = metrics_before["sha256"]
 
     worker_source = render_worker_script(
         task=plan.task,
@@ -392,18 +417,32 @@ def run_colab_job(
                 runner=runner,
             )
 
-    output_audio_path = out_dir / plan.output_filename
+    if not plan.keep_session and sessions_clean is not True:
+        raise ColabError(
+            f"could not confirm Colab session {plan.session!r} stopped; "
+            f"verify immediately with `colab --auth {plan.auth} sessions`"
+        )
+
     if not output_audio_path.is_file():
         raise ColabError(f"Colab job finished without expected output artifact: {output_audio_path}")
+    if not worker_report_path.is_file():
+        raise ColabError(f"Colab job finished without required worker_report.json: {worker_report_path}")
 
-    worker_report_path = out_dir / "worker_report.json"
-    colab_meta: dict[str, Any] = {}
-    if worker_report_path.is_file():
+    try:
         colab_meta = json.loads(worker_report_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ColabError(f"worker_report.json is not valid JSON: {worker_report_path}") from exc
+
+    output_digest = sha256_file(output_audio_path)
+    _validate_worker_report(
+        colab_meta,
+        expected_task=plan.task,
+        input_sha256=input_digest,
+        output_sha256=output_digest,
+    )
 
     metrics_after = measure_audio_file(output_audio_path)
 
-    drive_res: DriveTransferResult | None = None
     drive_uri: str | None = (
         build_remote_uri(config.drive_subpath, remote_base=config.drive_remote_base)
         if config.drive_subpath
@@ -411,16 +450,12 @@ def run_colab_job(
     )
 
     manifest_path = out_dir / "manifest.json"
-    output_files = [output_audio_path]
-    if worker_report_path.is_file():
-        output_files.append(worker_report_path)
-
     manifest = build_manifest(
         task=plan.task,
         gpu=plan.gpu,
         session=plan.session,
         input_path=input_path,
-        output_paths=output_files,
+        output_paths=[output_audio_path, worker_report_path],
         metrics_before=metrics_before,
         metrics_after=metrics_after,
         colab_metadata=colab_meta,
@@ -428,16 +463,22 @@ def run_colab_job(
     )
     write_manifest(manifest_path, manifest)
 
+    drive_transfers: list[DriveTransferResult] = []
     if config.drive_subpath:
-        drive_res = upload_path(
-            out_dir,
-            config.drive_subpath,
-            remote_base=config.drive_remote_base,
-            dry_run=False,
-            verify=True,
-            rclone_bin=config.rclone_bin,
-            runner=runner,
-        )
+        # Upload ONLY the explicit artifacts of this run (never arbitrary files in out_dir).
+        base_sub = config.drive_subpath.rstrip("/")
+        for artifact in (output_audio_path, worker_report_path, manifest_path):
+            drive_transfers.append(
+                upload_path(
+                    artifact,
+                    f"{base_sub}/{artifact.name}",
+                    remote_base=config.drive_remote_base,
+                    dry_run=False,
+                    verify=True,
+                    rclone_bin=config.rclone_bin,
+                    runner=runner,
+                )
+            )
 
     return ColabJobResult(
         executed=True,
@@ -448,5 +489,5 @@ def run_colab_job(
         manifest_path=str(manifest_path),
         manifest=manifest,
         sessions_clean_after=sessions_clean,
-        drive_transfer=drive_res,
+        drive_transfers=drive_transfers,
     )

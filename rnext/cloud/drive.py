@@ -5,8 +5,9 @@ Safety invariants:
   - Non-destructive only: uses ``rclone copy`` / ``rclone copyto`` and
     ``rclone check --one-way``. Never invokes ``move``, ``sync``, ``delete``,
     or ``purge``, and never removes local originals.
-  - Blocks secrets, cookies, keys, and ``.git`` directories from ever being
-    transferred.
+  - Explicit retry policy: ``--retries 1 --low-level-retries 1`` (no hidden retries).
+  - Blocks secrets, cookies, keys, and ``.git`` directories anywhere in the
+    target path or its parents/descendants.
   - Portable: zero hardcoded machine paths; resolves ``rclone`` via explicit
     argument, ``MR_RCLONE_BIN``, ``PATH``, or ``Path.home() / '.local/bin/rclone'``.
 """
@@ -14,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -22,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_REMOTE_BASE = "gdrive:darkfactory-storage/music-restoration"
+_RCLONE_NO_RETRY_FLAGS = ("--retries", "1", "--low-level-retries", "1")
 
 _BLOCKED_DIR_NAMES = {".git", ".secrets", ".ssh", ".gnupg"}
 _BLOCKED_EXTENSIONS = {".pem", ".key", ".p12", ".pfx", ".kdbx"}
@@ -136,12 +139,13 @@ def _is_blocked_name(name: str) -> bool:
 
 
 def assert_safe_local_path(local_path: Path) -> None:
-    """Refuse to transfer secrets, cookies, keys, or git metadata."""
-    target = Path(local_path)
+    """Refuse to transfer secrets, cookies, keys, or git metadata (including parent dirs)."""
+    target = Path(local_path).expanduser().resolve()
     if not target.exists():
         raise DriveError(f"local path does not exist: {target}")
-    if _is_blocked_name(target.name):
-        raise DriveError(f"refusing to transfer sensitive path: {target.name}")
+    for part in target.parts:
+        if _is_blocked_name(part):
+            raise DriveError(f"refusing to transfer sensitive path component: {part}")
     if target.is_dir():
         for child in target.rglob("*"):
             rel_parts = child.relative_to(target).parts
@@ -150,6 +154,43 @@ def assert_safe_local_path(local_path: Path) -> None:
                     raise DriveError(
                         f"refusing to transfer directory containing sensitive entry: {'/'.join(rel_parts)}"
                     )
+
+
+def _escape_rclone_filter_name(name: str) -> str:
+    """Escape rclone glob metacharacters so ``--include`` matches a literal filename."""
+    return re.sub(r"([*?\[\]{}\\])", r"\\\1", name)
+
+
+def _single_file_remote_layout(target: Path, remote_uri: str) -> tuple[bool, str]:
+    """Return ``(is_exact_file_uri, remote_parent_dir)`` consistently for upload and verify."""
+    if remote_uri.endswith("/" + target.name):
+        return True, remote_uri.rsplit("/", 1)[0]
+    return False, remote_uri
+
+
+def _build_check_cmd(bin_path: str, target: Path, remote_uri: str) -> list[str]:
+    if target.is_file():
+        _, remote_parent = _single_file_remote_layout(target, remote_uri)
+        escaped = _escape_rclone_filter_name(target.name)
+        return [
+            bin_path,
+            "check",
+            "--one-way",
+            *_RCLONE_NO_RETRY_FLAGS,
+            "--include",
+            f"/{escaped}",
+            "--exclude",
+            "*",
+            str(target.parent),
+            remote_parent,
+        ]
+    return [bin_path, "check", "--one-way", *_RCLONE_NO_RETRY_FLAGS, str(target), remote_uri]
+
+
+def _check_output_matched_files(target: Path, stderr: str) -> bool:
+    """Ensure ``rclone check`` did not silently pass with 0 matched files."""
+    low = (stderr or "").lower()
+    return not ("0 matching files" in low and (target.is_file() or any(target.rglob("*"))))
 
 
 def verify_one_way(
@@ -165,30 +206,18 @@ def verify_one_way(
     assert_safe_local_path(target)
     remote_uri = build_remote_uri(remote_subpath, remote_base=remote_base)
     bin_path = _require_rclone_bin(rclone_bin)
-
-    if target.is_file():
-        remote_parent = remote_uri.rsplit("/", 1)[0] if "/" in remote_uri else remote_uri
-        cmd = [
-            bin_path,
-            "check",
-            "--one-way",
-            "--include",
-            target.name,
-            str(target.parent),
-            remote_parent,
-        ]
-    else:
-        cmd = [bin_path, "check", "--one-way", str(target), remote_uri]
+    cmd = _build_check_cmd(bin_path, target, remote_uri)
 
     proc = runner(cmd, capture_output=True, text=True)
-    ok = proc.returncode == 0
+    stderr = getattr(proc, "stderr", "") or ""
+    ok = (int(proc.returncode) == 0) and _check_output_matched_files(target, stderr)
     return DriveCheckResult(
         ok=ok,
         remote_uri=remote_uri,
         command=cmd,
         returncode=int(proc.returncode),
         stdout=getattr(proc, "stdout", "") or "",
-        stderr=getattr(proc, "stderr", "") or "",
+        stderr=stderr,
     )
 
 
@@ -215,27 +244,13 @@ def upload_path(
     bin_display = bin_path or "rclone"
 
     if target.is_file():
-        # If remote_subpath already ends with the filename, copyto exact path;
-        # otherwise copy into the remote directory.
-        if remote_uri.endswith("/" + target.name):
-            copy_cmd = [bin_display, "copyto", str(target), remote_uri]
-            verify_remote_parent = remote_uri.rsplit("/", 1)[0]
-        else:
-            copy_cmd = [bin_display, "copy", str(target), remote_uri]
-            verify_remote_parent = remote_uri
-        check_cmd = [
-            bin_display,
-            "check",
-            "--one-way",
-            "--include",
-            target.name,
-            str(target.parent),
-            verify_remote_parent,
-        ]
+        is_exact, _ = _single_file_remote_layout(target, remote_uri)
+        op = "copyto" if is_exact else "copy"
+        copy_cmd = [bin_display, op, *_RCLONE_NO_RETRY_FLAGS, str(target), remote_uri]
     else:
-        copy_cmd = [bin_display, "copy", str(target), remote_uri]
-        check_cmd = [bin_display, "check", "--one-way", str(target), remote_uri]
+        copy_cmd = [bin_display, "copy", *_RCLONE_NO_RETRY_FLAGS, str(target), remote_uri]
 
+    check_cmd = _build_check_cmd(bin_display, target, remote_uri)
     planned_cmds = [copy_cmd] + ([check_cmd] if verify else [])
     if dry_run:
         return DriveTransferResult(
@@ -249,7 +264,7 @@ def upload_path(
         )
 
     proc = runner(copy_cmd, capture_output=True, text=True)
-    if proc.returncode != 0:
+    if int(proc.returncode) != 0:
         raise DriveError(
             f"rclone upload failed (exit {proc.returncode}) for {remote_uri}: "
             f"{(getattr(proc, 'stderr', '') or '').strip()[:400]}"
@@ -259,13 +274,15 @@ def upload_path(
     verified: bool | None = None
     if verify:
         check_proc = runner(check_cmd, capture_output=True, text=True)
+        check_stderr = getattr(check_proc, "stderr", "") or ""
+        check_ok = (int(check_proc.returncode) == 0) and _check_output_matched_files(target, check_stderr)
         check_res = DriveCheckResult(
-            ok=check_proc.returncode == 0,
+            ok=check_ok,
             remote_uri=remote_uri,
             command=check_cmd,
             returncode=int(check_proc.returncode),
             stdout=getattr(check_proc, "stdout", "") or "",
-            stderr=getattr(check_proc, "stderr", "") or "",
+            stderr=check_stderr,
         )
         verified = check_res.ok
         if not check_res.ok:
@@ -306,7 +323,7 @@ def download_path(
     bin_path = find_rclone_bin(rclone_bin) if dry_run else _require_rclone_bin(rclone_bin)
     bin_display = bin_path or "rclone"
 
-    cmd = [bin_display, "copy"]
+    cmd = [bin_display, "copy", *_RCLONE_NO_RETRY_FLAGS]
     if not overwrite:
         cmd.append("--ignore-existing")
     cmd.extend([remote_uri, str(dest)])
@@ -324,7 +341,7 @@ def download_path(
 
     dest.mkdir(parents=True, exist_ok=True)
     proc = runner(cmd, capture_output=True, text=True)
-    if proc.returncode != 0:
+    if int(proc.returncode) != 0:
         raise DriveError(
             f"rclone download failed (exit {proc.returncode}) for {remote_uri}: "
             f"{(getattr(proc, 'stderr', '') or '').strip()[:400]}"
@@ -355,9 +372,9 @@ def list_remote(
         else base
     )
     bin_path = _require_rclone_bin(rclone_bin)
-    cmd = [bin_path, "lsjson", remote_uri]
+    cmd = [bin_path, "lsjson", *_RCLONE_NO_RETRY_FLAGS, remote_uri]
     proc = runner(cmd, capture_output=True, text=True)
-    if proc.returncode != 0:
+    if int(proc.returncode) != 0:
         raise DriveError(
             f"rclone lsjson failed (exit {proc.returncode}) for {remote_uri}: "
             f"{(getattr(proc, 'stderr', '') or '').strip()[:400]}"

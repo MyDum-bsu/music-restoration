@@ -33,7 +33,7 @@ from rnext.cloud.metrics import MetricsError
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="colab_restore.py",
-        description="Run GPU audio restoration on Google Colab via ultra-colab-run with auto-stop and SHA-256 manifests.",
+        description="Run GPU audio restoration on Google Colab with guaranteed auto-stop and SHA-256 manifests.",
     )
     p.add_argument("--input", type=Path, help="Local input audio file (WAV/FLAC/etc.).")
     p.add_argument("--out-dir", type=Path, help="Local output directory for restored audio and manifest.json.")
@@ -47,7 +47,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="Validate inputs and print planned commands without starting a VM.")
     p.add_argument("--drive-subpath", default=None, help="Optional Google Drive subpath under remote base for post-run upload + check.")
     p.add_argument("--drive-remote", default=None, help="Override rclone remote base (default: MR_RCLONE_REMOTE or gdrive:darkfactory-storage/music-restoration).")
-    p.add_argument("--ultra-colab-bin", default=None, help="Optional path to ultra-colab-run executable.")
     p.add_argument("--colab-bin", default=None, help="Optional path to colab CLI executable.")
     p.add_argument("--rclone-bin", default=None, help="Optional path to rclone executable.")
     p.add_argument("--check-sessions", action="store_true", help="Check active Colab sessions and exit (0 if 0 active, 1 otherwise).")
@@ -84,7 +83,6 @@ def main(argv: list[str] | None = None) -> int:
             dry_run=args.dry_run,
             drive_subpath=args.drive_subpath,
             drive_remote_base=args.drive_remote,
-            ultra_colab_bin=args.ultra_colab_bin,
             colab_bin=args.colab_bin,
             rclone_bin=args.rclone_bin,
         )
@@ -101,8 +99,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"output: {res.output_audio_path}")
         if res.manifest_path:
             print(f"manifest: {res.manifest_path}")
-        if res.drive_transfer:
-            print(f"drive: {res.drive_transfer.remote_uri} (verified={res.drive_transfer.verified})")
+        if res.drive_transfers:
+            print(f"drive: uploaded {len(res.drive_transfers)} verified artifacts")
     return 0
 
 

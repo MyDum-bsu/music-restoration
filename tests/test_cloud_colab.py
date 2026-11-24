@@ -16,10 +16,12 @@ from rnext.cloud.colab_runner import (
     ColabError,
     ColabJobConfig,
     build_colab_job_plan,
+    check_active_sessions,
     ensure_session_stopped,
     run_colab_job,
 )
 from rnext.cloud.colab_worker import VALID_TASKS, render_worker_script
+from rnext.cloud.metrics import sha256_file
 
 REPO = Path(__file__).resolve().parents[1]
 
@@ -38,7 +40,7 @@ def _make_wav(path: Path, sr: int = 44100, dur_s: float = 4.0) -> Path:
 
 
 @pytest.mark.parametrize("task", VALID_TASKS)
-def test_render_worker_script_is_valid_python(task: str) -> None:
+def test_render_worker_script_is_valid_python_and_requires_cuda(task: str) -> None:
     src = render_worker_script(
         task=task,
         input_filename="synthetic.wav",
@@ -46,6 +48,8 @@ def test_render_worker_script_is_valid_python(task: str) -> None:
     )
     ast.parse(src)
     assert f'"task": "{task}"' in src
+    assert "_require_cuda()" in src
+    assert 'torch.device("cpu")' not in src
 
 
 def test_build_colab_job_plan_validates_inputs_and_includes_auto_stop(tmp_path: Path) -> None:
@@ -104,9 +108,15 @@ def test_run_colab_job_dry_run_never_invokes_subprocess(tmp_path: Path) -> None:
     assert res.manifest is None
 
 
-def test_run_colab_job_end_to_end_mocked_with_auto_stop_and_drive_upload(tmp_path: Path) -> None:
+def test_run_colab_job_end_to_end_mocked_uploads_only_run_artifacts(tmp_path: Path) -> None:
     wav = _make_wav(tmp_path / "synth.wav", dur_s=4.0)
     out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    # Unrelated file sitting in out_dir must NEVER be uploaded to Drive.
+    unrelated = out_dir / "unrelated_note.txt"
+    unrelated.write_text("do not upload", encoding="utf-8")
+
+    input_sha = sha256_file(wav)
     calls: list[list[str]] = []
 
     def fake_runner(cmd, **kwargs):
@@ -115,13 +125,26 @@ def test_run_colab_job_end_to_end_mocked_with_auto_stop_and_drive_upload(tmp_pat
             _make_wav(Path(cmd[-1]), dur_s=4.0)
             return SimpleNamespace(returncode=0, stdout="downloaded", stderr="")
         if "download" in cmd and cmd[-1].endswith("worker_report.json"):
+            out_sha = sha256_file(out_dir / "synth_gpu_smoke.wav")
             Path(cmd[-1]).write_text(
-                json.dumps({"gpu_name": "Tesla T4", "cuda_available": True, "elapsed_s": 1.23}),
+                json.dumps(
+                    {
+                        "task": "gpu_smoke",
+                        "status": "ok",
+                        "gpu_name": "Tesla T4",
+                        "cuda_available": True,
+                        "elapsed_s": 1.23,
+                        "input_sha256": input_sha,
+                        "output_sha256": out_sha,
+                    }
+                ),
                 encoding="utf-8",
             )
             return SimpleNamespace(returncode=0, stdout="downloaded", stderr="")
         if "sessions" in cmd:
             return SimpleNamespace(returncode=0, stdout="[colab] No active sessions found on server.", stderr="")
+        if "check" in cmd:
+            return SimpleNamespace(returncode=0, stdout="", stderr="1 matching files")
         return SimpleNamespace(returncode=0, stdout="ok", stderr="")
 
     res = run_colab_job(
@@ -140,15 +163,95 @@ def test_run_colab_job_end_to_end_mocked_with_auto_stop_and_drive_upload(tmp_pat
     )
     assert res.executed is True
     assert res.sessions_clean_after is True
-    assert res.drive_transfer is not None and res.drive_transfer.verified is True
-    assert res.manifest_path is not None and Path(res.manifest_path).is_file()
+    assert len(res.drive_transfers) == 3
+    assert all(t.verified is True for t in res.drive_transfers)
+    uploaded_names = {Path(t.local_path).name for t in res.drive_transfers}
+    assert uploaded_names == {"synth_gpu_smoke.wav", "worker_report.json", "manifest.json"}
+    assert "unrelated_note.txt" not in uploaded_names
     assert res.manifest is not None
     assert res.manifest["colab_metadata"]["gpu_name"] == "Tesla T4"
     assert res.manifest["drive_uri"].endswith("/smoke/mock-01")
-    assert len(res.manifest["outputs"]) == 2
     assert any("stop" in c and "mr-mock-01" in c for c in calls)
-    assert any("sessions" in c for c in calls)
-    assert any("check" in c and "--one-way" in c for c in calls)
+
+
+def test_session_check_nonzero_exit_fails_stop_confirmation(tmp_path: Path) -> None:
+    def auth_err_runner(cmd, **kwargs):
+        return SimpleNamespace(returncode=1, stdout="", stderr="auth failed")
+
+    with pytest.raises(ColabError, match="colab sessions failed"):
+        check_active_sessions(colab_bin="/bin/true", runner=auth_err_runner)
+
+    assert ensure_session_stopped("mr-s1", colab_bin="/bin/true", runner=auth_err_runner) is False
+
+    # Full job must fail loudly if teardown cannot be confirmed (even if exec succeeded).
+    wav = _make_wav(tmp_path / "synth.wav", dur_s=4.0)
+    out_dir = tmp_path / "out"
+
+    def unconfirmed_stop_runner(cmd, **kwargs):
+        if "download" in cmd and cmd[-1].endswith("synth_gpu_smoke.wav"):
+            _make_wav(Path(cmd[-1]), dur_s=4.0)
+            return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+        if "download" in cmd and cmd[-1].endswith("worker_report.json"):
+            Path(cmd[-1]).write_text(json.dumps({"status": "ok"}), encoding="utf-8")
+            return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+        if "sessions" in cmd:
+            return SimpleNamespace(returncode=1, stdout="", stderr="auth failed")
+        return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+
+    with pytest.raises(ColabError, match="could not confirm Colab session"):
+        run_colab_job(
+            ColabJobConfig(
+                input_path=wav,
+                out_dir=out_dir,
+                task="gpu_smoke",
+                gpu="T4",
+                session="mr-unconfirmed",
+                dry_run=False,
+                colab_bin="/bin/true",
+            ),
+            runner=unconfirmed_stop_runner,
+        )
+
+
+def test_run_colab_job_rejects_mismatched_worker_report_hash(tmp_path: Path) -> None:
+    wav = _make_wav(tmp_path / "synth.wav", dur_s=4.0)
+    out_dir = tmp_path / "out"
+
+    def bad_hash_runner(cmd, **kwargs):
+        if "download" in cmd and cmd[-1].endswith("synth_gpu_smoke.wav"):
+            _make_wav(Path(cmd[-1]), dur_s=4.0)
+            return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+        if "download" in cmd and cmd[-1].endswith("worker_report.json"):
+            Path(cmd[-1]).write_text(
+                json.dumps(
+                    {
+                        "task": "gpu_smoke",
+                        "status": "ok",
+                        "cuda_available": True,
+                        "input_sha256": "deadbeef",
+                        "output_sha256": "deadbeef",
+                    }
+                ),
+                encoding="utf-8",
+            )
+            return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+        if "sessions" in cmd:
+            return SimpleNamespace(returncode=0, stdout="[colab] No active sessions found on server.", stderr="")
+        return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+
+    with pytest.raises(ColabError, match="input_sha256 mismatch"):
+        run_colab_job(
+            ColabJobConfig(
+                input_path=wav,
+                out_dir=out_dir,
+                task="gpu_smoke",
+                gpu="T4",
+                session="mr-bad-hash",
+                dry_run=False,
+                colab_bin="/bin/true",
+            ),
+            runner=bad_hash_runner,
+        )
 
 
 def test_auto_stop_fires_even_when_worker_exec_fails(tmp_path: Path) -> None:

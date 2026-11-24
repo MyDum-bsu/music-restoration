@@ -6,6 +6,9 @@ Produces a standalone Python 3 script executed inside the Colab VM
   - ``neural_declip``: PyTorch CUDA STFT-domain iterative declipping & peak recovery
   - ``demucs``: Demucs v4 (htdemucs) GPU stem separation
   - ``audiosr``: AudioSR GPU bandwidth extension
+
+All tasks require an active CUDA GPU and fail explicitly if ``torch.cuda.is_available()``
+is ``False`` (no silent CPU fallback).
 """
 from __future__ import annotations
 
@@ -45,7 +48,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -69,24 +71,19 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def _read_audio_f32(path: Path) -> tuple[np.ndarray, int]:
-    """Decode WAV/FLAC to float32 [frames, channels] using scipy/wave/ffmpeg."""
-    if path.suffix.lower() == ".wav":
-        try:
-            from scipy.io import wavfile
+def _require_cuda():
+    """Verify CUDA GPU is available; fail hard instead of falling back to CPU."""
+    import torch
 
-            sr, data = wavfile.read(str(path))
-            if data.ndim == 1:
-                data = data[:, np.newaxis]
-            if np.issubdtype(data.dtype, np.integer):
-                info = np.iinfo(data.dtype)
-                scale = float(max(abs(info.min), info.max))
-                arr = (data.astype(np.float32) / scale)
-            else:
-                arr = data.astype(np.float32)
-            return arr, int(sr)
-        except Exception:
-            pass
+    if not torch.cuda.is_available():
+        raise RuntimeError(
+            "CUDA GPU is required for Colab GPU worker, but torch.cuda.is_available() is False"
+        )
+    return torch, torch.device("cuda")
+
+
+def _read_audio_f32(path: Path) -> tuple[np.ndarray, int]:
+    """Decode audio preserving native channels via ffprobe + ffmpeg."""
     probe = subprocess.run(
         [
             "ffprobe", "-v", "error", "-select_streams", "a:0",
@@ -127,21 +124,14 @@ def _write_wav_pcm16(path: Path, x: np.ndarray, sr: int) -> None:
 
 def _gpu_spectral_declip(x: np.ndarray, sr: int, iterations: int = 8) -> tuple[np.ndarray, dict]:
     """Run PyTorch CUDA STFT-domain iterative soft-declipping & peak recovery."""
-    import torch
-
-    use_cuda = torch.cuda.is_available()
-    device = torch.device("cuda" if use_cuda else "cpu")
+    torch, device = _require_cuda()
     meta = {{
         "torch_version": torch.__version__,
-        "cuda_available": bool(use_cuda),
+        "cuda_available": True,
         "device": str(device),
-        "gpu_name": torch.cuda.get_device_name(0) if use_cuda else "cpu",
-        "cuda_version": torch.version.cuda if use_cuda else None,
-        "vram_gb": (
-            round(torch.cuda.get_device_properties(0).total_memory / (1024 ** 3), 2)
-            if use_cuda
-            else 0.0
-        ),
+        "gpu_name": torch.cuda.get_device_name(0),
+        "cuda_version": torch.version.cuda,
+        "vram_gb": round(torch.cuda.get_device_properties(0).total_memory / (1024 ** 3), 2),
     }}
 
     t = torch.from_numpy(x.T.copy()).to(device=device, dtype=torch.float32)  # [C, N]
@@ -158,7 +148,6 @@ def _gpu_spectral_declip(x: np.ndarray, sr: int, iterations: int = 8) -> tuple[n
         for _ in range(max(1, iterations)):
             spec = torch.stft(restored, n_fft=n_fft, hop_length=hop, window=window, return_complex=True)
             mag = spec.abs()
-            # Soft-threshold sparse spectral shrinkage to suppress clipping harmonics.
             tau = torch.quantile(mag.reshape(mag.shape[0], -1), 0.70, dim=-1, keepdim=True).unsqueeze(-1) * 0.15
             mag_shrunk = torch.clamp(mag - tau, min=0.0)
             phase = spec / (mag + 1e-8)
@@ -169,22 +158,17 @@ def _gpu_spectral_declip(x: np.ndarray, sr: int, iterations: int = 8) -> tuple[n
                 window=window,
                 length=t.shape[-1],
             )
-            # Project unclipped samples back to exact original values; keep reconstructed peaks.
             restored = torch.where(clipped_mask, recon, t)
-    else:
-        # Still exercise real CUDA FFT round-trip + gentle peak safety for smoke verification.
-        if t.shape[-1] >= n_fft:
-            spec = torch.stft(restored, n_fft=n_fft, hop_length=hop, window=window, return_complex=True)
-            restored = torch.istft(spec, n_fft=n_fft, hop_length=hop, window=window, length=t.shape[-1])
+    elif t.shape[-1] >= n_fft:
+        spec = torch.stft(restored, n_fft=n_fft, hop_length=hop, window=window, return_complex=True)
+        restored = torch.istft(spec, n_fft=n_fft, hop_length=hop, window=window, length=t.shape[-1])
 
-    # Apply conservative -0.5 dBFS ceiling so restored peaks never re-clip on PCM16 export.
     peak = float(restored.abs().max().item()) if restored.numel() else 0.0
     ceiling = 10.0 ** (-0.5 / 20.0)
     if peak > ceiling:
         restored = restored * (ceiling / peak)
 
-    if use_cuda:
-        torch.cuda.synchronize()
+    torch.cuda.synchronize()
     out_np = restored.detach().cpu().numpy().T
     meta["clipped_samples_detected"] = int(clipped_mask.sum().item())
     meta["iterations"] = int(iterations)
@@ -192,22 +176,17 @@ def _gpu_spectral_declip(x: np.ndarray, sr: int, iterations: int = 8) -> tuple[n
 
 
 def _run_demucs(input_path: Path, output_path: Path, options: dict) -> dict:
-    import torch
-
+    torch, _ = _require_cuda()
     if shutil.which("demucs") is None:
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "-q", "demucs"],
-            check=True,
-        )
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "demucs"], check=True)
     model = str(options.get("model", "htdemucs"))
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     stems_root = output_path.parent / "stems"
     stems_root.mkdir(parents=True, exist_ok=True)
     subprocess.run(
         [
             sys.executable, "-m", "demucs",
             "-n", model,
-            "--device", device,
+            "--device", "cuda",
             "-o", str(stems_root),
             str(input_path),
         ],
@@ -217,7 +196,6 @@ def _run_demucs(input_path: Path, output_path: Path, options: dict) -> dict:
     stem_files = sorted(stem_dir.glob("*.wav")) if stem_dir.is_dir() else []
     if not stem_files:
         raise RuntimeError(f"demucs produced no stem wavs in {{stem_dir}}")
-    # Recombine stems cleanly into output_path so before/after metrics run seamlessly.
     acc = None
     sr_out = 44100
     for sf in stem_files:
@@ -225,32 +203,22 @@ def _run_demucs(input_path: Path, output_path: Path, options: dict) -> dict:
         acc = arr.astype(np.float64) if acc is None else (acc + arr.astype(np.float64))
     _write_wav_pcm16(output_path, acc.astype(np.float32), sr_out)
     return {{
-        "cuda_available": bool(torch.cuda.is_available()),
-        "device": device,
-        "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu",
+        "cuda_available": True,
+        "device": "cuda",
+        "gpu_name": torch.cuda.get_device_name(0),
         "demucs_model": model,
         "stems": [sf.name for sf in stem_files],
     }}
 
 
 def _run_audiosr(input_path: Path, output_path: Path, options: dict) -> dict:
-    import torch
-
+    torch, _ = _require_cuda()
     if shutil.which("audiosr") is None:
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "-q", "audiosr"],
-            check=True,
-        )
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+        subprocess.run([sys.executable, "-m", "pip", "install", "-q", "audiosr"], check=True)
     tmp_dir = output_path.parent / "audiosr_out"
     tmp_dir.mkdir(parents=True, exist_ok=True)
     subprocess.run(
-        [
-            "audiosr",
-            "-i", str(input_path),
-            "-s", str(tmp_dir),
-            "--device", device,
-        ],
+        ["audiosr", "-i", str(input_path), "-s", str(tmp_dir), "--device", "cuda"],
         check=True,
     )
     produced = sorted(tmp_dir.rglob("*.wav"))
@@ -258,9 +226,9 @@ def _run_audiosr(input_path: Path, output_path: Path, options: dict) -> dict:
         raise RuntimeError(f"audiosr produced no wav in {{tmp_dir}}")
     shutil.copy2(produced[0], output_path)
     return {{
-        "cuda_available": bool(torch.cuda.is_available()),
-        "device": device,
-        "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "cpu",
+        "cuda_available": True,
+        "device": "cuda",
+        "gpu_name": torch.cuda.get_device_name(0),
         "audiosr_output": produced[0].name,
     }}
 

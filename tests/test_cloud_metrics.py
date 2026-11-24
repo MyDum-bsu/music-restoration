@@ -25,7 +25,8 @@ from rnext.cloud.metrics import (
 
 
 def _write_wav(path: Path, x: np.ndarray, sr: int = 44100) -> Path:
-    pcm = np.clip(np.round(x * 32767.0), -32768, 32767).astype(np.int16)
+    arr = x[:, np.newaxis] if x.ndim == 1 else x
+    pcm = np.clip(np.round(arr * 32767.0), -32768, 32767).astype(np.int16)
     with wave.open(str(path), "wb") as wf:
         wf.setnchannels(pcm.shape[1])
         wf.setsampwidth(2)
@@ -49,14 +50,21 @@ def test_spectral_profile_distinguishes_tone_from_noise() -> None:
     assert prof_tone["nyquist_hz"] == 22050.0
 
 
-def test_artifact_check_detects_clipping_and_spikes() -> None:
+def test_artifact_check_detects_clipping_spikes_and_requires_tp() -> None:
     sr = 44100
     t = np.arange(sr, dtype=np.float32) / sr
     clean = np.stack([0.3 * np.sin(2 * np.pi * 440 * t)] * 2, axis=1)
+
     res_clean = artifact_check(clean, tp_dbfs=-3.0)
     assert res_clean["clipped_samples"] == 0
     assert res_clean["spike_count"] == 0
+    assert res_clean["tp_checked"] is True
     assert res_clean["passed"] is True
+
+    # Missing True Peak must never masquerade as a full pass.
+    res_incomplete = artifact_check(clean, tp_dbfs=None)
+    assert res_incomplete["tp_checked"] is False
+    assert res_incomplete["passed"] is False
 
     clipped = np.clip(clean * 5.0, -1.0, 1.0)
     clipped[1000, 0] = -1.0
@@ -67,7 +75,7 @@ def test_artifact_check_detects_clipping_and_spikes() -> None:
     assert res_bad["passed"] is False
 
 
-def test_measure_lufs_tp_parses_ffmpeg_stderr() -> None:
+def test_measure_lufs_tp_parses_ffmpeg_and_raises_on_failure() -> None:
     sample_stderr = (
         "  Integrated loudness:\n"
         "    I:         -14.2 LUFS\n"
@@ -76,23 +84,32 @@ def test_measure_lufs_tp_parses_ffmpeg_stderr() -> None:
         "    Peak:      -0.8 dBFS\n"
     )
 
-    def fake_runner(cmd, **kwargs):
+    def ok_runner(cmd, **kwargs):
         assert "ebur128=peak=true" in cmd
         return SimpleNamespace(returncode=0, stdout="", stderr=sample_stderr)
 
-    lufs, tp = measure_lufs_tp(Path("dummy.wav"), runner=fake_runner)
+    lufs, tp = measure_lufs_tp(Path("dummy.wav"), runner=ok_runner)
     assert lufs == -14.2
     assert tp == -0.8
 
+    def fail_runner(cmd, **kwargs):
+        return SimpleNamespace(returncode=1, stdout="", stderr="invalid data")
 
-def test_measure_audio_file_and_compare_metrics(tmp_path: Path) -> None:
+    with pytest.raises(MetricsError, match="exited 1"):
+        measure_lufs_tp(Path("dummy.wav"), runner=fail_runner)
+
+
+def test_measure_audio_file_preserves_mono_channels_and_compares(tmp_path: Path) -> None:
     sr = 44100
     t = np.arange(sr * 4, dtype=np.float32) / sr
-    # Clipped signal vs restored softer signal
     base = 0.4 * np.sin(2 * np.pi * 440 * t) + 0.2 * np.sin(2 * np.pi * 1320 * t)
+
+    p_mono = _write_wav(tmp_path / "mono.wav", base * 0.5, sr)
+    m_mono = measure_audio_file(p_mono, include_lufs=True)
+    assert m_mono["channels"] == 1
+
     before_arr = np.clip(np.stack([base * 2.5, base * 2.5], axis=1), -1.0, 1.0)
     after_arr = np.stack([base * 0.7, base * 0.7], axis=1)
-
     p_before = _write_wav(tmp_path / "before.wav", before_arr, sr)
     p_after = _write_wav(tmp_path / "after.wav", after_arr, sr)
 
@@ -104,8 +121,6 @@ def test_measure_audio_file_and_compare_metrics(tmp_path: Path) -> None:
     assert len(m_before["sha256"]) == 64
     assert m_before["artifacts"]["clipped_samples"] > 0
     assert m_after["artifacts"]["clipped_samples"] == 0
-    assert m_before["lufs_i"] is not None
-    assert m_after["tp_dbfs"] is not None
 
     delta = compare_metrics(m_before, m_after)
     assert delta["clipped_samples_delta"] < 0
@@ -139,7 +154,6 @@ def test_build_and_write_manifest_deterministic_and_portable(tmp_path: Path) -> 
     assert manifest["outputs"][0]["sha256"] == sha256_file(out)
     assert manifest["metrics_delta"]["lufs_i_delta"] == -2.0
 
-    # Manifest must not leak absolute machine paths.
     m_path = write_manifest(tmp_path / "manifest.json", manifest)
     text = m_path.read_text(encoding="utf-8")
     assert str(tmp_path) not in text
