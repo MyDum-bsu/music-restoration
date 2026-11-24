@@ -89,6 +89,50 @@ def test_build_colab_job_plan_validates_inputs_and_uploads_features(tmp_path: Pa
     with pytest.raises(ColabError, match="unsupported GPU"):
         build_colab_job_plan(ColabJobConfig(input_path=wav, out_dir=tmp_path / "out", gpu="RTX9999", dry_run=True))
 
+    # Two concurrent plans built in the same second get distinct default session names.
+    p_a = build_colab_job_plan(ColabJobConfig(input_path=wav, out_dir=tmp_path / "a", task="gpu_smoke", dry_run=True))
+    p_b = build_colab_job_plan(ColabJobConfig(input_path=wav, out_dir=tmp_path / "b", task="gpu_smoke", dry_run=True))
+    assert p_a.session != p_b.session
+
+
+def test_run_colab_job_refuses_active_session_collision_and_tracks_endpoint_id(tmp_path: Path) -> None:
+    wav = _make_wav(tmp_path / "synth.wav", dur_s=4.0)
+
+    def active_collision_runner(cmd, **kwargs):
+        if "sessions" in cmd:
+            return SimpleNamespace(returncode=0, stdout="[mr-busy] endpoint m-s-9999  T4", stderr="")
+        raise AssertionError(f"must not create/run when session collides: {cmd}")
+
+    with pytest.raises(ColabError, match="already active"):
+        run_colab_job(
+            ColabJobConfig(
+                input_path=wav,
+                out_dir=tmp_path / "out_busy",
+                task="gpu_smoke",
+                gpu="T4",
+                session="mr-busy",
+                dry_run=False,
+                colab_bin="/bin/true",
+            ),
+            runner=active_collision_runner,
+        )
+
+    # If allocated endpoint ID still appears under another alias, stop is NOT confirmed.
+    def endpoint_still_alive_runner(cmd, **kwargs):
+        if "sessions" in cmd:
+            return SimpleNamespace(returncode=0, stdout="[other-name] endpoint m-s-alive123  T4", stderr="")
+        return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+
+    assert (
+        ensure_session_stopped(
+            "mr-mine",
+            endpoint_id="m-s-alive123",
+            colab_bin="/bin/true",
+            runner=endpoint_still_alive_runner,
+        )
+        is False
+    )
+
 
 def test_run_colab_job_dry_run_never_invokes_subprocess(tmp_path: Path) -> None:
     wav = _make_wav(tmp_path / "synth.wav", dur_s=0.5)

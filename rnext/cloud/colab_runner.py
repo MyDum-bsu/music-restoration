@@ -23,6 +23,7 @@ import datetime as dt
 import json
 import os
 import re
+import secrets
 import shlex
 import shutil
 import subprocess
@@ -45,6 +46,7 @@ DEFAULT_GPU = "L4"
 DEFAULT_AUTH = "adc"
 SUPPORTED_AUDIO_EXT = {".wav", ".flac", ".aiff", ".mp3", ".m4a", ".ogg", ".opus"}
 _UNLABELLED_SESSION_RE = re.compile(r"(?:^|\s|\|)\[?\?\]?(?:\s|\||$)", re.MULTILINE)
+_ENDPOINT_ID_RE = re.compile(r"\b(m-[a-z0-9]+-[a-z0-9_-]+)\b", re.IGNORECASE)
 
 
 class ColabError(RuntimeError):
@@ -204,8 +206,10 @@ def build_colab_job_plan(config: ColabJobConfig) -> ColabJobPlan:
         build_remote_uri(config.drive_subpath, remote_base=config.drive_remote_base)
 
     out_dir = Path(config.out_dir).expanduser().resolve()
-    ts = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d-%H%M%S")
-    session = _sanitize_session_name(config.session or f"mr-{config.task[:10]}-{ts}")
+    ts = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d%H%M%S")
+    session = _sanitize_session_name(
+        config.session or f"mr-{config.task[:6]}-{ts}-{secrets.token_hex(3)}"
+    )
     output_filename = f"{input_path.stem}_{config.task}.wav"
     worker_script_path = out_dir / f"_mr_colab_worker_{config.task}.py"
     features_path = _features_module_path()
@@ -315,13 +319,26 @@ def check_active_sessions(
     return no_active, combined
 
 
-def _session_confirmed_absent(session: str, no_active: bool, output: str) -> bool:
-    """Confirm ``session`` is absent AND no unlabelled (``?``) VM is running."""
+def _extract_endpoint_id(output: str) -> str | None:
+    match = _ENDPOINT_ID_RE.search(output or "")
+    return match.group(1) if match else None
+
+
+def _session_confirmed_absent(
+    session: str,
+    no_active: bool,
+    output: str,
+    *,
+    endpoint_id: str | None = None,
+) -> bool:
+    """Confirm ``session`` (and its VM ``endpoint_id`` if known) is absent and no ``[?]`` VM is running."""
     if no_active:
         return True
     if session in output:
         return False
-    # `colab sessions` renders active VMs without a local session alias as `?`;
+    if endpoint_id and endpoint_id in output:
+        return False
+    # `colab sessions` renders active VMs without a local session alias as `[?]`;
     # we cannot distinguish an unlabelled active VM from our own session.
     return not bool(_UNLABELLED_SESSION_RE.search(output))
 
@@ -329,11 +346,12 @@ def _session_confirmed_absent(session: str, no_active: bool, output: str) -> boo
 def ensure_session_stopped(
     session: str,
     *,
+    endpoint_id: str | None = None,
     auth: str = DEFAULT_AUTH,
     colab_bin: str | None = None,
     runner: Any = subprocess.run,
 ) -> bool:
-    """Confirm ``session`` is stopped; return ``False`` on CLI error, active session, or unlabelled ``?`` VM."""
+    """Confirm ``session`` (and ``endpoint_id``) is stopped; return ``False`` on CLI error or active VM."""
     bin_path = find_colab_bin(colab_bin)
     if not bin_path:
         return False
@@ -341,7 +359,7 @@ def ensure_session_stopped(
         no_active, text = check_active_sessions(auth=auth, colab_bin=bin_path, runner=runner)
     except ColabError:
         return False
-    if _session_confirmed_absent(session, no_active, text):
+    if _session_confirmed_absent(session, no_active, text, endpoint_id=endpoint_id):
         return True
     stop_proc = runner([bin_path, "--auth", auth, "stop", "-s", session], capture_output=True, text=True)
     if int(stop_proc.returncode) != 0:
@@ -350,7 +368,7 @@ def ensure_session_stopped(
         no_active_after, text_after = check_active_sessions(auth=auth, colab_bin=bin_path, runner=runner)
     except ColabError:
         return False
-    return _session_confirmed_absent(session, no_active_after, text_after)
+    return _session_confirmed_absent(session, no_active_after, text_after, endpoint_id=endpoint_id)
 
 
 def _validate_worker_report(
@@ -407,6 +425,17 @@ def run_colab_job(
                 f"refusing to overwrite existing output artifact: {existing} (use a fresh --out-dir per run)"
             )
 
+    # Refuse to clobber an already-active session with the same name.
+    no_active_pre, pre_sessions_text = check_active_sessions(
+        auth=plan.auth,
+        colab_bin=config.colab_bin,
+        runner=runner,
+    )
+    if not no_active_pre and plan.session in pre_sessions_text:
+        raise ColabError(
+            f"Colab session {plan.session!r} is already active; choose a unique --session name"
+        )
+
     out_dir.mkdir(parents=True, exist_ok=True)
     metrics_before = measure_audio_file(input_path)
     input_digest = metrics_before["sha256"]
@@ -422,6 +451,7 @@ def run_colab_job(
     normal_steps = [s for s in plan.steps if not s.always]
     always_steps = [s for s in plan.steps if s.always]
     session_created = False
+    allocated_endpoint: str | None = None
     stop_step_ok = True
     sessions_clean: bool | None = None
 
@@ -431,6 +461,8 @@ def run_colab_job(
             rc = int(proc.returncode)
             if step.stage == "create_session" and rc == 0:
                 session_created = True
+                create_out = (getattr(proc, "stdout", "") or "") + "\n" + (getattr(proc, "stderr", "") or "")
+                allocated_endpoint = _extract_endpoint_id(create_out)
             if rc != 0:
                 stderr_s = (getattr(proc, "stderr", "") or "").strip()
                 stdout_s = (getattr(proc, "stdout", "") or "").strip()
@@ -447,6 +479,7 @@ def run_colab_job(
         if not plan.keep_session:
             verified_stopped = ensure_session_stopped(
                 plan.session,
+                endpoint_id=allocated_endpoint,
                 auth=plan.auth,
                 colab_bin=config.colab_bin,
                 runner=runner,
