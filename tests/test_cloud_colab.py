@@ -40,7 +40,7 @@ def _make_wav(path: Path, sr: int = 44100, dur_s: float = 4.0) -> Path:
 
 
 @pytest.mark.parametrize("task", VALID_TASKS)
-def test_render_worker_script_is_valid_python_and_requires_cuda(task: str) -> None:
+def test_render_worker_script_is_valid_python_requires_cuda_and_uses_rnext_features(task: str) -> None:
     src = render_worker_script(
         task=task,
         input_filename="synthetic.wav",
@@ -49,10 +49,12 @@ def test_render_worker_script_is_valid_python_and_requires_cuda(task: str) -> No
     ast.parse(src)
     assert f'"task": "{task}"' in src
     assert "_require_cuda()" in src
+    assert "import rnext_features as F" in src
+    assert "F.decode_f32" in src
     assert 'torch.device("cpu")' not in src
 
 
-def test_build_colab_job_plan_validates_inputs_and_includes_auto_stop(tmp_path: Path) -> None:
+def test_build_colab_job_plan_validates_inputs_and_uploads_features(tmp_path: Path) -> None:
     wav = _make_wav(tmp_path / "synth.wav", dur_s=0.5)
     cfg = ColabJobConfig(
         input_path=wav,
@@ -69,6 +71,7 @@ def test_build_colab_job_plan_validates_inputs_and_includes_auto_stop(tmp_path: 
     stages = [s.stage for s in plan.steps]
     assert stages == [
         "create_session",
+        "upload_features",
         "upload_input",
         "exec_worker",
         "download_audio",
@@ -108,11 +111,31 @@ def test_run_colab_job_dry_run_never_invokes_subprocess(tmp_path: Path) -> None:
     assert res.manifest is None
 
 
+def test_run_colab_job_refuses_to_overwrite_existing_artifacts(tmp_path: Path) -> None:
+    wav = _make_wav(tmp_path / "synth.wav", dur_s=0.5)
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    prior = out_dir / "synth_gpu_smoke.wav"
+    prior.write_bytes(b"precious-prior-output")
+
+    with pytest.raises(ColabError, match="refusing to overwrite existing output artifact"):
+        run_colab_job(
+            ColabJobConfig(
+                input_path=wav,
+                out_dir=out_dir,
+                task="gpu_smoke",
+                gpu="T4",
+                dry_run=False,
+                colab_bin="/bin/true",
+            )
+        )
+    assert prior.read_bytes() == b"precious-prior-output"
+
+
 def test_run_colab_job_end_to_end_mocked_uploads_only_run_artifacts(tmp_path: Path) -> None:
     wav = _make_wav(tmp_path / "synth.wav", dur_s=4.0)
     out_dir = tmp_path / "out"
     out_dir.mkdir()
-    # Unrelated file sitting in out_dir must NEVER be uploaded to Drive.
     unrelated = out_dir / "unrelated_note.txt"
     unrelated.write_text("do not upload", encoding="utf-8")
 
@@ -174,7 +197,7 @@ def test_run_colab_job_end_to_end_mocked_uploads_only_run_artifacts(tmp_path: Pa
     assert any("stop" in c and "mr-mock-01" in c for c in calls)
 
 
-def test_session_check_nonzero_exit_fails_stop_confirmation(tmp_path: Path) -> None:
+def test_session_check_nonzero_or_unlabelled_vm_fails_stop_confirmation(tmp_path: Path) -> None:
     def auth_err_runner(cmd, **kwargs):
         return SimpleNamespace(returncode=1, stdout="", stderr="auth failed")
 
@@ -183,19 +206,29 @@ def test_session_check_nonzero_exit_fails_stop_confirmation(tmp_path: Path) -> N
 
     assert ensure_session_stopped("mr-s1", colab_bin="/bin/true", runner=auth_err_runner) is False
 
-    # Full job must fail loudly if teardown cannot be confirmed (even if exec succeeded).
+    # Unlabelled active VM shown as `?` must NOT be treated as confirmed stopped!
+    def unlabelled_vm_runner(cmd, **kwargs):
+        if "sessions" in cmd:
+            return SimpleNamespace(returncode=0, stdout="  ?   T4   RUNNING", stderr="")
+        return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+
+    assert ensure_session_stopped("mr-s1", colab_bin="/bin/true", runner=unlabelled_vm_runner) is False
+
+    # Non-zero exit from `stop` must also fail confirmation even if sessions list is empty.
     wav = _make_wav(tmp_path / "synth.wav", dur_s=4.0)
     out_dir = tmp_path / "out"
 
-    def unconfirmed_stop_runner(cmd, **kwargs):
+    def stop_fail_runner(cmd, **kwargs):
         if "download" in cmd and cmd[-1].endswith("synth_gpu_smoke.wav"):
             _make_wav(Path(cmd[-1]), dur_s=4.0)
             return SimpleNamespace(returncode=0, stdout="ok", stderr="")
         if "download" in cmd and cmd[-1].endswith("worker_report.json"):
             Path(cmd[-1]).write_text(json.dumps({"status": "ok"}), encoding="utf-8")
             return SimpleNamespace(returncode=0, stdout="ok", stderr="")
+        if "stop" in cmd:
+            return SimpleNamespace(returncode=1, stdout="", stderr="stop failed")
         if "sessions" in cmd:
-            return SimpleNamespace(returncode=1, stdout="", stderr="auth failed")
+            return SimpleNamespace(returncode=0, stdout="[colab] No active sessions found on server.", stderr="")
         return SimpleNamespace(returncode=0, stdout="ok", stderr="")
 
     with pytest.raises(ColabError, match="could not confirm Colab session"):
@@ -205,11 +238,11 @@ def test_session_check_nonzero_exit_fails_stop_confirmation(tmp_path: Path) -> N
                 out_dir=out_dir,
                 task="gpu_smoke",
                 gpu="T4",
-                session="mr-unconfirmed",
+                session="mr-stop-fail",
                 dry_run=False,
                 colab_bin="/bin/true",
             ),
-            runner=unconfirmed_stop_runner,
+            runner=stop_fail_runner,
         )
 
 

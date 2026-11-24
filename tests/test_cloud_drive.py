@@ -31,7 +31,7 @@ def test_build_remote_uri_uses_default_base() -> None:
     assert uri == f"{DEFAULT_REMOTE_BASE}/smoke/test1"
 
 
-def test_upload_defaults_to_dry_run_and_explicit_no_retries(tmp_path: Path) -> None:
+def test_upload_defaults_to_dry_run_and_explicit_bounded_retries(tmp_path: Path) -> None:
     wav = tmp_path / "sample.wav"
     wav.write_bytes(b"audio-data")
 
@@ -76,13 +76,13 @@ def test_upload_execute_runs_copy_and_one_way_check_without_deleting_local(tmp_p
     assert wav.is_file() and wav.read_bytes() == b"restored-audio"
 
 
-def test_upload_blocks_secrets_cookies_and_sensitive_parent_dirs(tmp_path: Path) -> None:
-    secret_file = tmp_path / "rutracker_cookies.txt"
-    secret_file.write_text("session=123", encoding="utf-8")
-    with pytest.raises(DriveError, match="sensitive"):
-        upload_path(secret_file, "smoke/leak", dry_run=True)
+def test_upload_blocks_dotfiles_netrc_secrets_and_sensitive_parent_dirs(tmp_path: Path) -> None:
+    for name in ("rutracker_cookies.txt", ".netrc", ".env", "id_rsa"):
+        f = tmp_path / name
+        f.write_text("sensitive", encoding="utf-8")
+        with pytest.raises(DriveError, match="sensitive"):
+            upload_path(f, "smoke/leak", dry_run=True)
 
-    # Single file inside a sensitive parent directory must also be blocked!
     secrets_dir = tmp_path / ".secrets"
     secrets_dir.mkdir()
     innocent_name = secrets_dir / "config.json"
@@ -97,17 +97,18 @@ def test_upload_blocks_secrets_cookies_and_sensitive_parent_dirs(tmp_path: Path)
         upload_path(d, "smoke/bundle", dry_run=True)
 
 
-def test_upload_raises_when_one_way_check_fails_or_matches_zero_files(tmp_path: Path) -> None:
+def test_upload_requires_positive_matching_file_count_from_rclone_check(tmp_path: Path) -> None:
     wav = tmp_path / "sample.wav"
     wav.write_bytes(b"audio")
 
-    def zero_match_runner(cmd, **kwargs):
+    # Real rclone v1.76.0 prints only "0 differences found" when a filter matches 0 files.
+    def empty_filter_runner(cmd, **kwargs):
         if cmd[1] == "copy":
             return SimpleNamespace(returncode=0, stdout="", stderr="")
-        return SimpleNamespace(returncode=0, stdout="", stderr="0 differences found\n0 matching files")
+        return SimpleNamespace(returncode=0, stdout="", stderr="0 differences found")
 
     with pytest.raises(DriveError, match="check --one-way failed"):
-        upload_path(wav, "smoke/run1", dry_run=False, verify=True, rclone_bin="/bin/true", runner=zero_match_runner)
+        upload_path(wav, "smoke/run1", dry_run=False, verify=True, rclone_bin="/bin/true", runner=empty_filter_runner)
 
 
 def test_single_file_upload_and_verify_agree_on_remote_dir_and_escape_globs(tmp_path: Path) -> None:
@@ -119,14 +120,12 @@ def test_single_file_upload_and_verify_agree_on_remote_dir_and_escape_globs(tmp_
         seen.append(list(cmd))
         return SimpleNamespace(returncode=0, stdout="", stderr="1 matching files")
 
-    # Directory subpath: both upload and verify target smoke/run1 (not smoke!)
     res_dir = verify_one_way(wav, "smoke/run1", rclone_bin="/bin/true", runner=fake_runner)
     assert res_dir.ok is True
     assert seen[-1][-1].endswith("/smoke/run1")
     assert r"/track\[1\].wav" in seen[-1]
     assert "--exclude" in seen[-1]
 
-    # Exact file subpath: verify targets parent smoke/run1
     res_exact = verify_one_way(wav, "smoke/run1/track[1].wav", rclone_bin="/bin/true", runner=fake_runner)
     assert res_exact.ok is True
     assert seen[-1][-1].endswith("/smoke/run1")

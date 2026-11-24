@@ -1,7 +1,11 @@
 """Self-contained Colab GPU worker script generator.
 
-Produces a standalone Python 3 script executed inside the Colab VM
-(``/content/``) with zero dependencies on local workspace paths. Supports:
+Produces a Python 3 script executed inside the Colab VM (``/content/``) with
+zero dependencies on local workspace paths. Audio decoding delegates directly
+to ``rnext/features.py`` (uploaded as ``/content/rnext_features.py``) to obey
+the repository one-owner rule.
+
+Supports:
   - ``gpu_smoke``: fast CUDA GPU verification + PyTorch spectral soft-declip pass
   - ``neural_declip``: PyTorch CUDA STFT-domain iterative declipping & peak recovery
   - ``demucs``: Demucs v4 (htdemucs) GPU stem separation
@@ -25,7 +29,7 @@ def render_worker_script(
     output_filename: str,
     extra_options: dict[str, Any] | None = None,
 ) -> str:
-    """Render a self-contained Colab GPU worker script for ``task``."""
+    """Render a Colab GPU worker script for ``task`` delegating decode to ``rnext_features``."""
     if task not in VALID_TASKS:
         raise ValueError(f"unsupported Colab task {task!r}; expected one of {VALID_TASKS}")
     if not input_filename or "/" in input_filename or "\\" in input_filename:
@@ -57,6 +61,11 @@ from pathlib import Path
 
 import numpy as np
 
+if "/content" not in sys.path:
+    sys.path.insert(0, "/content")
+
+import rnext_features as F
+
 CONFIG = json.loads({cfg_json!r})
 
 
@@ -80,29 +89,6 @@ def _require_cuda():
             "CUDA GPU is required for Colab GPU worker, but torch.cuda.is_available() is False"
         )
     return torch, torch.device("cuda")
-
-
-def _read_audio_f32(path: Path) -> tuple[np.ndarray, int]:
-    """Decode audio preserving native channels via ffprobe + ffmpeg."""
-    probe = subprocess.run(
-        [
-            "ffprobe", "-v", "error", "-select_streams", "a:0",
-            "-show_entries", "stream=sample_rate,channels", "-of", "json", str(path),
-        ],
-        capture_output=True, text=True, check=True,
-    )
-    stream = json.loads(probe.stdout)["streams"][0]
-    sr = int(stream["sample_rate"])
-    ch = int(stream["channels"])
-    raw = subprocess.run(
-        [
-            "ffmpeg", "-v", "error", "-i", str(path),
-            "-map", "0:a:0", "-ac", str(ch), "-c:a", "pcm_f32le", "-f", "f32le", "-",
-        ],
-        capture_output=True, check=True,
-    ).stdout
-    arr = np.frombuffer(raw, dtype=np.float32).reshape(-1, ch).copy()
-    return arr, sr
 
 
 def _write_wav_pcm16(path: Path, x: np.ndarray, sr: int) -> None:
@@ -199,7 +185,7 @@ def _run_demucs(input_path: Path, output_path: Path, options: dict) -> dict:
     acc = None
     sr_out = 44100
     for sf in stem_files:
-        arr, sr_out = _read_audio_f32(sf)
+        arr, sr_out = F.decode_f32(str(sf), channels=None)
         acc = arr.astype(np.float64) if acc is None else (acc + arr.astype(np.float64))
     _write_wav_pcm16(output_path, acc.astype(np.float32), sr_out)
     return {{
@@ -246,18 +232,18 @@ def main() -> int:
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     if task in ("gpu_smoke", "neural_declip"):
-        x, sr = _read_audio_f32(input_path)
+        x, sr = F.decode_f32(str(input_path), channels=None)
         iters = int(options.get("iterations", 4 if task == "gpu_smoke" else 12))
         y, meta = _gpu_spectral_declip(x, sr, iterations=iters)
         _write_wav_pcm16(output_path, y, sr)
         sample_rate, channels, num_frames = sr, int(y.shape[1]), int(y.shape[0])
     elif task == "demucs":
         meta = _run_demucs(input_path, output_path, options)
-        y, sr = _read_audio_f32(output_path)
+        y, sr = F.decode_f32(str(output_path), channels=None)
         sample_rate, channels, num_frames = sr, int(y.shape[1]), int(y.shape[0])
     elif task == "audiosr":
         meta = _run_audiosr(input_path, output_path, options)
-        y, sr = _read_audio_f32(output_path)
+        y, sr = F.decode_f32(str(output_path), channels=None)
         sample_rate, channels, num_frames = sr, int(y.shape[1]), int(y.shape[0])
     else:
         raise ValueError(f"unsupported task: {{task}}")

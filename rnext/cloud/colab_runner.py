@@ -3,9 +3,14 @@
 Design guarantees:
   - Strict ``dry_run`` mode: validates inputs and prints exact planned steps
     without starting a Colab VM or spending Compute Units.
-  - Hard auto-stop guarantee: ``run_colab_job`` always stops the VM in a
-    ``finally`` block, verifies via ``colab --auth <auth> sessions`` (requiring
-    exit code 0!), and raises ``ColabError`` if teardown cannot be confirmed.
+  - Hard auto-stop guarantee: ``run_colab_job`` stops the VM in a ``finally``
+    block (checking ``colab stop`` exit code) and verifies via
+    ``colab --auth <auth> sessions`` that neither our session nor any unlabelled
+    (``?``) active VM remains running. Never returns 0 if teardown is unconfirmed.
+  - Never deletes prior run artifacts in ``out_dir``: refuses to overwrite
+    existing output audio or ``worker_report.json`` so previous results are safe.
+  - Uploads ``rnext/features.py`` to ``/content/rnext_features.py`` so the GPU
+    worker reuses the repository's single audio decoder (one-owner rule).
   - Requires a fresh ``worker_report.json`` with ``status == "ok"``,
     ``cuda_available is True``, and matching input/output SHA-256 hashes.
   - Uploads ONLY the explicit artifacts produced by the current run (restored
@@ -39,6 +44,7 @@ VALID_AUTHS = ("adc", "oauth2")
 DEFAULT_GPU = "L4"
 DEFAULT_AUTH = "adc"
 SUPPORTED_AUDIO_EXT = {".wav", ".flac", ".aiff", ".mp3", ".m4a", ".ogg", ".opus"}
+_UNLABELLED_SESSION_RE = re.compile(r"(?:^|\s|\|)\?(?:\s|\||$)", re.MULTILINE)
 
 
 class ColabError(RuntimeError):
@@ -161,6 +167,13 @@ def find_colab_bin(explicit: str | None = None) -> str | None:
     return None
 
 
+def _features_module_path() -> Path:
+    path = Path(__file__).resolve().parents[1] / "features.py"
+    if not path.is_file():
+        raise ColabError(f"rnext/features.py not found at expected location: {path}")
+    return path
+
+
 def _sanitize_session_name(raw: str) -> str:
     cleaned = re.sub(r"[^a-zA-Z0-9_-]+", "-", raw).strip("-")
     if not cleaned:
@@ -195,6 +208,7 @@ def build_colab_job_plan(config: ColabJobConfig) -> ColabJobPlan:
     session = _sanitize_session_name(config.session or f"mr-{config.task[:10]}-{ts}")
     output_filename = f"{input_path.stem}_{config.task}.wav"
     worker_script_path = out_dir / f"_mr_colab_worker_{config.task}.py"
+    features_path = _features_module_path()
 
     colab_bin = find_colab_bin(config.colab_bin)
     if not config.dry_run and not colab_bin:
@@ -209,6 +223,10 @@ def build_colab_job_plan(config: ColabJobConfig) -> ColabJobPlan:
 
     steps: list[ColabPlanStep] = [
         ColabPlanStep(stage="create_session", cmd=new_cmd),
+        ColabPlanStep(
+            stage="upload_features",
+            cmd=[*base, "upload", "-s", session, str(features_path), "/content/rnext_features.py"],
+        ),
         ColabPlanStep(
             stage="upload_input",
             cmd=[*base, "upload", "-s", session, str(input_path), f"/content/{input_path.name}"],
@@ -297,6 +315,17 @@ def check_active_sessions(
     return no_active, combined
 
 
+def _session_confirmed_absent(session: str, no_active: bool, output: str) -> bool:
+    """Confirm ``session`` is absent AND no unlabelled (``?``) VM is running."""
+    if no_active:
+        return True
+    if session in output:
+        return False
+    # `colab sessions` renders active VMs without a local session alias as `?`;
+    # we cannot distinguish an unlabelled active VM from our own session.
+    return not bool(_UNLABELLED_SESSION_RE.search(output))
+
+
 def ensure_session_stopped(
     session: str,
     *,
@@ -304,7 +333,7 @@ def ensure_session_stopped(
     colab_bin: str | None = None,
     runner: Any = subprocess.run,
 ) -> bool:
-    """Confirm ``session`` is stopped; return ``False`` on any CLI error or active session."""
+    """Confirm ``session`` is stopped; return ``False`` on CLI error, active session, or unlabelled ``?`` VM."""
     bin_path = find_colab_bin(colab_bin)
     if not bin_path:
         return False
@@ -312,7 +341,7 @@ def ensure_session_stopped(
         no_active, text = check_active_sessions(auth=auth, colab_bin=bin_path, runner=runner)
     except ColabError:
         return False
-    if no_active or session not in text:
+    if _session_confirmed_absent(session, no_active, text):
         return True
     stop_proc = runner([bin_path, "--auth", auth, "stop", "-s", session], capture_output=True, text=True)
     if int(stop_proc.returncode) != 0:
@@ -321,7 +350,7 @@ def ensure_session_stopped(
         no_active_after, text_after = check_active_sessions(auth=auth, colab_bin=bin_path, runner=runner)
     except ColabError:
         return False
-    return no_active_after or (session not in text_after)
+    return _session_confirmed_absent(session, no_active_after, text_after)
 
 
 def _validate_worker_report(
@@ -365,17 +394,19 @@ def run_colab_job(
         )
 
     out_dir = Path(plan.out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
     input_path = Path(plan.input_path)
     worker_script_path = Path(plan.worker_script_path)
     output_audio_path = out_dir / plan.output_filename
     worker_report_path = out_dir / "worker_report.json"
 
-    # Remove stale artifacts from any prior run in out_dir so we only accept fresh outputs.
-    for stale in (output_audio_path, worker_report_path):
-        if stale.exists():
-            stale.unlink()
+    # Refuse to overwrite prior run artifacts instead of deleting them prematurely.
+    for existing in (output_audio_path, worker_report_path):
+        if existing.exists():
+            raise ColabError(
+                f"refusing to overwrite existing output artifact: {existing} (use a fresh --out-dir per run)"
+            )
 
+    out_dir.mkdir(parents=True, exist_ok=True)
     metrics_before = measure_audio_file(input_path)
     input_digest = metrics_before["sha256"]
 
@@ -390,6 +421,7 @@ def run_colab_job(
     normal_steps = [s for s in plan.steps if not s.always]
     always_steps = [s for s in plan.steps if s.always]
     session_created = False
+    stop_step_ok = True
     sessions_clean: bool | None = None
 
     try:
@@ -408,9 +440,11 @@ def run_colab_job(
     finally:
         if session_created:
             for step in always_steps:
-                runner(step.cmd, capture_output=True, text=True)
+                stop_proc = runner(step.cmd, capture_output=True, text=True)
+                if int(stop_proc.returncode) != 0:
+                    stop_step_ok = False
         if not plan.keep_session:
-            sessions_clean = ensure_session_stopped(
+            sessions_clean = stop_step_ok and ensure_session_stopped(
                 plan.session,
                 auth=plan.auth,
                 colab_bin=config.colab_bin,

@@ -5,9 +5,14 @@ Safety invariants:
   - Non-destructive only: uses ``rclone copy`` / ``rclone copyto`` and
     ``rclone check --one-way``. Never invokes ``move``, ``sync``, ``delete``,
     or ``purge``, and never removes local originals.
-  - Explicit retry policy: ``--retries 1 --low-level-retries 1`` (no hidden retries).
-  - Blocks secrets, cookies, keys, and ``.git`` directories anywhere in the
-    target path or its parents/descendants.
+  - Explicit bounded retry policy: ``--retries 1 --low-level-retries 3``
+    (zero top-level retries; bounded HTTP-level retry for transient Google
+    Drive 429/5xx responses).
+  - Positive integrity confirmation: ``rclone check --one-way`` must explicitly
+    report the expected count of matching files (never silently passing on an
+    empty filter match).
+  - Blocks hidden/dot files (e.g. ``.netrc``, ``.env``, ``.secrets``),
+    credential files, keys, cookies, and sensitive parent directories.
   - Portable: zero hardcoded machine paths; resolves ``rclone`` via explicit
     argument, ``MR_RCLONE_BIN``, ``PATH``, or ``Path.home() / '.local/bin/rclone'``.
 """
@@ -24,11 +29,24 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_REMOTE_BASE = "gdrive:darkfactory-storage/music-restoration"
-_RCLONE_NO_RETRY_FLAGS = ("--retries", "1", "--low-level-retries", "1")
+# Explicit, bounded retry policy: 1 top-level attempt, up to 3 HTTP-level retries
+# for transient Google Drive API 429/5xx responses.
+_RCLONE_RETRY_FLAGS = ("--retries", "1", "--low-level-retries", "3")
 
-_BLOCKED_DIR_NAMES = {".git", ".secrets", ".ssh", ".gnupg"}
-_BLOCKED_EXTENSIONS = {".pem", ".key", ".p12", ".pfx", ".kdbx"}
+_BLOCKED_ANCESTOR_DIRS = {".git", ".secrets", ".ssh", ".gnupg", ".aws", ".kube", ".docker"}
+_BLOCKED_FILENAMES = {
+    "netrc",
+    "pgpass",
+    "id_rsa",
+    "id_ed25519",
+    "id_ecdsa",
+    "id_dsa",
+    "authorized_keys",
+    "known_hosts",
+}
+_BLOCKED_EXTENSIONS = {".pem", ".key", ".p12", ".pfx", ".kdbx", ".jks"}
 _BLOCKED_NAME_TOKENS = ("cookie", "secret", "token", "credential", "password")
+_MATCHING_FILES_RE = re.compile(r"(\d+)\s+matching\s+files?", re.IGNORECASE)
 
 
 class DriveError(RuntimeError):
@@ -129,30 +147,42 @@ def build_remote_uri(remote_subpath: str, remote_base: str | None = None) -> str
     return f"{base}/{clean_sub}"
 
 
-def _is_blocked_name(name: str) -> bool:
+def _is_blocked_entry_name(name: str) -> bool:
+    """Return True for dotfiles, known credential files, secret tokens, or key extensions."""
     low = name.lower()
-    if low in _BLOCKED_DIR_NAMES or low == ".env" or low.startswith(".env."):
+    if low.startswith("."):
+        return True
+    if low in _BLOCKED_FILENAMES:
         return True
     if Path(low).suffix in _BLOCKED_EXTENSIONS:
         return True
     return any(tok in low for tok in _BLOCKED_NAME_TOKENS)
 
 
+def _is_blocked_ancestor(part: str) -> bool:
+    low = part.lower()
+    if low in _BLOCKED_ANCESTOR_DIRS:
+        return True
+    return any(tok in low for tok in _BLOCKED_NAME_TOKENS)
+
+
 def assert_safe_local_path(local_path: Path) -> None:
-    """Refuse to transfer secrets, cookies, keys, or git metadata (including parent dirs)."""
+    """Refuse to transfer dotfiles, secrets, cookies, keys, or entries under sensitive dirs."""
     target = Path(local_path).expanduser().resolve()
     if not target.exists():
         raise DriveError(f"local path does not exist: {target}")
-    for part in target.parts:
-        if _is_blocked_name(part):
-            raise DriveError(f"refusing to transfer sensitive path component: {part}")
+    for ancestor in target.parts[:-1]:
+        if _is_blocked_ancestor(ancestor):
+            raise DriveError(f"refusing to transfer path under sensitive directory: {ancestor}")
+    if _is_blocked_entry_name(target.name):
+        raise DriveError(f"refusing to transfer sensitive or hidden path: {target.name}")
     if target.is_dir():
         for child in target.rglob("*"):
             rel_parts = child.relative_to(target).parts
             for part in rel_parts:
-                if _is_blocked_name(part):
+                if _is_blocked_entry_name(part):
                     raise DriveError(
-                        f"refusing to transfer directory containing sensitive entry: {'/'.join(rel_parts)}"
+                        f"refusing to transfer directory containing sensitive or hidden entry: {'/'.join(rel_parts)}"
                     )
 
 
@@ -176,7 +206,7 @@ def _build_check_cmd(bin_path: str, target: Path, remote_uri: str) -> list[str]:
             bin_path,
             "check",
             "--one-way",
-            *_RCLONE_NO_RETRY_FLAGS,
+            *_RCLONE_RETRY_FLAGS,
             "--include",
             f"/{escaped}",
             "--exclude",
@@ -184,13 +214,28 @@ def _build_check_cmd(bin_path: str, target: Path, remote_uri: str) -> list[str]:
             str(target.parent),
             remote_parent,
         ]
-    return [bin_path, "check", "--one-way", *_RCLONE_NO_RETRY_FLAGS, str(target), remote_uri]
+    return [bin_path, "check", "--one-way", *_RCLONE_RETRY_FLAGS, str(target), remote_uri]
 
 
-def _check_output_matched_files(target: Path, stderr: str) -> bool:
-    """Ensure ``rclone check`` did not silently pass with 0 matched files."""
-    low = (stderr or "").lower()
-    return not ("0 matching files" in low and (target.is_file() or any(target.rglob("*"))))
+def _expected_file_count(target: Path) -> int:
+    if target.is_file():
+        return 1
+    return sum(1 for p in target.rglob("*") if p.is_file())
+
+
+def _positive_check_confirmed(target: Path, stdout: str, stderr: str) -> bool:
+    """Require positive confirmation from ``rclone check`` matching the expected file count."""
+    expected = _expected_file_count(target)
+    if expected == 0:
+        return True
+    combined = f"{stdout}\n{stderr}"
+    matches = _MATCHING_FILES_RE.findall(combined)
+    if not matches:
+        return False
+    matched_count = int(matches[-1])
+    if target.is_file():
+        return matched_count == 1
+    return matched_count >= expected
 
 
 def verify_one_way(
@@ -209,14 +254,15 @@ def verify_one_way(
     cmd = _build_check_cmd(bin_path, target, remote_uri)
 
     proc = runner(cmd, capture_output=True, text=True)
+    stdout = getattr(proc, "stdout", "") or ""
     stderr = getattr(proc, "stderr", "") or ""
-    ok = (int(proc.returncode) == 0) and _check_output_matched_files(target, stderr)
+    ok = (int(proc.returncode) == 0) and _positive_check_confirmed(target, stdout, stderr)
     return DriveCheckResult(
         ok=ok,
         remote_uri=remote_uri,
         command=cmd,
         returncode=int(proc.returncode),
-        stdout=getattr(proc, "stdout", "") or "",
+        stdout=stdout,
         stderr=stderr,
     )
 
@@ -235,7 +281,7 @@ def upload_path(
 
     Defaults to ``dry_run=True``. Local files are never deleted or modified.
     When ``dry_run=False`` and ``verify=True``, runs ``rclone check --one-way``
-    after upload and raises ``DriveError`` if verification fails.
+    after upload and raises ``DriveError`` unless positive match count is confirmed.
     """
     target = Path(local_path).expanduser().resolve()
     assert_safe_local_path(target)
@@ -246,9 +292,9 @@ def upload_path(
     if target.is_file():
         is_exact, _ = _single_file_remote_layout(target, remote_uri)
         op = "copyto" if is_exact else "copy"
-        copy_cmd = [bin_display, op, *_RCLONE_NO_RETRY_FLAGS, str(target), remote_uri]
+        copy_cmd = [bin_display, op, *_RCLONE_RETRY_FLAGS, str(target), remote_uri]
     else:
-        copy_cmd = [bin_display, "copy", *_RCLONE_NO_RETRY_FLAGS, str(target), remote_uri]
+        copy_cmd = [bin_display, "copy", *_RCLONE_RETRY_FLAGS, str(target), remote_uri]
 
     check_cmd = _build_check_cmd(bin_display, target, remote_uri)
     planned_cmds = [copy_cmd] + ([check_cmd] if verify else [])
@@ -274,14 +320,17 @@ def upload_path(
     verified: bool | None = None
     if verify:
         check_proc = runner(check_cmd, capture_output=True, text=True)
+        check_stdout = getattr(check_proc, "stdout", "") or ""
         check_stderr = getattr(check_proc, "stderr", "") or ""
-        check_ok = (int(check_proc.returncode) == 0) and _check_output_matched_files(target, check_stderr)
+        check_ok = (int(check_proc.returncode) == 0) and _positive_check_confirmed(
+            target, check_stdout, check_stderr
+        )
         check_res = DriveCheckResult(
             ok=check_ok,
             remote_uri=remote_uri,
             command=check_cmd,
             returncode=int(check_proc.returncode),
-            stdout=getattr(check_proc, "stdout", "") or "",
+            stdout=check_stdout,
             stderr=check_stderr,
         )
         verified = check_res.ok
@@ -323,7 +372,7 @@ def download_path(
     bin_path = find_rclone_bin(rclone_bin) if dry_run else _require_rclone_bin(rclone_bin)
     bin_display = bin_path or "rclone"
 
-    cmd = [bin_display, "copy", *_RCLONE_NO_RETRY_FLAGS]
+    cmd = [bin_display, "copy", *_RCLONE_RETRY_FLAGS]
     if not overwrite:
         cmd.append("--ignore-existing")
     cmd.extend([remote_uri, str(dest)])
@@ -372,7 +421,7 @@ def list_remote(
         else base
     )
     bin_path = _require_rclone_bin(rclone_bin)
-    cmd = [bin_path, "lsjson", *_RCLONE_NO_RETRY_FLAGS, remote_uri]
+    cmd = [bin_path, "lsjson", *_RCLONE_RETRY_FLAGS, remote_uri]
     proc = runner(cmd, capture_output=True, text=True)
     if int(proc.returncode) != 0:
         raise DriveError(
